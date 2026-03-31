@@ -17,6 +17,7 @@ services:
     #   - COPAW_AUTH_ENABLED=true
     #   - COPAW_AUTH_USERNAME=admin
     #   - COPAW_AUTH_PASSWORD=yourpassword
+    #   - COPAW_ENABLE_BUILTIN_QA_AGENT=false
     volumes:
       - copaw-data:/app/working
       - copaw-secrets:/app/working.secret
