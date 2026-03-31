@@ -30,6 +30,13 @@ from ..config.utils import load_config, save_config
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_AGENT_NAME = "猎小易"
+DEFAULT_AGENT_DESCRIPTION = "给到 HR 的专属猎头 Agent 助手"
+DEFAULT_AGENT_FIRST_RUN_SKILL_NAMES: tuple[str, ...] = (
+    "job_intake_consultant",
+    "duolie_talent",
+)
+
 # Workspace items to migrate: (name, is_directory)
 _WORKSPACE_ITEMS_TO_MIGRATE = [
     # Directories
@@ -48,6 +55,53 @@ _WORKSPACE_JSON_DEFAULTS: list[tuple[str, dict]] = [
     ("chats.json", {"version": 1, "chats": []}),
     ("jobs.json", {"version": 1, "jobs": []}),
 ]
+
+
+def _build_default_agent_config(
+    config,
+    workspace_dir: Path,
+    *,
+    migrated: bool = False,
+) -> AgentProfileConfig:
+    legacy_agents = config.agents
+    description = (
+        f"{DEFAULT_AGENT_DESCRIPTION}（由旧配置迁移）"
+        if migrated
+        else DEFAULT_AGENT_DESCRIPTION
+    )
+    return AgentProfileConfig(
+        id="default",
+        name=DEFAULT_AGENT_NAME,
+        description=description,
+        workspace_dir=str(workspace_dir),
+        language=config.agents.language or "zh",
+        channels=config.channels if hasattr(config, "channels") else None,
+        mcp=config.mcp if hasattr(config, "mcp") else None,
+        heartbeat=(
+            legacy_agents.defaults.heartbeat
+            if hasattr(legacy_agents, "defaults") and legacy_agents.defaults
+            else HeartbeatConfig()
+        ),
+        running=(
+            legacy_agents.running
+            if hasattr(legacy_agents, "running") and legacy_agents.running
+            else AgentsRunningConfig()
+        ),
+        llm_routing=(
+            legacy_agents.llm_routing
+            if hasattr(legacy_agents, "llm_routing")
+            and legacy_agents.llm_routing
+            else AgentsLLMRoutingConfig()
+        ),
+        system_prompt_files=(
+            legacy_agents.system_prompt_files
+            if hasattr(legacy_agents, "system_prompt_files")
+            and legacy_agents.system_prompt_files
+            else ["AGENTS.md", "SOUL.md", "PROFILE.md"]
+        ),
+        tools=config.tools if hasattr(config, "tools") else None,
+        security=config.security if hasattr(config, "security") else None,
+    )
 
 
 def migrate_legacy_workspace_to_default_agent() -> bool:
@@ -95,46 +149,16 @@ def migrate_legacy_workspace_to_default_agent() -> bool:
     logger.info("Migrating legacy config to multi-agent structure...")
     logger.info("=" * 60)
 
-    # Extract legacy agent configuration
-    legacy_agents = config.agents
-
     # Create default agent workspace
     default_workspace = Path(f"{WORKING_DIR}/workspaces/default").expanduser()
     default_workspace.mkdir(parents=True, exist_ok=True)
     logger.info(f"Created default agent workspace: {default_workspace}")
 
     # Build default agent configuration from legacy settings
-    default_agent_config = AgentProfileConfig(
-        id="default",
-        name="猎小易",
-        description="给到 HR 的专属猎头 Agent 助手（由旧配置迁移）",
-        workspace_dir=str(default_workspace),
-        channels=config.channels if hasattr(config, "channels") else None,
-        mcp=config.mcp if hasattr(config, "mcp") else None,
-        heartbeat=(
-            legacy_agents.defaults.heartbeat
-            if hasattr(legacy_agents, "defaults") and legacy_agents.defaults
-            else None
-        ),
-        running=(
-            legacy_agents.running
-            if hasattr(legacy_agents, "running") and legacy_agents.running
-            else AgentsRunningConfig()
-        ),
-        llm_routing=(
-            legacy_agents.llm_routing
-            if hasattr(legacy_agents, "llm_routing")
-            and legacy_agents.llm_routing
-            else AgentsLLMRoutingConfig()
-        ),
-        system_prompt_files=(
-            legacy_agents.system_prompt_files
-            if hasattr(legacy_agents, "system_prompt_files")
-            and legacy_agents.system_prompt_files
-            else ["AGENTS.md", "SOUL.md", "PROFILE.md"]
-        ),
-        tools=config.tools if hasattr(config, "tools") else None,
-        security=config.security if hasattr(config, "security") else None,
+    default_agent_config = _build_default_agent_config(
+        config,
+        default_workspace,
+        migrated=True,
     )
 
     # Save default agent configuration to workspace/agent.json
@@ -582,6 +606,8 @@ def ensure_default_agent_exists() -> None:
         ).expanduser()
         agent_existed = False
 
+    agent_config_path = default_workspace / "agent.json"
+
     # Ensure workspace directory exists
     default_workspace.mkdir(parents=True, exist_ok=True)
 
@@ -605,6 +631,40 @@ def ensure_default_agent_exists() -> None:
         logger.info(
             f"Created default agent with workspace: {default_workspace}",
         )
+
+    if agent_config_path.exists():
+        return
+
+    logger.info("Initializing default agent workspace/persona...")
+
+    from ..agents.skills_manager import (
+        SkillService,
+        ensure_skill_pool_initialized,
+    )
+    from .routers.agents import _initialize_agent_workspace
+
+    ensure_skill_pool_initialized()
+
+    default_agent_config = _build_default_agent_config(
+        config,
+        default_workspace,
+    )
+    _initialize_agent_workspace(
+        default_workspace,
+        default_agent_config,
+        skill_names=list(DEFAULT_AGENT_FIRST_RUN_SKILL_NAMES),
+    )
+    save_agent_config("default", default_agent_config)
+
+    skill_service = SkillService(default_workspace)
+    for skill_name in DEFAULT_AGENT_FIRST_RUN_SKILL_NAMES:
+        result = skill_service.enable_skill(skill_name)
+        if not result.get("success"):
+            logger.warning(
+                "Failed to enable default skill %r for default agent: %s",
+                skill_name,
+                result.get("reason"),
+            )
 
 
 def _other_agent_owns_workspace(
