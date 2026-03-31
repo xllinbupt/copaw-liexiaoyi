@@ -21,6 +21,7 @@ from ..config.config import (
     save_agent_config,
 )
 from ..constant import (
+    CONFIG_FILE,
     BUILTIN_QA_AGENT_ID,
     BUILTIN_QA_AGENT_NAME,
     BUILTIN_QA_AGENT_SKILL_NAMES,
@@ -55,6 +56,23 @@ _WORKSPACE_JSON_DEFAULTS: list[tuple[str, dict]] = [
     ("chats.json", {"version": 1, "chats": []}),
     ("jobs.json", {"version": 1, "jobs": []}),
 ]
+
+
+def _has_legacy_workspace_content(root: Path) -> bool:
+    for item_name, _ in _WORKSPACE_ITEMS_TO_MIGRATE:
+        if (root / item_name).exists():
+            return True
+    return any(root.glob("*.md"))
+
+
+def _workspace_has_any_skills(workspace_dir: Path) -> bool:
+    skills_dir = workspace_dir / "skills"
+    if not skills_dir.exists():
+        return False
+    return any(
+        path.is_dir() and (path / "SKILL.md").exists()
+        for path in skills_dir.iterdir()
+    )
 
 
 def _build_default_agent_config(
@@ -104,6 +122,35 @@ def _build_default_agent_config(
     )
 
 
+def _seed_default_agent_workspace(
+    workspace_dir: Path,
+    agent_config: AgentProfileConfig,
+) -> None:
+    from ..agents.skills_manager import (
+        SkillService,
+        ensure_skill_pool_initialized,
+    )
+    from .routers.agents import _initialize_agent_workspace
+
+    ensure_skill_pool_initialized()
+    _initialize_agent_workspace(
+        workspace_dir,
+        agent_config,
+        skill_names=list(DEFAULT_AGENT_FIRST_RUN_SKILL_NAMES),
+    )
+    save_agent_config("default", agent_config)
+
+    skill_service = SkillService(workspace_dir)
+    for skill_name in DEFAULT_AGENT_FIRST_RUN_SKILL_NAMES:
+        result = skill_service.enable_skill(skill_name)
+        if not result.get("success"):
+            logger.warning(
+                "Failed to enable default skill %r for default agent: %s",
+                skill_name,
+                result.get("reason"),
+            )
+
+
 def migrate_legacy_workspace_to_default_agent() -> bool:
     """Migrate legacy single-agent workspace to default agent workspace.
 
@@ -117,6 +164,18 @@ def migrate_legacy_workspace_to_default_agent() -> bool:
     Returns:
         bool: True if migration was performed, False if already migrated
     """
+    config_path = (Path(WORKING_DIR) / CONFIG_FILE).expanduser()
+    legacy_root = Path(WORKING_DIR).expanduser()
+    if (
+        not config_path.exists()
+        and not _has_legacy_workspace_content(legacy_root)
+    ):
+        logger.debug(
+            "Fresh working dir detected at %s, skipping legacy migration",
+            legacy_root,
+        )
+        return False
+
     try:
         config = load_config()
     except Exception as e:
@@ -212,6 +271,9 @@ def migrate_legacy_workspace_to_default_agent() -> bool:
         "Updated root config.json to multi-agent structure "
         "(kept original fields for backward compatibility)",
     )
+
+    if not _workspace_has_any_skills(default_workspace):
+        _seed_default_agent_workspace(default_workspace, default_agent_config)
 
     logger.info("=" * 60)
     logger.info("Migration completed successfully!")
@@ -633,38 +695,24 @@ def ensure_default_agent_exists() -> None:
         )
 
     if agent_config_path.exists():
+        if _workspace_has_any_skills(default_workspace):
+            return
+        logger.info(
+            "Default agent exists but has no workspace skills; "
+            "seeding builtin defaults...",
+        )
+        from ..config.config import load_agent_config
+
+        default_agent_config = load_agent_config("default")
+        _seed_default_agent_workspace(default_workspace, default_agent_config)
         return
 
     logger.info("Initializing default agent workspace/persona...")
-
-    from ..agents.skills_manager import (
-        SkillService,
-        ensure_skill_pool_initialized,
-    )
-    from .routers.agents import _initialize_agent_workspace
-
-    ensure_skill_pool_initialized()
-
     default_agent_config = _build_default_agent_config(
         config,
         default_workspace,
     )
-    _initialize_agent_workspace(
-        default_workspace,
-        default_agent_config,
-        skill_names=list(DEFAULT_AGENT_FIRST_RUN_SKILL_NAMES),
-    )
-    save_agent_config("default", default_agent_config)
-
-    skill_service = SkillService(default_workspace)
-    for skill_name in DEFAULT_AGENT_FIRST_RUN_SKILL_NAMES:
-        result = skill_service.enable_skill(skill_name)
-        if not result.get("success"):
-            logger.warning(
-                "Failed to enable default skill %r for default agent: %s",
-                skill_name,
-                result.get("reason"),
-            )
+    _seed_default_agent_workspace(default_workspace, default_agent_config)
 
 
 def _other_agent_owns_workspace(
@@ -786,3 +834,24 @@ def ensure_qa_agent_exists() -> None:
         "Created builtin QA agent with workspace: %s",
         qa_workspace,
     )
+
+
+def remove_builtin_qa_agent_if_present() -> None:
+    """Remove builtin QA agent profile when this distro disables it.
+
+    The workspace is left on disk intentionally to avoid destructive deletes,
+    but the agent disappears from runtime/UI configuration.
+    """
+    config = load_config()
+    qa_id = BUILTIN_QA_AGENT_ID
+    if qa_id not in config.agents.profiles:
+        return
+
+    logger.info(
+        "Removing builtin QA agent profile %r because it is disabled",
+        qa_id,
+    )
+    config.agents.profiles.pop(qa_id, None)
+    if config.agents.active_agent == qa_id:
+        config.agents.active_agent = "default"
+    save_config(config)

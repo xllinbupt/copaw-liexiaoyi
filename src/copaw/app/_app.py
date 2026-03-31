@@ -36,6 +36,7 @@ from .migration import (
     migrate_legacy_skills_to_skill_pool,
     ensure_default_agent_exists,
     ensure_qa_agent_exists,
+    remove_builtin_qa_agent_if_present,
 )
 from .channels.registry import register_custom_channel_routes
 
@@ -196,6 +197,7 @@ async def lifespan(
     if BUILTIN_QA_AGENT_ENABLED:
         ensure_qa_agent_exists()
     else:
+        remove_builtin_qa_agent_if_present()
         logger.info(
             "Skipping builtin QA agent creation because "
             "COPAW_ENABLE_BUILTIN_QA_AGENT is disabled.",
