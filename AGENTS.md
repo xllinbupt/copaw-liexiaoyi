@@ -105,3 +105,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 - **Run pre-commit** every time the backend code is changed
 - **Run tests** before major commits: `pytest`
 - **Format frontend** code from each app directory: `cd console && npm run format`, `cd website && pnpm format`
+- **Bump version before every GitHub push that changes behavior**: update `src/copaw/__version__.py` and increment from the previous released value so deployments can be distinguished clearly
