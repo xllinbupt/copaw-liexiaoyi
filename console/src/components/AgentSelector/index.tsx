@@ -61,9 +61,23 @@ export default function AgentSelector({
   // Check if current agent is disabled, auto-switch to default
   useEffect(() => {
     const currentAgent = agents?.find((a) => a.id === selectedAgent);
+    const enabledAgents = agents?.filter((a) => a.enabled) ?? [];
     if (currentAgent && !currentAgent.enabled) {
-      setSelectedAgent("default");
+      const fallbackAgent =
+        enabledAgents.find((a) => a.id === "default") || enabledAgents[0];
+      if (fallbackAgent && fallbackAgent.id !== selectedAgent) {
+        setSelectedAgent(fallbackAgent.id);
+      }
       message.warning(t("agent.currentAgentDisabled"));
+      return;
+    }
+
+    if (!currentAgent && enabledAgents.length > 0) {
+      const fallbackAgent =
+        enabledAgents.find((a) => a.id === "default") || enabledAgents[0];
+      if (fallbackAgent && fallbackAgent.id !== selectedAgent) {
+        setSelectedAgent(fallbackAgent.id);
+      }
     }
   }, [agents, selectedAgent, setSelectedAgent, t]);
 

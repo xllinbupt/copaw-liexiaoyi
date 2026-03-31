@@ -11,77 +11,78 @@ export const i18n: Record<Lang, Record<string, string>> = {
     "nav.githubComingSoon": "Coming Soon",
     "nav.lang": "EN",
     "nav.agentscopeTeam": "AgentScope",
-    "hero.slogan": "懂你所需，伴你左右",
+    "hero.slogan": "给到 HR 的专属猎头 Agent 助手",
     "hero.sub":
-      "你的AI个人助理；安装极简、本地与云上均可部署；支持多端接入、能力轻松扩展。",
+      "面向猎头与招聘团队的 AI 助手；支持本地部署、多端接入、招聘流程自动化，并可通过内置招聘 Skills 持续扩展。",
     "hero.cta": "查看文档",
     "follow.title": "关注我们",
-    "follow.sub": "第一时间获取 CoPaw 最新动态",
+    "follow.sub": "第一时间获取猎小易的招聘自动化更新",
     "follow.xiaohongshu": "小红书：",
     "follow.x": "X：",
     "follow.community.title": "加入社区",
     "follow.community.discord": "Discord",
     "follow.community.dingtalk": "钉钉群",
-    "brandstory.title": "Why CoPaw？",
+    "brandstory.title": "为什么是猎小易？",
     "brandstory.para1":
-      "CoPaw 既是「你的搭档小爪子」（co-paw），也寓意 Co Personal Agent Workstation（协同个人智能体工作台）。",
+      "猎小易是一位为 HR 和猎头顾问打造的专属招聘 Agent，围绕搜人、读简历、初筛与协同推进而设计。",
     "brandstory.para2":
-      "我们希望它不是冰冷的工具，而是一只随时准备帮忙的温暖「小爪子」，是你数字生活中最默契的伙伴。",
+      "它不是泛用聊天机器人，而是能嵌入招聘日常、连接招聘数据、帮你持续推进候选人流程的团队成员。",
     "features.title": "核心能力",
-    "features.channels.title": "全域触达",
+    "features.channels.title": "多端招聘协同",
     "features.channels.desc":
-      "支持钉钉、飞书、QQ、Discord、iMessage 等频道，一个 CoPaw 按需连接。",
-    "features.private.title": "由你掌控",
+      "支持控制台、钉钉、飞书等协同场景，把岗位沟通、简历结论与面试推进集中在一个入口。",
+    "features.private.title": "数据在你手里",
     "features.private.desc":
-      "记忆与个性化由你掌控，本地或云端均可；定时与协作发往指定频道。",
-    "features.multiagent.title": "多智能体",
+      "支持本地部署和私有数据管理，简历、候选人评估与招聘知识可以沉淀在你自己的环境里。",
+    "features.multiagent.title": "招聘角色协作",
     "features.multiagent.desc":
-      "创建多个独立智能体，各司其职；启用协作技能，智能体间可互相通信协作。",
-    "features.skills.title": "Skills 扩展",
-    "features.skills.desc": "内置定时任务，自定义技能目录，CoPaw 自动加载。",
-    "testimonials.title": "社区怎么说",
+      "可按招聘流程拆分成搜寻、初筛、面试协调、候选人跟进等角色，让多个 Agent 分工协作。",
+    "features.skills.title": "招聘 Skills",
+    "features.skills.desc":
+      "内置招聘场景 Skills，可自动加载本地扩展，例如多猎简历检索、文件阅读与可视浏览器操作。",
+    "testimonials.title": "招聘团队怎么说",
     "testimonials.viewAll": "查看全部",
-    "testimonials.1": "CoPaw 就该这样：多频道一个入口，Python 好改好部署。",
-    "testimonials.2": "定时和心跳很实用，Skills 自己加，数据都在本地。",
-    "testimonials.3": "想完全掌控的团队用着很顺手。",
-    "usecases.title": "你可以用 CoPaw 做什么",
+    "testimonials.1": "把搜人、看简历、发起沟通放在一个入口里，招聘效率一下顺了很多。",
+    "testimonials.2": "本地部署让候选人数据更安心，Skills 也能按团队流程自己加。",
+    "testimonials.3": "很适合需要沉淀方法论和流程标准的猎头团队。",
+    "usecases.title": "你可以用猎小易做什么",
     "usecases.sub": "",
-    "usecases.category.social": "社交媒体",
-    "usecases.category.creative": "创意与构建",
-    "usecases.category.productivity": "生产力",
-    "usecases.category.research": "研究与学习",
-    "usecases.category.assistant": "桌面与文件",
-    "usecases.category.explore": "探索更多",
+    "usecases.category.social": "人才搜寻",
+    "usecases.category.creative": "岗位拆解",
+    "usecases.category.productivity": "招聘推进",
+    "usecases.category.research": "人才研判",
+    "usecases.category.assistant": "简历与文件",
+    "usecases.category.explore": "扩展接入",
     "usecases.social.1":
-      "每日将小红书、知乎、Reddit 上你关注的热帖整理成摘要并推送，并根据反馈优化推荐。",
+      "基于职位 JD、城市、年限、学历和关键词组合检索候选人，快速形成首批推荐名单。",
     "usecases.social.2":
-      "每日抓取 B 站、YouTube 关注频道或关键词下的新视频并生成摘要，节省浏览时间。",
+      "调用内置的多猎 Skill 搜索候选人，并直接查看简历详情，减少来回切系统的成本。",
     "usecases.social.3":
-      "分析小红书、知乎等账号的内容规律与特点，为内容创作提供参考。",
+      "把历史搜寻条件沉淀成可复用模板，让同类岗位的搜人动作标准化。",
     "usecases.creative.1":
-      "睡前向 CoPaw 说明目标并设定自动执行，次日即可获得可用的雏形。",
+      "把模糊的招聘需求拆成职责关键词、行业背景、目标公司与排除条件，自动生成搜寻策略。",
     "usecases.creative.2":
-      "从选题、找素材到确定方向，CoPaw 可协助完成视频内容创作全流程。",
+      "根据目标岗位产出候选人画像、面试关注点与推荐话术，帮助顾问统一评估口径。",
     "usecases.productivity.1":
-      "每日汇总订阅邮件与 Newsletter 精华，并推送至钉钉、飞书或 QQ 会话。",
+      "按候选人阶段整理待办，提醒跟进、约面、反馈与 offer 推进，减少流程遗漏。",
     "usecases.productivity.2":
-      "从邮件与日历自动整理联系人，支持用自然语言查询联系人及往来记录。",
+      "汇总聊天记录、简历亮点与评估结论，生成适合发给 HR 团队的结构化候选人摘要。",
     "usecases.productivity.3":
-      "记录饮食与身体反应，由 CoPaw 定期分析并呈现规律。",
+      "将岗位、候选人、沟通记录串起来，帮助招聘团队在控制台中快速回看进展。",
     "usecases.research.1":
-      "自动追踪科技与 AI 公司财报与重要资讯，筛选重点并生成摘要。",
+      "对比候选人与 JD 的匹配度，标出优势、风险项、待核实信息和面试建议。",
     "usecases.research.2":
-      "将链接、文章与帖子存入个人知识库，便于在多场景中检索与复用。",
+      "沉淀常见岗位的筛选标准、行业地图和问法模板，支持团队持续复用。",
     "usecases.assistant.1":
-      "协助整理与搜索本地文件、阅读文档并做摘要；在钉钉、飞书或 QQ 中通过对话将指定文件发至当前会话。",
+      "阅读本地简历、职位说明书和面试反馈文档，自动提炼重点并与候选人信息串联。",
     "usecases.explore.1":
-      "你可以探索更多可能，用 Skills 与定时任务组合成 agentic app。",
+      "继续接入更多招聘系统、表格或内部流程工具，把猎小易扩展成团队专属招聘操作台。",
     "quickstart.title": "快速开始",
     "quickstart.serviceNotice":
-      "几分钟，获得专属AI助理。一行命令，或双击桌面应用，自己动手，轻松搞定。",
+      "几分钟，获得一位面向 HR 的专属招聘 Agent。可本地部署，也可按你的团队流程继续扩展。",
     "quickstart.hintBefore": "安装 → 初始化 → 启动；频道配置见 ",
     "quickstart.hintLink": "文档",
-    "quickstart.hintAfter": "，即可通过钉钉、飞书、QQ 等频道使用 CoPaw。",
+    "quickstart.hintAfter": "，即可在控制台或协同频道里使用猎小易处理招聘任务。",
     "quickstart.method.pip": "pip",
     "quickstart.method.script": "脚本安装",
     "quickstart.method.docker": "Docker",
@@ -89,7 +90,7 @@ export const i18n: Record<Lang, Record<string, string>> = {
     "quickstart.method.desktop": "桌面应用",
     "quickstart.desc.pip": "适合自行管理 Python 环境的用户",
     "quickstart.desc.script":
-      "无需手动配置 Python，一行命令自动完成安装。脚本会自动下载 uv（Python 包管理器）、创建虚拟环境、安装 CoPaw 及其依赖（含 Node.js 和前端资源）。注意：部分网络环境或企业权限管控下可能无法使用。",
+      "无需手动配置 Python，一行命令自动完成安装。脚本会自动下载 uv、创建虚拟环境并安装猎小易运行所需依赖（含 Node.js 和前端资源）。",
     "quickstart.desc.docker":
       "使用官方 Docker 镜像快速部署，隔离环境、便于管理",
     "quickstart.desc.cloud": "云端一键部署或在线运行，无需本地环境配置",
@@ -111,7 +112,7 @@ export const i18n: Record<Lang, Record<string, string>> = {
     "quickstart.desktop.viewGuide": "查看使用指南",
     "quickstart.desktop.recommended": "推荐",
     "quickstart.badgeBeta": "Beta",
-    footer: "CoPaw — 懂你所需，伴你左右",
+    footer: "猎小易 — 给到 HR 的专属猎头 Agent 助手",
     "footer.poweredBy.p1": "由 ",
     "footer.poweredBy.p2": " 基于 ",
     "footer.poweredBy.p3": "、",
@@ -148,79 +149,79 @@ export const i18n: Record<Lang, Record<string, string>> = {
     "nav.githubComingSoon": "Coming Soon",
     "nav.lang": "中文",
     "nav.agentscopeTeam": "AgentScope",
-    "hero.slogan": "Works for you, grows with you",
+    "hero.slogan": "Your dedicated AI headhunting assistant for HR teams",
     "hero.sub":
-      "Your Personal AI Assistant; easy to install, deploy on your own machine or on the cloud; supports multiple chat apps with easily extensible capabilities.",
+      "An AI recruiting assistant for HR and headhunting teams, built for private deployment, resume workflows, candidate search, and extensible recruiting skills.",
     "hero.cta": "Read the docs",
     "follow.title": "Follow us",
-    "follow.sub": "Follow us for the latest CoPaw updates",
+    "follow.sub": "Follow us for the latest LieXiaoYi recruiting workflow updates",
     "follow.xiaohongshu": "Rednote:",
     "follow.x": "X:",
     "follow.community.title": "Join the community",
     "follow.community.discord": "Discord",
     "follow.community.dingtalk": "DingTalk",
-    "brandstory.title": "Why CoPaw?",
+    "brandstory.title": "Why LieXiaoYi?",
     "brandstory.para1":
-      'CoPaw represents both a Co Personal Agent Workstation and a "co-paw"—a partner always by your side.',
+      "LieXiaoYi is designed for HR and executive search teams that want a focused recruiting agent instead of a generic chat bot.",
     "brandstory.para2":
-      'More than just a cold tool, CoPaw is a warm "little paw" always ready to lend a hand (or a paw!). It is the ultimate teammate for your digital life.',
+      "It helps search for talent, read resumes, structure evaluations, and keep recruiting pipelines moving inside your own environment.",
     "features.title": "Key capabilities",
-    "features.channels.title": "Every channel",
+    "features.channels.title": "Recruiting collaboration",
     "features.channels.desc":
-      "DingTalk, Feishu, QQ, Discord, iMessage, and more — one assistant, connect as you need.",
-    "features.private.title": "Under your control",
+      "Use the console or team channels to keep candidate summaries, interview progress, and team collaboration in one place.",
+    "features.private.title": "Private by default",
     "features.private.desc":
-      "Memory and personalization under your control. Deploy locally or in the cloud; scheduled reminders and collaboration to any channel.",
-    "features.multiagent.title": "Multi-Agent",
+      "Candidate data, recruiting notes, and team know-how stay in your own environment with local or private deployment options.",
+    "features.multiagent.title": "Role-based recruiting agents",
     "features.multiagent.desc":
-      "Create multiple independent agents, each with their own specialty; enable collaboration skill for inter-agent communication.",
-    "features.skills.title": "Skills",
+      "Split work across sourcing, screening, interview coordination, and follow-up so multiple agents can collaborate on one hiring flow.",
+    "features.skills.title": "Recruiting skills",
     "features.skills.desc":
-      "Built-in Cron; custom skills in your workspace, auto-loaded.",
-    "testimonials.title": "What people say",
+      "Built-in recruiting skills auto-load from your workspace, including local sourcing and resume lookup skills such as Duolie.",
+    "testimonials.title": "What recruiting teams say",
     "testimonials.viewAll": "View all",
     "testimonials.1":
-      "This is what a personal assistant should be: one entry, every channel.",
+      "Candidate search, resume review, and team sync finally live in one workflow.",
     "testimonials.2":
-      "Cron and heartbeat are super practical. Add your own skills; data stays local.",
-    "testimonials.3": "Teams who want full control love it.",
-    "usecases.title": "What you can do with CoPaw",
+      "Private deployment made adoption easier, and custom recruiting skills fit our process quickly.",
+    "testimonials.3": "It feels much closer to a recruiting copilot than a generic assistant.",
+    "usecases.title": "What you can do with LieXiaoYi",
     "usecases.sub": "",
-    "usecases.category.social": "Social media",
-    "usecases.category.creative": "Creative & building",
-    "usecases.category.productivity": "Productivity",
-    "usecases.category.research": "Research & learning",
-    "usecases.category.assistant": "Desktop & files",
-    "usecases.category.explore": "Explore more",
+    "usecases.category.social": "Talent sourcing",
+    "usecases.category.creative": "Role design",
+    "usecases.category.productivity": "Pipeline execution",
+    "usecases.category.research": "Candidate evaluation",
+    "usecases.category.assistant": "Resumes & files",
+    "usecases.category.explore": "Workflow extensions",
     "usecases.social.1":
-      "Daily digest of hot posts from Xiaohongshu, Zhihu, and Reddit based on your interests, with recommendations that improve over time.",
+      "Search candidates by role, city, years of experience, school background, and hiring keywords to build a first-pass shortlist quickly.",
     "usecases.social.2":
-      "Daily summaries of new videos from Bilibili or YouTube by channel or keyword, saving you time browsing.",
+      "Use the built-in Duolie skill to search candidate records and open detailed resumes without leaving the recruiting workflow.",
     "usecases.social.3":
-      "Analyze your Xiaohongshu or Zhihu account to uncover content patterns and inform what to post next.",
+      "Turn proven sourcing filters into reusable templates for similar mandates across the team.",
     "usecases.creative.1":
-      "Describe your goal to CoPaw and set it to run overnight; get a working draft by the next day.",
+      "Break a hiring brief into responsibilities, keywords, target companies, exclusions, and must-have signals for more accurate sourcing.",
     "usecases.creative.2":
-      "From topic selection and material gathering to direction setting, CoPaw supports the full video content workflow.",
+      "Generate candidate personas, interview focus points, and recommendation angles for each role.",
     "usecases.productivity.1":
-      "Daily digests of newsletters and important emails, delivered to your DingTalk, Feishu or QQ chat.",
+      "Track follow-ups, interview scheduling, feedback collection, and offer progress so fewer candidates slip through the cracks.",
     "usecases.productivity.2":
-      "Contacts surfaced from email and calendar, with natural-language search for people and past interactions.",
+      "Summarize resumes, chat notes, and evaluation decisions into structured candidate updates for HR stakeholders.",
     "usecases.productivity.3":
-      "Log diet and symptoms; CoPaw analyzes and surfaces patterns over time.",
+      "Keep role context, candidate status, and recruiter notes connected in a single workspace.",
     "usecases.research.1":
-      "Track tech and AI company earnings and news; get key points and summaries automatically.",
+      "Compare candidates against the JD and flag strengths, risks, missing signals, and interview questions to validate.",
     "usecases.research.2":
-      "Save links, articles, and posts to a personal knowledge base and reuse them across workflows.",
+      "Build a reusable internal knowledge base of role scorecards, market maps, and evaluation patterns.",
     "usecases.assistant.1":
-      "Organize and search local files, read and summarize documents; request files in DingTalk, Feishu or QQ and receive them in the current chat.",
+      "Read local resumes, JDs, and interview feedback files, then extract the most relevant points for the hiring team.",
     "usecases.explore.1":
-      "Explore more possibilities—combine Skills and cron into your own agentic app.",
+      "Connect more recruiting systems, spreadsheets, or internal workflows and turn LieXiaoYi into your team's recruiting control center.",
     "quickstart.title": "Quick start",
     "quickstart.serviceNotice":
-      "Your personal AI assistant in minutes. One command, or double-click the app—do it yourself, done easily.",
+      "Get a recruiting-first AI agent for your HR team in minutes, then extend it with your own sourcing and resume workflows.",
     "quickstart.hintBefore":
-      "Install → init → start. Configure channels to use CoPaw on DingTalk, Feishu, QQ, etc. See ",
+      "Install → init → start. Configure channels if you want to use LieXiaoYi across team tools. See ",
     "quickstart.hintLink": "docs",
     "quickstart.hintAfter": ".",
     "quickstart.method.pip": "pip",
@@ -230,7 +231,7 @@ export const i18n: Record<Lang, Record<string, string>> = {
     "quickstart.method.desktop": "Desktop",
     "quickstart.desc.pip": "If you prefer managing Python yourself",
     "quickstart.desc.script":
-      "No Python setup required, one command installs everything. The script will automatically download uv (Python package manager), create a virtual environment, and install CoPaw with all dependencies (including Node.js and frontend assets). Note: May not work in restricted network environments or corporate firewalls.",
+      "No Python setup required. One command downloads uv, creates a virtual environment, and installs LieXiaoYi with all required dependencies, including Node.js and frontend assets.",
     "quickstart.desc.docker":
       "Quick deployment with official Docker images, isolated environment and easy management",
     "quickstart.desc.cloud":
@@ -253,7 +254,7 @@ export const i18n: Record<Lang, Record<string, string>> = {
     "quickstart.desktop.viewGuide": "View User Guide",
     "quickstart.desktop.recommended": "recommended",
     "quickstart.badgeBeta": "Beta",
-    footer: "CoPaw — Works for you, grows with you",
+    footer: "LieXiaoYi — Your dedicated AI headhunting assistant for HR teams",
     "footer.poweredBy.p1": "Built by ",
     "footer.poweredBy.p2": " with ",
     "footer.poweredBy.p3": ", ",

@@ -959,7 +959,7 @@ cloudflared tunnel --url http://localhost:8088
       "tts_voice": "en-US-Journey-D",
       "stt_provider": "deepgram",
       "language": "en-US",
-      "welcome_greeting": "Hi! This is CoPaw. How can I help you?"
+      "welcome_greeting": "Hi! This is LieXiaoYi, your recruiting assistant. How can I help?"
     }
   }
 }
@@ -998,7 +998,7 @@ cloudflared tunnel --url http://localhost:8088
 | `tts_voice`          | string | `"en-US-Journey-D"`                        | TTS 语音模型                       |
 | `stt_provider`       | string | `"deepgram"`                               | 语音转文本提供商                   |
 | `language`           | string | `"en-US"`                                  | 语言代码                           |
-| `welcome_greeting`   | string | `"Hi! This is CoPaw. How can I help you?"` | 欢迎语（接通电话后的第一句话）     |
+| `welcome_greeting`   | string | `"Hi! This is LieXiaoYi, your recruiting assistant. How can I help?"` | 欢迎语（接通电话后的第一句话）     |
 
 > **注意**：Voice 频道需要持续的网络连接和内网穿透工具运行。建议在生产环境使用稳定的内网穿透方案（如 Cloudflare Tunnel、ngrok 付费版等）。
 

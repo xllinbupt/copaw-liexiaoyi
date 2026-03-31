@@ -98,6 +98,10 @@ CHATS_FILE = EnvVarLoader.get_str("COPAW_CHATS_FILE", "chats.json")
 # Builtin multi-agent profile: CoPaw Q&A helper.
 BUILTIN_QA_AGENT_ID = "CoPaw_QA_Agent_0.1beta1"
 BUILTIN_QA_AGENT_NAME = "QA Agent"
+BUILTIN_QA_AGENT_ENABLED = EnvVarLoader.get_bool(
+    "COPAW_ENABLE_BUILTIN_QA_AGENT",
+    True,
+)
 # Default skills when the builtin QA workspace is first created only.
 BUILTIN_QA_AGENT_SKILL_NAMES: tuple[str, ...] = (
     "guidance",

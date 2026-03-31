@@ -12,6 +12,9 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { isDark } = useTheme();
+  const logoSrc = `${import.meta.env.BASE_URL}${
+    isDark ? "dark-logo.svg" : "logo.svg"
+  }?v=liepin-wordmark-2`;
   const [loading, setLoading] = useState(false);
   const [isRegister, setIsRegister] = useState(false);
   const [hasUsers, setHasUsers] = useState(true);
@@ -94,11 +97,9 @@ export default function LoginPage() {
       >
         <div style={{ textAlign: "center", marginBottom: 32 }}>
           <img
-            src={`${import.meta.env.BASE_URL}${
-              isDark ? "dark-logo.png" : "logo.png"
-            }`}
-            alt="CoPaw"
-            style={{ height: 48, marginBottom: 12 }}
+            src={logoSrc}
+            alt="Liepin"
+            style={{ height: 64, marginBottom: 16 }}
           />
           <h2 style={{ margin: 0, fontWeight: 600, fontSize: 20 }}>
             {isRegister ? t("login.registerTitle") : t("login.title")}

@@ -63,6 +63,7 @@ export default function Sidebar({ selectedKey }: SidebarProps) {
   const [accountLoading, setAccountLoading] = useState(false);
   const [accountForm] = Form.useForm();
   const [collapsed, setCollapsed] = useState(false);
+  const [openKeys, setOpenKeys] = useState<string[]>(DEFAULT_OPEN_KEYS);
 
   // ── Effects ──────────────────────────────────────────────────────────────
 
@@ -386,7 +387,13 @@ export default function Sidebar({ selectedKey }: SidebarProps) {
         <Menu
           mode="inline"
           selectedKeys={[selectedKey]}
-          openKeys={DEFAULT_OPEN_KEYS}
+          openKeys={openKeys}
+          onOpenChange={(nextOpenKeys) => {
+            const latestOpenKey = nextOpenKeys.find(
+              (key) => !openKeys.includes(key),
+            );
+            setOpenKeys(latestOpenKey ? [latestOpenKey] : []);
+          }}
           onClick={({ key }) => {
             const path = KEY_TO_PATH[String(key)];
             if (path) navigate(path);

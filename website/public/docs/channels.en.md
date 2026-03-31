@@ -930,7 +930,7 @@ Advanced options:
       "tts_voice": "en-US-Journey-D",
       "stt_provider": "deepgram",
       "language": "en-US",
-      "welcome_greeting": "Hi! This is CoPaw. How can I help you?"
+      "welcome_greeting": "Hi! This is LieXiaoYi, your recruiting assistant. How can I help?"
     }
   }
 }
@@ -969,7 +969,7 @@ After configuration, simply call your Twilio phone number to have a voice conver
 | `tts_voice`          | string | `"en-US-Journey-D"`                        | TTS voice model                              |
 | `stt_provider`       | string | `"deepgram"`                               | Speech-to-text provider                      |
 | `language`           | string | `"en-US"`                                  | Language code                                |
-| `welcome_greeting`   | string | `"Hi! This is CoPaw. How can I help you?"` | Welcome message when call connects           |
+| `welcome_greeting`   | string | `"Hi! This is LieXiaoYi, your recruiting assistant. How can I help?"` | Welcome message when call connects           |
 
 > **Note**: The Voice channel requires a continuous network connection and a running tunnel solution. For production use, consider stable tunneling options (like Cloudflare Tunnel, ngrok paid plans, etc.).
 

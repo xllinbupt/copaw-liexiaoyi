@@ -1,6 +1,6 @@
 <div align="center">
 
-# CoPaw
+# LieXiaoYi
 
 [![GitHub Repo](https://img.shields.io/badge/GitHub-Repo-black.svg?logo=github)](https://github.com/agentscope-ai/CoPaw)
 [![PyPI](https://img.shields.io/pypi/v/copaw?color=3775A9&label=PyPI&logo=pypi)](https://pypi.org/project/copaw/)
@@ -22,17 +22,17 @@
   <img src="https://img.alicdn.com/imgextra/i2/O1CN014TIqyO1U5wDiSbFfA_!!6000000002467-2-tps-816-192.png" alt="CoPaw Logo" width="120">
 </p>
 
-<p align="center"><b>Works for you, grows with you.</b></p>
+<p align="center"><b>Your dedicated AI headhunting assistant for HR teams.</b></p>
 
 </div>
 
-Your personal AI assistant — easy to install, deploy locally or in the cloud, connect across channels, extend with ease.
+An AI recruiting assistant for HR and executive search teams — easy to install, deploy privately, connect across channels, and extend with recruiting-focused skills.
 
 > **Core capabilities:**
 >
 > **Under your control** — Memory and personalization fully under your control. Deploy locally (data stays on your machine) or in the cloud (your chosen server). No third-party hosting, no data upload.
 >
-> **Skills extension** — Built-in scheduling, PDF/Office processing, news digest, and more; custom skills auto-loaded, no lock-in. Skills determine what CoPaw can do.
+> **Skills extension** — Built-in recruiting-ready skills with auto-loaded custom skills. This version includes `duolie_talent` for talent search and resume lookup in Duolie.
 >
 > **Multi-agent collaboration** — Create multiple independent agents, each with their own role; enable collaboration skills for inter-agent communication to tackle complex tasks together.
 >
@@ -406,7 +406,7 @@ For common questions, troubleshooting tips, and known issues, please visit the *
   <img src="https://img.alicdn.com/imgextra/i1/O1CN0197AtT32351zYCnOUU_!!6000000007203-1-tps-2214-1080.gif" width="600" alt="Star CoPaw" />
 </a>
 
-Star CoPaw on GitHub and be instantly notified of new releases.
+Star the project on GitHub and stay up to date with new LieXiaoYi releases.
 
 ---
 

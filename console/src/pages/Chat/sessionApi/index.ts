@@ -9,7 +9,11 @@ import api, {
   type ChatStatus,
   type Message,
 } from "../../../api";
-import { toDisplayUrl } from "../utils";
+import {
+  isResumeCardPayload,
+  normalizeResumeCardPayload,
+  toDisplayUrl,
+} from "../utils";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -98,6 +102,12 @@ const extractTextFromContent = (content: unknown): string => {
 };
 
 function resolveContentItemUrl(c: ContentItem): ContentItem {
+  if (c.type === "resume_card" && isResumeCardPayload(c)) {
+    return normalizeResumeCardPayload(c) as ContentItem;
+  }
+  if (c.type === "data" && isResumeCardPayload(c.data)) {
+    return { ...c, data: normalizeResumeCardPayload(c.data) };
+  }
   if (c.type === "image" && c.image_url) {
     return { ...c, image_url: toDisplayUrl(c.image_url as string) };
   }

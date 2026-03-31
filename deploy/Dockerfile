@@ -3,6 +3,7 @@
 # -----------------------------------------------------------------------------
 FROM agentscope-registry.ap-southeast-1.cr.aliyuncs.com/agentscope/node:slim AS console-builder
 WORKDIR /app
+ENV NODE_OPTIONS=--max-old-space-size=3072
 COPY console /app/console
 RUN cd /app/console && npm ci --include=dev && npm run build
 

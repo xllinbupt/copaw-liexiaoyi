@@ -164,7 +164,9 @@ class VoiceChannelConfig(BaseChannelConfig):
     tts_voice: str = "en-US-Journey-D"
     stt_provider: str = "deepgram"
     language: str = "en-US"
-    welcome_greeting: str = "Hi! This is CoPaw. How can I help you?"
+    welcome_greeting: str = (
+        "Hi! This is LieXiaoYi, your recruiting assistant. How can I help?"
+    )
 
 
 class XiaoYiConfig(BaseChannelConfig):
@@ -1257,8 +1259,8 @@ def migrate_legacy_config_to_multi_agent() -> bool:
     # Create default agent configuration from legacy settings
     default_agent_config = AgentProfileConfig(
         id="default",
-        name="Default Agent",
-        description="Default CoPaw agent",
+        name="猎小易",
+        description="给到 HR 的专属猎头 Agent 助手",
         workspace_dir=str(default_workspace),
         channels=config.channels if config.channels else None,
         mcp=config.mcp if config.mcp else None,

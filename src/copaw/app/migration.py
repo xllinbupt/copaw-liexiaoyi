@@ -106,8 +106,8 @@ def migrate_legacy_workspace_to_default_agent() -> bool:
     # Build default agent configuration from legacy settings
     default_agent_config = AgentProfileConfig(
         id="default",
-        name="Default Agent",
-        description="Default CoPaw agent (migrated from legacy config)",
+        name="猎小易",
+        description="给到 HR 的专属猎头 Agent 助手（由旧配置迁移）",
         workspace_dir=str(default_workspace),
         channels=config.channels if hasattr(config, "channels") else None,
         mcp=config.mcp if hasattr(config, "mcp") else None,

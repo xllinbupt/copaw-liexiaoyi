@@ -7,25 +7,24 @@ const defaultConfig = {
     prefix: "copaw",
     leftHeader: {
       logo: "",
-      title: "Work with CoPaw",
+      title: "猎小易",
     },
   },
   sender: {
     attachments: true,
     maxLength: 10000,
-    disclaimer: "Works for you, grows with you",
+    disclaimer: "给到 HR 的专属猎头 Agent 助手",
   },
   welcome: {
-    greeting: "Hello, how can I help you today?",
-    description:
-      "I am a helpful assistant that can help you with your questions.",
+    greeting: "你好，我是猎小易。",
+    description: "我会帮你处理搜人、读简历、初筛和招聘推进。",
     avatar: `${import.meta.env.BASE_URL}copaw-symbol.svg`,
     prompts: [
       {
-        value: "Let's start a new journey!",
+        value: "帮我按 JD 制定一版搜人策略",
       },
       {
-        value: "Can you tell me what skills you have?",
+        value: "帮我看看你现在有哪些招聘技能",
       },
     ],
   },

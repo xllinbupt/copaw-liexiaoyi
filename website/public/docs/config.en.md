@@ -154,8 +154,8 @@ Stores globally shared configuration:
     "profiles": {
       "default": {
         "id": "default",
-        "name": "Default Agent",
-        "description": "Default workspace agent",
+        "name": "LieXiaoYi",
+        "description": "Recruiting-focused default workspace agent",
         "enabled": true
       },
       "abc123": {
@@ -210,8 +210,8 @@ Each agent has an independent `agent.json` in its workspace directory (`~/.copaw
 ```json
 {
   "id": "default",
-  "name": "Default Agent",
-  "description": "Default workspace agent",
+  "name": "LieXiaoYi",
+  "description": "Recruiting-focused default workspace agent",
   "workspace_dir": "",
   "channels": {
     "console": {

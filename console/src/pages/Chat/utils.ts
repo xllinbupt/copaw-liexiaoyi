@@ -22,6 +22,59 @@ export type RuntimeLoadingBridgeApi = {
   setLoading?: (loading: boolean | string) => void;
 };
 
+export type ResumeCardPayload = {
+  type?: string;
+  card_type?: string;
+  candidate_id?: string;
+  resIdEncode?: string;
+  resumeIdEncode?: string;
+  candidate_name?: string;
+  name?: string;
+  gender?: string;
+  sex?: string;
+  age?: number | string;
+  current_title?: string;
+  current_company?: string;
+  company?: string;
+  city?: string;
+  location?: string;
+  years_experience?: number | string;
+  education?: string;
+  current_salary?: string;
+  expected_salary?: string;
+  updated_at?: string;
+  tags?: string[];
+  highlights?: string[];
+  work_experiences?: Array<
+    | string
+    | {
+        company?: string;
+        title?: string;
+        period?: string;
+        summary?: string;
+      }
+  >;
+  education_experiences?: Array<
+    | string
+    | {
+        school?: string;
+        major?: string;
+        degree?: string;
+        period?: string;
+      }
+  >;
+  match_reason?: string;
+  summary?: string;
+  source?: string;
+  resume_detail_url?: string;
+  detail_url?: string;
+  avatar_url?: string;
+  [key: string]: unknown;
+};
+
+const DUOLIE_RESUME_DETAIL_BASE =
+  "https://www.duolie.com/resumedetail?resIdEncode=";
+
 // ---------------------------------------------------------------------------
 // Text extraction utilities
 // ---------------------------------------------------------------------------
@@ -176,4 +229,142 @@ export function toDisplayUrl(url: string | undefined): string {
   if (url.startsWith("http://") || url.startsWith("https://")) return url;
   if (url.startsWith("file://")) url = url.replace("file://", "");
   return chatApi.filePreviewUrl(url.startsWith("/") ? url : `/${url}`);
+}
+
+function isLikelyResumeToken(value: string): boolean {
+  return /^[a-zA-Z0-9]{16,}$/.test(value.trim());
+}
+
+function buildDuolieResumeDetailUrl(value: string | undefined): string {
+  if (!value) return "";
+
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+    return trimmed;
+  }
+
+  if (trimmed.startsWith("file://") || trimmed.startsWith("/")) {
+    return toDisplayUrl(trimmed);
+  }
+
+  if (
+    trimmed.includes("resIdEncode=") &&
+    !trimmed.startsWith(DUOLIE_RESUME_DETAIL_BASE)
+  ) {
+    const token = trimmed.split("resIdEncode=").pop() || "";
+    return `${DUOLIE_RESUME_DETAIL_BASE}${encodeURIComponent(token)}`;
+  }
+
+  if (isLikelyResumeToken(trimmed)) {
+    return `${DUOLIE_RESUME_DETAIL_BASE}${encodeURIComponent(trimmed)}`;
+  }
+
+  return toDisplayUrl(trimmed);
+}
+
+export function isResumeCardPayload(
+  value: unknown,
+): value is ResumeCardPayload {
+  if (!value || typeof value !== "object") return false;
+  const payload = value as ResumeCardPayload;
+  return (
+    payload.type === "resume_card" || payload.card_type === "resume_card"
+  );
+}
+
+export function normalizeResumeCardPayload(
+  payload: ResumeCardPayload,
+): ResumeCardPayload {
+  const normalized = { ...payload };
+  const detailToken =
+    (typeof normalized.resIdEncode === "string" && normalized.resIdEncode) ||
+    (typeof normalized.resumeIdEncode === "string" &&
+      normalized.resumeIdEncode) ||
+    (typeof normalized.resume_detail_url === "string" &&
+    isLikelyResumeToken(normalized.resume_detail_url)
+      ? normalized.resume_detail_url
+      : "") ||
+    (typeof normalized.detail_url === "string" &&
+    isLikelyResumeToken(normalized.detail_url)
+      ? normalized.detail_url
+      : "");
+
+  if (typeof normalized.resume_detail_url === "string") {
+    normalized.resume_detail_url = buildDuolieResumeDetailUrl(
+      normalized.resume_detail_url,
+    );
+  }
+  if (typeof normalized.detail_url === "string") {
+    normalized.detail_url = buildDuolieResumeDetailUrl(normalized.detail_url);
+  }
+  if (typeof normalized.avatar_url === "string") {
+    normalized.avatar_url = toDisplayUrl(normalized.avatar_url);
+  }
+  if (!normalized.resume_detail_url && detailToken) {
+    normalized.resume_detail_url = buildDuolieResumeDetailUrl(detailToken);
+  }
+  if (!normalized.detail_url && normalized.resume_detail_url) {
+    normalized.detail_url = normalized.resume_detail_url;
+  }
+
+  return normalized;
+}
+
+type ParsedResumeCardsResult = {
+  cards: ResumeCardPayload[];
+  remainingText: string;
+};
+
+function coerceResumeCards(value: unknown): ResumeCardPayload[] {
+  if (Array.isArray(value)) {
+    return value.filter(isResumeCardPayload).map(normalizeResumeCardPayload);
+  }
+  if (isResumeCardPayload(value)) {
+    return [normalizeResumeCardPayload(value)];
+  }
+  return [];
+}
+
+export function parseResumeCardsFromText(
+  text: string | undefined,
+): ParsedResumeCardsResult {
+  if (!text || !text.includes("resume_card")) {
+    return { cards: [], remainingText: text || "" };
+  }
+
+  const cards: ResumeCardPayload[] = [];
+  let remainingText = text;
+  const fencePattern = /```(?:json)?\s*([\s\S]*?)```/gi;
+
+  remainingText = remainingText.replace(fencePattern, (fullMatch, jsonText) => {
+    try {
+      const parsed = JSON.parse(String(jsonText).trim());
+      const parsedCards = coerceResumeCards(parsed);
+      if (parsedCards.length === 0) return fullMatch;
+      cards.push(...parsedCards);
+      return "";
+    } catch {
+      return fullMatch;
+    }
+  });
+
+  if (cards.length === 0) {
+    const trimmed = text.trim();
+    try {
+      const parsed = JSON.parse(trimmed);
+      const parsedCards = coerceResumeCards(parsed);
+      if (parsedCards.length > 0) {
+        return { cards: parsedCards, remainingText: "" };
+      }
+    } catch {
+      // ignore invalid raw JSON
+    }
+  }
+
+  return {
+    cards,
+    remainingText: remainingText.replace(/\n{3,}/g, "\n\n").trim(),
+  };
 }

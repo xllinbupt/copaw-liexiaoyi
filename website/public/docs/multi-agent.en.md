@@ -238,7 +238,7 @@ If you previously used CoPaw **v0.0.x**, upgrading to **v0.1.0** will **automati
 2. **Verify Migration**
 
    - After starting CoPaw, check the agent list in console
-   - You should see an agent named "Default Agent"
+   - You should see an agent named "LieXiaoYi"
    - Your old conversations and configs should still be there
 
 3. **Backup Recommendation**

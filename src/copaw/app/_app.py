@@ -14,7 +14,13 @@ from agentscope_runtime.engine.app import AgentApp
 
 from ..config import load_config  # pylint: disable=no-name-in-module
 from ..config.utils import get_config_path
-from ..constant import DOCS_ENABLED, LOG_LEVEL_ENV, CORS_ORIGINS, WORKING_DIR
+from ..constant import (
+    BUILTIN_QA_AGENT_ENABLED,
+    CORS_ORIGINS,
+    DOCS_ENABLED,
+    LOG_LEVEL_ENV,
+    WORKING_DIR,
+)
 from ..__version__ import __version__
 from ..utils.logging import setup_logger, add_copaw_file_handler
 from .auth import AuthMiddleware
@@ -187,7 +193,13 @@ async def lifespan(
     migrate_legacy_workspace_to_default_agent()
     ensure_default_agent_exists()
     migrate_legacy_skills_to_skill_pool()
-    ensure_qa_agent_exists()
+    if BUILTIN_QA_AGENT_ENABLED:
+        ensure_qa_agent_exists()
+    else:
+        logger.info(
+            "Skipping builtin QA agent creation because "
+            "COPAW_ENABLE_BUILTIN_QA_AGENT is disabled.",
+        )
 
     # --- Multi-agent manager initialization ---
     logger.info("Initializing MultiAgentManager...")
@@ -391,11 +403,25 @@ if os.path.isdir(_CONSOLE_STATIC_DIR):
             return FileResponse(f, media_type="image/png")
         raise HTTPException(status_code=404, detail="Not Found")
 
+    @app.get("/logo.svg")
+    def _console_logo_svg():
+        f = _console_path / "logo.svg"
+        if f.is_file():
+            return FileResponse(f, media_type="image/svg+xml")
+        raise HTTPException(status_code=404, detail="Not Found")
+
     @app.get("/dark-logo.png")
     def _console_dark_logo():
         f = _console_path / "dark-logo.png"
         if f.is_file():
             return FileResponse(f, media_type="image/png")
+        raise HTTPException(status_code=404, detail="Not Found")
+
+    @app.get("/dark-logo.svg")
+    def _console_dark_logo_svg():
+        f = _console_path / "dark-logo.svg"
+        if f.is_file():
+            return FileResponse(f, media_type="image/svg+xml")
         raise HTTPException(status_code=404, detail="Not Found")
 
     @app.get("/copaw-symbol.svg")

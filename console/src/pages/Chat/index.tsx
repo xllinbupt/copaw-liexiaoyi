@@ -24,6 +24,7 @@ import styles from "./index.module.less";
 import { IconButton } from "@agentscope-ai/design";
 import ChatActionGroup from "./components/ChatActionGroup";
 import ChatHeaderTitle from "./components/ChatHeaderTitle";
+import ResumeResponseCard from "./components/ResumeResponseCard";
 import ChatSessionInitializer from "./components/ChatSessionInitializer";
 import {
   toDisplayUrl,
@@ -579,7 +580,7 @@ export default function ChatPage() {
       },
       welcome: {
         ...i18nConfig.welcome,
-        nick: "CoPaw",
+        nick: "猎小易",
         avatar:
           "https://gw.alicdn.com/imgextra/i2/O1CN01pyXzjQ1EL1PuZMlSd_!!6000000000334-2-tps-288-288.png",
       },
@@ -617,6 +618,9 @@ export default function ChatPage() {
         multiple: true,
         hideBuiltInSessionList: true,
         api: sessionApi,
+      },
+      cards: {
+        AgentScopeRuntimeResponseCard: ResumeResponseCard,
       },
       api: {
         ...defaultConfig.api,
@@ -668,7 +672,14 @@ export default function ChatPage() {
         replace: true,
       },
     } as unknown as IAgentScopeRuntimeWebUIOptions;
-  }, [customFetch, copyResponse, handleFileUpload, t, isDark, multimodalCaps]);
+  }, [
+    customFetch,
+    copyResponse,
+    handleFileUpload,
+    t,
+    isDark,
+    multimodalCaps,
+  ]);
 
   return (
     <div

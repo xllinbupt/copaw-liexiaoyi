@@ -51,7 +51,7 @@ export function Nav({
   lang,
   onLangClick,
   docsPath,
-  repoUrl: _repoUrl,
+  repoUrl,
 }: NavProps) {
   const [open, setOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
@@ -209,11 +209,11 @@ export function Nav({
             <span>{t(lang, "nav.lang")}</span>
           </button>
           <a
-            href="https://github.com/agentscope-ai/CoPaw"
+            href={repoUrl}
             target="_blank"
             rel="noopener noreferrer"
             className={linkClass}
-            title="CoPaw on GitHub"
+            title={`${projectName} on GitHub`}
           >
             <Github size={18} strokeWidth={1.5} aria-hidden />
             <span>{t(lang, "nav.github")}</span>
@@ -310,12 +310,12 @@ export function Nav({
           <Globe size={18} /> {t(lang, "nav.lang")}
         </button>
         <a
-          href="https://github.com/agentscope-ai/CoPaw"
+          href={repoUrl}
           target="_blank"
           rel="noopener noreferrer"
           className={linkClass}
           onClick={() => setOpen(false)}
-          title="CoPaw on GitHub"
+          title={`${projectName} on GitHub`}
         >
           <Github size={18} /> {t(lang, "nav.github")}
         </a>

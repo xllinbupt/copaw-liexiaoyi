@@ -15,7 +15,7 @@ from ..utils.logging import setup_logger, SuppressPathAccessLogFilter
 @click.command("app")
 @click.option(
     "--host",
-    default="127.0.0.1",
+    default="0.0.0.0",
     show_default=True,
     help="Bind host",
 )
@@ -61,6 +61,20 @@ def app_cmd(
     hide_access_paths: tuple[str, ...],
 ) -> None:
     """Run CoPaw FastAPI app."""
+    auth_enabled = os.environ.get("COPAW_AUTH_ENABLED", "").strip().lower() in (
+        "true",
+        "1",
+        "yes",
+    )
+
+    if host not in ("127.0.0.1", "localhost", "::1") and not auth_enabled:
+        click.echo(
+            "WARNING: CoPaw is binding to a non-local host without login "
+            "protection enabled. Set COPAW_AUTH_ENABLED=true before "
+            "sharing it on your intranet.",
+            err=True,
+        )
+
     # Handle deprecated --workers parameter
     if workers is not None:
         click.echo(

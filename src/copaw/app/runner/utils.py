@@ -132,6 +132,82 @@ def _resolve_content_url(url: str) -> str:
     return _abspath_from_url(url)
 
 
+DUOLIE_RESUME_DETAIL_BASE = (
+    "https://www.duolie.com/resumedetail?resIdEncode="
+)
+
+
+def _is_likely_resume_token(value: str) -> bool:
+    return bool(re.fullmatch(r"[A-Za-z0-9]{16,}", value.strip()))
+
+
+def _normalize_resume_detail_url(value: str) -> str:
+    if not isinstance(value, str):
+        return value
+
+    trimmed = value.strip()
+    if not trimmed:
+        return trimmed
+
+    if trimmed.startswith(("http://", "https://")):
+        return trimmed
+
+    if trimmed.startswith("file:") or trimmed.startswith("/"):
+        return _resolve_content_url(trimmed)
+
+    if "resIdEncode=" in trimmed:
+        token = trimmed.split("resIdEncode=")[-1]
+        return f"{DUOLIE_RESUME_DETAIL_BASE}{token}"
+
+    if _is_likely_resume_token(trimmed):
+        return f"{DUOLIE_RESUME_DETAIL_BASE}{trimmed}"
+
+    return _resolve_content_url(trimmed)
+
+
+def _normalize_resume_card_payload(block: dict) -> dict:
+    payload = dict(block)
+    payload["type"] = "resume_card"
+
+    detail_token = (
+        payload.get("resIdEncode")
+        or payload.get("resumeIdEncode")
+        or (
+            payload.get("resume_detail_url")
+            if isinstance(payload.get("resume_detail_url"), str)
+            and _is_likely_resume_token(payload.get("resume_detail_url"))
+            else None
+        )
+        or (
+            payload.get("detail_url")
+            if isinstance(payload.get("detail_url"), str)
+            and _is_likely_resume_token(payload.get("detail_url"))
+            else None
+        )
+    )
+
+    for key in (
+        "resume_detail_url",
+        "detail_url",
+        "avatar_url",
+    ):
+        value = payload.get(key)
+        if isinstance(value, str):
+            if key in ("resume_detail_url", "detail_url"):
+                payload[key] = _normalize_resume_detail_url(value)
+            else:
+                payload[key] = _resolve_content_url(value)
+
+    if detail_token and not payload.get("resume_detail_url"):
+        payload["resume_detail_url"] = _normalize_resume_detail_url(
+            detail_token,
+        )
+    if payload.get("resume_detail_url") and not payload.get("detail_url"):
+        payload["detail_url"] = payload["resume_detail_url"]
+
+    return payload
+
+
 # pylint: disable=too-many-branches,too-many-statements, too-many-nested-blocks
 def _build_media_message_from_block(
     block: dict,
@@ -615,6 +691,25 @@ def agentscope_msg_to_message(
                     **kwargs,
                 )
                 current_message.add_content(new_content=file_content)
+
+            elif btype == "resume_card":
+                if current_type != MessageType.MESSAGE:
+                    if current_message:
+                        results.append(current_message.completed())
+                    current_message = Message(
+                        type=MessageType.MESSAGE,
+                        role=role,
+                    )
+                    current_message.metadata = metadata
+                    current_type = MessageType.MESSAGE
+
+                current_message.add_content(
+                    new_content=DataContent(
+                        delta=False,
+                        index=None,
+                        data=_normalize_resume_card_payload(block),
+                    ),
+                )
 
             else:
                 if current_type != MessageType.MESSAGE:

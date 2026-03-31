@@ -14,9 +14,9 @@ export interface SiteConfig {
 }
 
 const defaultConfig: SiteConfig = {
-  projectName: "CoPaw",
-  projectTaglineEn: "Works for you, grows with you",
-  projectTaglineZh: "懂你所需，伴你左右",
+  projectName: "猎小易",
+  projectTaglineEn: "Your dedicated AI headhunting assistant for HR teams",
+  projectTaglineZh: "给到 HR 的专属猎头 Agent 助手",
   repoUrl: "https://github.com/agentscope-ai/CoPaw",
   docsPath: "/docs/",
   showTestimonials: true,

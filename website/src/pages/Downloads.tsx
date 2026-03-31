@@ -258,8 +258,8 @@ export function Downloads({ config, lang, onLangClick }: DownloadsProps) {
           <h1>{lang === "zh" ? "下载资源" : "Downloads"}</h1>
           <p className="subtitle">
             {lang === "zh"
-              ? "获取 CoPaw 的各种安装包和工具"
-              : "Get CoPaw installers, tools, and resources"}
+              ? "获取猎小易的安装包、工具和部署资源"
+              : "Get LieXiaoYi installers, tools, and deployment resources"}
           </p>
         </header>
 
