@@ -24,6 +24,7 @@ import styles from "./index.module.less";
 import { IconButton } from "@agentscope-ai/design";
 import ChatHeaderTitle from "./components/ChatHeaderTitle";
 import ResumeResponseCard from "./components/ResumeResponseCard";
+import JobDetailPanel from "./components/JobDetailPanel";
 import ChatSessionInitializer from "./components/ChatSessionInitializer";
 import {
   CHAT_WORKSPACE_UPDATED_EVENT,
@@ -275,6 +276,9 @@ export default function ChatPage() {
     return match?.[1];
   }, [location.pathname]);
   const [showModelPrompt, setShowModelPrompt] = useState(false);
+  const [jobDetailPanelOpen, setJobDetailPanelOpen] = useState(false);
+  const [jobDetailPanelCoversChat, setJobDetailPanelCoversChat] =
+    useState(false);
   const { selectedAgent } = useAgentStore();
   const [refreshKey, setRefreshKey] = useState(0);
   const [chatSpecs, setChatSpecs] = useState<ChatSpec[]>([]);
@@ -314,6 +318,13 @@ export default function ChatPage() {
     () => (currentChat ? getChatJobDetails(currentChat) : null),
     [currentChat],
   );
+
+  useEffect(() => {
+    if (!currentChatJobDetails) {
+      setJobDetailPanelOpen(false);
+      setJobDetailPanelCoversChat(false);
+    }
+  }, [currentChatJobDetails]);
 
   // Tell sessionApi which session to put first in getSessionList, so the library's
   // useMount auto-selects the correct session without an extra getSession round-trip.
@@ -730,7 +741,14 @@ export default function ChatPage() {
           <>
             <ChatSessionInitializer />
             <RuntimeLoadingBridge bridgeRef={runtimeLoadingBridgeRef} />
-            <ChatHeaderTitle currentChat={currentChat} />
+            <ChatHeaderTitle
+              currentChat={currentChat}
+              onJobClick={() => {
+                if (currentChatJobDetails) {
+                  setJobDetailPanelOpen(true);
+                }
+              }}
+            />
             <span style={{ flex: 1 }} />
             <ModelSelector />
           </>
@@ -738,7 +756,7 @@ export default function ChatPage() {
       },
       welcome: {
         ...i18nConfig.welcome,
-        nick: "猎小易",
+        nick: "猎小侠",
         avatar:
           "https://gw.alicdn.com/imgextra/i2/O1CN01pyXzjQ1EL1PuZMlSd_!!6000000000334-2-tps-288-288.png",
       },
@@ -843,7 +861,11 @@ export default function ChatPage() {
 
   return (
     <div className={styles.chatWorkspaceLayout}>
-      <div className={styles.chatMainPanel}>
+      <div
+        className={`${styles.chatMainPanel} ${
+          jobDetailPanelCoversChat ? styles.chatMainPanelCollapsed : ""
+        }`}
+      >
         <div className={styles.chatMessagesArea}>
           <AgentScopeRuntimeWebUI
             ref={chatRef}
@@ -852,6 +874,13 @@ export default function ChatPage() {
           />
         </div>
       </div>
+
+      <JobDetailPanel
+        open={jobDetailPanelOpen}
+        job={currentChatJobDetails}
+        onClose={() => setJobDetailPanelOpen(false)}
+        onCoverChatChange={setJobDetailPanelCoversChat}
+      />
 
       <Modal
         open={showModelPrompt}

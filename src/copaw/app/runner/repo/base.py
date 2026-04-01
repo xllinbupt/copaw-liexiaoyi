@@ -93,7 +93,14 @@ class BaseChatRepository(ABC):
         cf = await self.load()
         for i, c in enumerate(cf.chats):
             if c.id == spec.id:
-                cf.chats[i] = spec
+                merged_meta = dict(c.meta or {})
+                merged_meta.update(spec.meta or {})
+                cf.chats[i] = spec.model_copy(
+                    update={
+                        "created_at": c.created_at,
+                        "meta": merged_meta,
+                    }
+                )
                 break
         else:
             cf.chats.append(spec)

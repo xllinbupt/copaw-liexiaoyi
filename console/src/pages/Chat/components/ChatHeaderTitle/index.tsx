@@ -5,9 +5,13 @@ import styles from "./index.module.less";
 
 interface ChatHeaderTitleProps {
   currentChat?: ChatSpec | null;
+  onJobClick?: () => void;
 }
 
-const ChatHeaderTitle: React.FC<ChatHeaderTitleProps> = ({ currentChat }) => {
+const ChatHeaderTitle: React.FC<ChatHeaderTitleProps> = ({
+  currentChat,
+  onJobClick,
+}) => {
   const chatName = currentChat?.name || "New Chat";
   const jobContext = currentChat ? getChatJobContext(currentChat) : null;
 
@@ -17,7 +21,14 @@ const ChatHeaderTitle: React.FC<ChatHeaderTitleProps> = ({ currentChat }) => {
       <div className={styles.chatMeta}>
         {jobContext ? (
           <>
-            <span className={styles.jobName}>{jobContext.jobName}</span>
+            <button
+              type="button"
+              className={styles.jobNameButton}
+              onClick={onJobClick}
+              title={`查看职位详情：${jobContext.jobName}`}
+            >
+              <span className={styles.jobName}>{jobContext.jobName}</span>
+            </button>
             {jobContext.pendingFeedbackCount > 0 ? (
               <span className={styles.metaTag}>
                 待反馈 {jobContext.pendingFeedbackCount}

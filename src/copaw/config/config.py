@@ -165,7 +165,7 @@ class VoiceChannelConfig(BaseChannelConfig):
     stt_provider: str = "deepgram"
     language: str = "en-US"
     welcome_greeting: str = (
-        "Hi! This is LieXiaoYi, your recruiting assistant. How can I help?"
+        "Hi! This is LieXiaoXia, your recruiting assistant. How can I help?"
     )
 
 
@@ -1259,7 +1259,7 @@ def migrate_legacy_config_to_multi_agent() -> bool:
     # Create default agent configuration from legacy settings
     default_agent_config = AgentProfileConfig(
         id="default",
-        name="猎小易",
+        name="猎小侠",
         description="给到 HR 的专属猎头 Agent 助手",
         workspace_dir=str(default_workspace),
         channels=config.channels if config.channels else None,
