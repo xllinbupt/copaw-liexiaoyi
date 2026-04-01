@@ -317,8 +317,141 @@
   justify-content: center;
 }
 
+.jobCard {
+  border: 1px solid rgba(20, 20, 20, 0.08);
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, rgba(255, 248, 240, 0.9) 0%, rgba(255, 255, 255, 1) 100%);
+  padding: 14px 16px;
+  cursor: pointer;
+  transition:
+    transform 0.14s ease,
+    box-shadow 0.14s ease,
+    border-color 0.14s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    border-color: rgba(255, 127, 22, 0.24);
+    box-shadow: 0 10px 24px rgba(17, 24, 39, 0.08);
+  }
+}
+
+.jobCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.jobCardLabel {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(255, 127, 22, 0.1);
+  color: #d86a0f;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.jobCardStatus {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.06);
+  color: rgba(0, 0, 0, 0.62);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.jobCardTitle {
+  margin-top: 10px;
+  color: #1f1f1f;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.jobCardMetaRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+  margin-top: 8px;
+}
+
+.jobCardMetaItem {
+  color: rgba(0, 0, 0, 0.62);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.jobCardSection {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.035);
+}
+
+.jobCardSectionLabel {
+  margin-bottom: 6px;
+  color: rgba(0, 0, 0, 0.5);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.jobCardSectionText {
+  color: rgba(0, 0, 0, 0.76);
+  font-size: 13px;
+  line-height: 1.65;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.jobCardBulletList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.jobCardBulletItem {
+  position: relative;
+  padding-left: 12px;
+  color: rgba(0, 0, 0, 0.76);
+  font-size: 13px;
+  line-height: 1.55;
+
+  &::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 8px;
+    width: 5px;
+    height: 5px;
+    border-radius: 999px;
+    background: rgba(255, 127, 22, 0.72);
+  }
+}
+
+.jobCardTagRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+
 :global(.dark) .resumeCard {
   background: #1f1f1f;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+:global(.dark) .jobCard {
+  background:
+    linear-gradient(180deg, rgba(58, 37, 20, 0.88) 0%, rgba(31, 31, 31, 1) 100%);
   border-color: rgba(255, 255, 255, 0.08);
 }
 
@@ -326,7 +459,8 @@
 :global(.dark) .resumeCardHeadline,
 :global(.dark) .resumeMetaItem,
 :global(.dark) .resumeSalaryItem,
-:global(.dark) .resumeTimelineCompany {
+:global(.dark) .resumeTimelineCompany,
+:global(.dark) .jobCardTitle {
   color: rgba(255, 255, 255, 0.9);
 }
 
@@ -334,8 +468,28 @@
 :global(.dark) .resumeTimelineTitle,
 :global(.dark) .resumeTimelineSecondary,
 :global(.dark) .resumeTimelineFallback,
-:global(.dark) .resumeCardReasonText {
+:global(.dark) .resumeCardReasonText,
+:global(.dark) .jobCardMetaItem,
+:global(.dark) .jobCardSectionText {
   color: rgba(255, 255, 255, 0.66);
+}
+
+:global(.dark) .jobCardStatus,
+:global(.dark) .jobCardSectionLabel {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+:global(.dark) .jobCardSection {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+:global(.dark) .jobCardLabel {
+  background: rgba(255, 127, 22, 0.18);
+  color: #ffb36a;
+}
+
+:global(.dark) .jobCardStatus {
+  background: rgba(255, 255, 255, 0.08);
 }
 
 :global(.dark) .resumeTimelinePeriod {
@@ -378,6 +532,10 @@
 
 @media (max-width: 768px) {
   .resumeCard {
+    padding: 12px;
+  }
+
+  .jobCard {
     padding: 12px;
   }
 

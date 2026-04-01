@@ -10,6 +10,8 @@ import api, {
   type Message,
 } from "../../../api";
 import {
+  isJobCardPayload,
+  normalizeJobCardPayload,
   isResumeCardPayload,
   normalizeResumeCardPayload,
   toDisplayUrl,
@@ -102,6 +104,12 @@ const extractTextFromContent = (content: unknown): string => {
 };
 
 function resolveContentItemUrl(c: ContentItem): ContentItem {
+  if (c.type === "job_card" && isJobCardPayload(c)) {
+    return normalizeJobCardPayload(c) as ContentItem;
+  }
+  if (c.type === "data" && isJobCardPayload(c.data)) {
+    return { ...c, data: normalizeJobCardPayload(c.data) };
+  }
   if (c.type === "resume_card" && isResumeCardPayload(c)) {
     return normalizeResumeCardPayload(c) as ContentItem;
   }

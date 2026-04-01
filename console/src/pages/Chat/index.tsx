@@ -28,9 +28,12 @@ import JobDetailPanel from "./components/JobDetailPanel";
 import ChatSessionInitializer from "./components/ChatSessionInitializer";
 import {
   CHAT_WORKSPACE_UPDATED_EVENT,
+  OPEN_JOB_DETAIL_PANEL_EVENT,
   buildChatPayload,
   getChatJobDetails,
   type ChatJobContext,
+  type ChatJobDetails,
+  type OpenJobDetailPanelDetail,
   type ChatWorkspaceUpdateDetail,
 } from "./chatWorkspace";
 import {
@@ -279,6 +282,8 @@ export default function ChatPage() {
   const [jobDetailPanelOpen, setJobDetailPanelOpen] = useState(false);
   const [jobDetailPanelCoversChat, setJobDetailPanelCoversChat] =
     useState(false);
+  const [jobDetailPanelJob, setJobDetailPanelJob] =
+    useState<ChatJobDetails | null>(null);
   const { selectedAgent } = useAgentStore();
   const [refreshKey, setRefreshKey] = useState(0);
   const [chatSpecs, setChatSpecs] = useState<ChatSpec[]>([]);
@@ -318,13 +323,23 @@ export default function ChatPage() {
     () => (currentChat ? getChatJobDetails(currentChat) : null),
     [currentChat],
   );
+  const resolvedJobDetailPanelJob = jobDetailPanelJob ?? currentChatJobDetails;
+
+  const closeJobDetailPanel = useCallback(() => {
+    setJobDetailPanelOpen(false);
+    setJobDetailPanelJob(null);
+  }, []);
 
   useEffect(() => {
-    if (!currentChatJobDetails) {
-      setJobDetailPanelOpen(false);
+    if (!resolvedJobDetailPanelJob) {
+      closeJobDetailPanel();
       setJobDetailPanelCoversChat(false);
     }
-  }, [currentChatJobDetails]);
+  }, [closeJobDetailPanel, resolvedJobDetailPanelJob]);
+
+  useEffect(() => {
+    setJobDetailPanelJob(null);
+  }, [chatId]);
 
   // Tell sessionApi which session to put first in getSessionList, so the library's
   // useMount auto-selects the correct session without an extra getSession round-trip.
@@ -415,6 +430,27 @@ export default function ChatPage() {
       );
     };
   }, [loadChatSpecs]);
+
+  useEffect(() => {
+    const handleOpenJobDetail = (event: Event) => {
+      const customEvent = event as CustomEvent<OpenJobDetailPanelDetail>;
+      const nextJob = customEvent.detail?.job;
+      if (!nextJob) return;
+      setJobDetailPanelJob(nextJob);
+      setJobDetailPanelOpen(true);
+    };
+
+    window.addEventListener(
+      OPEN_JOB_DETAIL_PANEL_EVENT,
+      handleOpenJobDetail as EventListener,
+    );
+    return () => {
+      window.removeEventListener(
+        OPEN_JOB_DETAIL_PANEL_EVENT,
+        handleOpenJobDetail as EventListener,
+      );
+    };
+  }, []);
 
   const refreshRuntimeSessions = useCallback(() => {
     setRefreshKey((prev) => prev + 1);
@@ -745,6 +781,7 @@ export default function ChatPage() {
               currentChat={currentChat}
               onJobClick={() => {
                 if (currentChatJobDetails) {
+                  setJobDetailPanelJob(null);
                   setJobDetailPanelOpen(true);
                 }
               }}
@@ -877,8 +914,8 @@ export default function ChatPage() {
 
       <JobDetailPanel
         open={jobDetailPanelOpen}
-        job={currentChatJobDetails}
-        onClose={() => setJobDetailPanelOpen(false)}
+        job={resolvedJobDetailPanelJob}
+        onClose={closeJobDetailPanel}
         onCoverChatChange={setJobDetailPanelCoversChat}
       />
 

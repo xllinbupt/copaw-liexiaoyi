@@ -16,11 +16,16 @@ import {
 } from "@agentscope-ai/chat/lib/AgentScopeRuntimeWebUI/core/AgentScopeRuntime/types";
 import { useChatAnywhereOptions } from "@agentscope-ai/chat/lib/AgentScopeRuntimeWebUI/core/Context/ChatAnywhereOptionsContext";
 import {
+  isJobCardPayload,
+  normalizeJobCardPayload,
+  parseJobCardsFromText,
+  type JobCardPayload,
   isResumeCardPayload,
   normalizeResumeCardPayload,
   parseResumeCardsFromText,
   type ResumeCardPayload,
 } from "../utils";
+import JobCard from "./JobCard";
 import ResumeCandidateCard from "./ResumeCandidateCard";
 import styles from "./resumeCards.module.less";
 
@@ -31,6 +36,7 @@ type ResumeResponseCardProps = {
 
 type SplitMessageResult = {
   visibleMessage: IAgentScopeRuntimeMessage | null;
+  jobCards: JobCardPayload[];
   cards: ResumeCardPayload[];
 };
 
@@ -38,19 +44,29 @@ function splitResumeCards(
   message: IAgentScopeRuntimeMessage,
 ): SplitMessageResult {
   if (!Array.isArray(message.content) || message.content.length === 0) {
-    return { visibleMessage: message, cards: [] };
+    return { visibleMessage: message, jobCards: [], cards: [] };
   }
 
+  const jobCards: JobCardPayload[] = [];
   const cards: ResumeCardPayload[] = [];
   const content: IContent[] = [];
 
   message.content.forEach((item) => {
     if (item?.type === AgentScopeRuntimeContentType.DATA) {
       const data = (item as any).data;
+      if (isJobCardPayload(data)) {
+        jobCards.push(normalizeJobCardPayload(data));
+        return;
+      }
       if (isResumeCardPayload(data)) {
         cards.push(normalizeResumeCardPayload(data));
         return;
       }
+    }
+
+    if ((item as { type?: string })?.type === "job_card" && isJobCardPayload(item)) {
+      jobCards.push(normalizeJobCardPayload(item as JobCardPayload));
+      return;
     }
 
     if ((item as { type?: string })?.type === "resume_card" && isResumeCardPayload(item)) {
@@ -60,13 +76,21 @@ function splitResumeCards(
 
     if ((item as { type?: string; text?: string }).type === "text") {
       const textItem = item as { type: string; text?: string };
-      const parsed = parseResumeCardsFromText(textItem.text);
-      if (parsed.cards.length > 0) {
-        cards.push(...parsed.cards);
-        if (!parsed.remainingText) {
+      const parsedJobs = parseJobCardsFromText(textItem.text);
+      if (parsedJobs.cards.length > 0) {
+        jobCards.push(...parsedJobs.cards);
+      }
+
+      const parsedResumes = parseResumeCardsFromText(parsedJobs.remainingText);
+      if (parsedJobs.cards.length > 0 || parsedResumes.cards.length > 0) {
+        cards.push(...parsedResumes.cards);
+        if (!parsedResumes.remainingText) {
           return;
         }
-        content.push({ ...(item as IContent), text: parsed.remainingText } as IContent);
+        content.push({
+          ...(item as IContent),
+          text: parsedResumes.remainingText,
+        } as IContent);
         return;
       }
     }
@@ -76,6 +100,7 @@ function splitResumeCards(
 
   return {
     visibleMessage: content.length > 0 ? { ...message, content } : null,
+    jobCards,
     cards,
   };
 }
@@ -107,10 +132,21 @@ export default function ResumeResponseCard(props: ResumeResponseCardProps) {
       {messages.map((item) => {
         switch (item.type) {
           case AgentScopeRuntimeMessageType.MESSAGE: {
-            const { visibleMessage, cards } = splitResumeCards(item);
+            const { visibleMessage, jobCards, cards } = splitResumeCards(item);
             return (
               <div key={item.id}>
                 {visibleMessage ? <Message data={visibleMessage} /> : null}
+                {jobCards.length > 0 ? (
+                  <div className={styles.resumeCardList}>
+                    {jobCards.map((card, index) => (
+                      <JobCard
+                        key={card.job_id || card.id || `${item.id}-job-${index}`}
+                        card={card}
+                        index={index}
+                      />
+                    ))}
+                  </div>
+                ) : null}
                 {cards.length > 0 ? (
                   <div className={styles.resumeCardList}>
                     {cards.map((card, index) => (

@@ -4,6 +4,7 @@ const DEFAULT_USER_ID = "default";
 const DEFAULT_CHANNEL = "console";
 const DEFAULT_SESSION_NAME = "New Chat";
 export const CHAT_WORKSPACE_UPDATED_EVENT = "copaw-chat-workspace-updated";
+export const OPEN_JOB_DETAIL_PANEL_EVENT = "copaw-open-job-detail-panel";
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -26,6 +27,10 @@ export interface ChatJobGroup extends ChatJobContext {
 
 export interface ChatWorkspaceUpdateDetail {
   refreshRuntime?: boolean;
+}
+
+export interface OpenJobDetailPanelDetail {
+  job: ChatJobDetails;
 }
 
 function isRecord(value: unknown): value is UnknownRecord {
@@ -267,6 +272,15 @@ export function notifyChatWorkspaceUpdated(
   window.dispatchEvent(
     new CustomEvent<ChatWorkspaceUpdateDetail>(CHAT_WORKSPACE_UPDATED_EVENT, {
       detail,
+    }),
+  );
+}
+
+export function openJobDetailPanel(job: ChatJobDetails): void {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(
+    new CustomEvent<OpenJobDetailPanelDetail>(OPEN_JOB_DETAIL_PANEL_EVENT, {
+      detail: { job },
     }),
   );
 }

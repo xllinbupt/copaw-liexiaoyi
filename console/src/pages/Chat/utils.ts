@@ -84,6 +84,30 @@ export type ResumeCardPayload = {
   [key: string]: unknown;
 };
 
+export type JobCardPayload = {
+  type?: string;
+  card_type?: string;
+  job_id?: string;
+  id?: string;
+  job_name?: string;
+  name?: string;
+  title?: string;
+  status?: string;
+  job_status?: string;
+  description?: string | string[];
+  summary?: string | string[];
+  requirements?: string | string[];
+  city?: string;
+  location?: string;
+  salary_range?: string;
+  pending_feedback_count?: number | string;
+  tags?: string[];
+  highlights?: string[];
+  created_at?: string;
+  updated_at?: string;
+  [key: string]: unknown;
+};
+
 const DUOLIE_RESUME_DETAIL_BASE =
   "https://www.duolie.com/resumedetail?resIdEncode=";
 
@@ -276,6 +300,28 @@ function buildDuolieResumeDetailUrl(value: string | undefined): string {
   return toDisplayUrl(trimmed);
 }
 
+function normalizeCardText(
+  value: unknown,
+  options?: {
+    joinWith?: string;
+  },
+): string {
+  if (typeof value === "string") {
+    return value.trim();
+  }
+
+  if (!Array.isArray(value)) {
+    return "";
+  }
+
+  const joinWith = options?.joinWith ?? "\n";
+  return value
+    .map((item) => (typeof item === "string" ? item.trim() : ""))
+    .filter(Boolean)
+    .join(joinWith)
+    .trim();
+}
+
 export function isResumeCardPayload(
   value: unknown,
 ): value is ResumeCardPayload {
@@ -367,6 +413,100 @@ export function parseResumeCardsFromText(
     try {
       const parsed = JSON.parse(trimmed);
       const parsedCards = coerceResumeCards(parsed);
+      if (parsedCards.length > 0) {
+        return { cards: parsedCards, remainingText: "" };
+      }
+    } catch {
+      // ignore invalid raw JSON
+    }
+  }
+
+  return {
+    cards,
+    remainingText: remainingText.replace(/\n{3,}/g, "\n\n").trim(),
+  };
+}
+
+export function isJobCardPayload(
+  value: unknown,
+): value is JobCardPayload {
+  if (!value || typeof value !== "object") return false;
+  const payload = value as JobCardPayload;
+  return payload.type === "job_card" || payload.card_type === "job_card";
+}
+
+export function normalizeJobCardPayload(
+  payload: JobCardPayload,
+): JobCardPayload {
+  const normalized = { ...payload };
+  const normalizedJobId =
+    (typeof normalized.job_id === "string" && normalized.job_id.trim()) ||
+    (typeof normalized.id === "string" && normalized.id.trim()) ||
+    "";
+  const normalizedJobName =
+    (typeof normalized.job_name === "string" && normalized.job_name.trim()) ||
+    (typeof normalized.name === "string" && normalized.name.trim()) ||
+    (typeof normalized.title === "string" && normalized.title.trim()) ||
+    "";
+
+  normalized.job_id = normalizedJobId;
+  normalized.job_name = normalizedJobName;
+  normalized.description =
+    normalizeCardText(normalized.description) ||
+    normalizeCardText(normalized.summary);
+  normalized.requirements = normalizeCardText(normalized.requirements);
+  normalized.status =
+    (typeof normalized.status === "string" && normalized.status.trim()) ||
+    (typeof normalized.job_status === "string" &&
+      normalized.job_status.trim()) ||
+    "";
+
+  return normalized;
+}
+
+type ParsedJobCardsResult = {
+  cards: JobCardPayload[];
+  remainingText: string;
+};
+
+function coerceJobCards(value: unknown): JobCardPayload[] {
+  if (Array.isArray(value)) {
+    return value.filter(isJobCardPayload).map(normalizeJobCardPayload);
+  }
+  if (isJobCardPayload(value)) {
+    return [normalizeJobCardPayload(value)];
+  }
+  return [];
+}
+
+export function parseJobCardsFromText(
+  text: string | undefined,
+): ParsedJobCardsResult {
+  if (!text || !text.includes("job_card")) {
+    return { cards: [], remainingText: text || "" };
+  }
+
+  const cards: JobCardPayload[] = [];
+  let remainingText = text;
+  const fencePattern = /```(?:json)?\s*([\s\S]*?)```/gi;
+
+  remainingText = remainingText.replace(fencePattern, (fullMatch, jsonText) => {
+    try {
+      const parsed = JSON.parse(String(jsonText).trim());
+      const parsedCards = coerceJobCards(parsed);
+      if (parsedCards.length === 0) return fullMatch;
+      cards.push(...parsedCards);
+      return "";
+    } catch {
+      return fullMatch;
+    }
+  });
+
+  if (cards.length === 0) {
+    const trimmed = text.trim();
+    try {
+      const parsed = JSON.parse(trimmed);
+      const parsedCards = coerceJobCards(parsed);
       if (parsedCards.length > 0) {
         return { cards: parsedCards, remainingText: "" };
       }
