@@ -673,6 +673,13 @@ class ToolGuardMixin:
         msg = Msg(
             self.name,
             [
+                {
+                    "type": "thinking",
+                    "thinking": (
+                        "User approval received. Continue replaying the "
+                        "previously approved tool call."
+                    ),
+                },
                 ToolUseBlock(
                     type="tool_use",
                     id=next_id,
@@ -705,6 +712,13 @@ class ToolGuardMixin:
             msg = Msg(
                 self.name,
                 [
+                    {
+                        "type": "thinking",
+                        "thinking": (
+                            "User approval received. Replay the approved "
+                            "tool call exactly once."
+                        ),
+                    },
                     ToolUseBlock(
                         type="tool_use",
                         id=forced_tool_call["id"],

@@ -34,6 +34,7 @@
   padding: 0 16px;
   display: flex;
   flex-direction: column;
+  position: relative;
 
   // Hide scrollbar in browser
   &::-webkit-scrollbar {
@@ -180,6 +181,10 @@
   }
 }
 
+.siderResizing {
+  transition: none !important;
+}
+
 .siderDark {
   background: #1a1a1a !important;
   border-right-color: rgba(255, 255, 255, 0.08) !important;
@@ -220,9 +225,41 @@
   }
 }
 
+.resizeHandle {
+  position: absolute;
+  top: 0;
+  right: -5px;
+  width: 10px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 20;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 4px;
+    width: 2px;
+    height: 100%;
+    border-radius: 999px;
+    background: transparent;
+    transition: background-color 0.2s ease;
+  }
+
+  &:hover::before {
+    background: rgba(255, 127, 22, 0.45);
+  }
+}
+
 .logoWrapper {
   display: flex;
   align-items: center;
+}
+
+.headerActions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
 }
 
 .logoImg {
@@ -252,8 +289,8 @@
   color: #1a171673;
   font-weight: 600;
   line-height: 1;
-  position: relative;
-  top: 3px;
+  display: inline-flex;
+  align-items: center;
 }
 
 .versionBadgeClickable {
@@ -317,6 +354,28 @@
     background: rgba(0, 0, 0, 0.06) !important;
     color: #ff7f16 !important;
   }
+}
+
+.sideMenuStack {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow: hidden;
+}
+
+.chatWorkspaceSlot {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.secondaryMenu {
+  flex: 0 0 auto;
+  max-height: 32vh;
+  overflow-y: auto;
+  padding-bottom: 4px;
 }
 
 /* Collapsed nav (icon-only group list) */

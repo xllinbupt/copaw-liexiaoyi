@@ -210,26 +210,51 @@
   min-width: 0;
 }
 
-.resumeTimelinePrimary {
+.resumeTimelineHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
+.resumeTimelineCompany {
   color: rgba(0, 0, 0, 0.86);
   font-size: 13px;
   font-weight: 600;
   line-height: 1.35;
+  min-width: 0;
+  flex: 1;
   word-break: break-word;
 }
 
-.resumeTimelineSecondary {
-  margin-top: 2px;
-  color: rgba(0, 0, 0, 0.56);
+.resumeTimelineTitle {
+  margin-top: 3px;
+  color: rgba(0, 0, 0, 0.74);
   font-size: 12px;
+  font-weight: 600;
   line-height: 1.35;
 }
 
+.resumeTimelineSecondary {
+  margin-top: 4px;
+  color: rgba(0, 0, 0, 0.56);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 .resumeTimelinePeriod {
-  margin-top: 2px;
   color: rgba(0, 0, 0, 0.42);
   font-size: 12px;
   line-height: 1.3;
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.resumeTimelineFallback {
+  color: rgba(0, 0, 0, 0.74);
+  font-size: 12px;
+  line-height: 1.45;
 }
 
 .resumeCardReasonBar {
@@ -301,12 +326,14 @@
 :global(.dark) .resumeCardHeadline,
 :global(.dark) .resumeMetaItem,
 :global(.dark) .resumeSalaryItem,
-:global(.dark) .resumeTimelinePrimary {
+:global(.dark) .resumeTimelineCompany {
   color: rgba(255, 255, 255, 0.9);
 }
 
 :global(.dark) .resumeEducationInline,
+:global(.dark) .resumeTimelineTitle,
 :global(.dark) .resumeTimelineSecondary,
+:global(.dark) .resumeTimelineFallback,
 :global(.dark) .resumeCardReasonText {
   color: rgba(255, 255, 255, 0.66);
 }

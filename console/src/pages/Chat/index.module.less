@@ -1,3 +1,21 @@
+.chatWorkspaceLayout {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  min-height: 0;
+  background:
+    linear-gradient(180deg, rgba(255, 248, 242, 0.65) 0%, rgba(255, 255, 255, 0.96) 18%),
+    #fff;
+}
+
+.chatMainPanel {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 /* Disabled input overlay */
 .chatDisabledOverlay {
   position: relative;
@@ -30,6 +48,7 @@
   width: 100%;
   overflow-y: auto;
   overflow-x: hidden;
+  background: transparent;
 
   :global {
     [class*="chat-anywhere-default-header-right"] {
@@ -118,10 +137,22 @@
 
 /* Dark mode scrollbar for disabled overlay */
 :global(.dark) {
+  .chatWorkspaceLayout {
+    background:
+      linear-gradient(180deg, rgba(43, 26, 13, 0.35) 0%, rgba(18, 18, 18, 0.98) 18%),
+      #111;
+  }
+
   .chatDisabledOverlay :global([class*="chat-anywhere-input"]),
   .chatDisabledOverlay :global([class*="chat-input"]),
   .chatDisabledOverlay :global(textarea),
   .chatDisabledOverlay :global(input[type="text"]) {
     background-color: #2a2a2a !important;
+  }
+}
+
+@media (max-width: 1080px) {
+  .chatWorkspaceLayout {
+    flex-direction: column;
   }
 }

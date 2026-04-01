@@ -34,6 +34,7 @@ logger = logging.getLogger(__name__)
 DEFAULT_AGENT_NAME = "猎小易"
 DEFAULT_AGENT_DESCRIPTION = "给到 HR 的专属猎头 Agent 助手"
 DEFAULT_AGENT_FIRST_RUN_SKILL_NAMES: tuple[str, ...] = (
+    "job_creator",
     "job_intake_consultant",
     "duolie_talent",
 )
@@ -149,6 +150,40 @@ def _seed_default_agent_workspace(
                 skill_name,
                 result.get("reason"),
             )
+
+
+def _ensure_default_agent_skills_enabled(
+    workspace_dir: Path,
+    agent_config: AgentProfileConfig,
+) -> None:
+    """Ensure default builtin recruiting skills exist and are enabled.
+
+    This intentionally self-heals older default workspaces where the files
+    exist but a required skill such as ``job_creator`` was left disabled.
+    """
+    from ..agents.skills_manager import (
+        SkillService,
+        ensure_skill_pool_initialized,
+    )
+    from .routers.agents import _initialize_agent_workspace
+
+    ensure_skill_pool_initialized()
+    _initialize_agent_workspace(
+        workspace_dir,
+        agent_config,
+        skill_names=list(DEFAULT_AGENT_FIRST_RUN_SKILL_NAMES),
+    )
+
+    skill_service = SkillService(workspace_dir)
+    for skill_name in DEFAULT_AGENT_FIRST_RUN_SKILL_NAMES:
+        result = skill_service.enable_skill(skill_name)
+        if result.get("success"):
+            continue
+        logger.warning(
+            "Failed to self-heal default skill %r for default agent: %s",
+            skill_name,
+            result.get("reason"),
+        )
 
 
 def migrate_legacy_workspace_to_default_agent() -> bool:
@@ -695,15 +730,19 @@ def ensure_default_agent_exists() -> None:
         )
 
     if agent_config_path.exists():
+        from ..config.config import load_agent_config
+
+        default_agent_config = load_agent_config("default")
         if _workspace_has_any_skills(default_workspace):
+            _ensure_default_agent_skills_enabled(
+                default_workspace,
+                default_agent_config,
+            )
             return
         logger.info(
             "Default agent exists but has no workspace skills; "
             "seeding builtin defaults...",
         )
-        from ..config.config import load_agent_config
-
-        default_agent_config = load_agent_config("default")
         _seed_default_agent_workspace(default_workspace, default_agent_config)
         return
 

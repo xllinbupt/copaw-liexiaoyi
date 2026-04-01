@@ -15,17 +15,23 @@ import { chatApi } from "../../api/modules/chat";
 import { getApiUrl } from "../../api/config";
 import { buildAuthHeaders } from "../../api/authHeaders";
 import { providerApi } from "../../api/modules/provider";
-import type { ProviderInfo, ModelInfo } from "../../api/types";
+import type { ProviderInfo, ModelInfo, ChatSpec } from "../../api/types";
 import ModelSelector from "./ModelSelector";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useAgentStore } from "../../stores/agentStore";
 import { useChatAnywhereInput } from "@agentscope-ai/chat";
 import styles from "./index.module.less";
 import { IconButton } from "@agentscope-ai/design";
-import ChatActionGroup from "./components/ChatActionGroup";
 import ChatHeaderTitle from "./components/ChatHeaderTitle";
 import ResumeResponseCard from "./components/ResumeResponseCard";
 import ChatSessionInitializer from "./components/ChatSessionInitializer";
+import {
+  CHAT_WORKSPACE_UPDATED_EVENT,
+  buildChatPayload,
+  getChatJobDetails,
+  type ChatJobContext,
+  type ChatWorkspaceUpdateDetail,
+} from "./chatWorkspace";
 import {
   toDisplayUrl,
   copyText,
@@ -38,6 +44,7 @@ import {
 } from "./utils";
 
 const CHAT_ATTACHMENT_MAX_MB = 10;
+const JOB_CONTEXT_INJECTED_STORAGE_PREFIX = "copaw_job_context_injected_";
 
 interface SessionInfo {
   session_id?: string;
@@ -270,6 +277,10 @@ export default function ChatPage() {
   const [showModelPrompt, setShowModelPrompt] = useState(false);
   const { selectedAgent } = useAgentStore();
   const [refreshKey, setRefreshKey] = useState(0);
+  const [chatSpecs, setChatSpecs] = useState<ChatSpec[]>([]);
+  const [currentChatHasHistory, setCurrentChatHasHistory] = useState<
+    boolean | null
+  >(null);
   const runtimeLoadingBridgeRef = useRef<RuntimeLoadingBridgeApi | null>(null);
 
   const isChatActiveRef = useRef(false);
@@ -295,6 +306,14 @@ export default function ChatPage() {
   const chatRef = useRef<IAgentScopeRuntimeWebUIRef>(null);
   chatIdRef.current = chatId;
   navigateRef.current = navigate;
+  const currentChat = useMemo(
+    () => chatSpecs.find((chat) => chat.id === chatId) ?? null,
+    [chatSpecs, chatId],
+  );
+  const currentChatJobDetails = useMemo(
+    () => (currentChat ? getChatJobDetails(currentChat) : null),
+    [currentChat],
+  );
 
   // Tell sessionApi which session to put first in getSessionList, so the library's
   // useMount auto-selects the correct session without an extra getSession round-trip.
@@ -303,6 +322,106 @@ export default function ChatPage() {
   }
 
   // Register session API event callbacks for URL synchronization
+
+  const loadChatSpecs = useCallback(async (options?: { silent?: boolean }) => {
+    try {
+      const chats = await chatApi.listChats();
+      setChatSpecs(chats);
+      return chats;
+    } catch (error) {
+      if (!options?.silent) {
+        message.error(error instanceof Error ? error.message : "加载聊天列表失败");
+      }
+      return [];
+    }
+  }, [selectedAgent]);
+
+  useEffect(() => {
+    void loadChatSpecs();
+  }, [loadChatSpecs, location.pathname, selectedAgent]);
+
+  useEffect(() => {
+    if (!isChatActiveRef.current) return;
+
+    const intervalId = window.setInterval(() => {
+      void loadChatSpecs({ silent: true });
+    }, 4000);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [loadChatSpecs, location.pathname, selectedAgent]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!currentChat?.id) {
+      setCurrentChatHasHistory(null);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    const checkCurrentChatHistory = async () => {
+      try {
+        const history = await chatApi.getChat(currentChat.id);
+        if (!cancelled) {
+          setCurrentChatHasHistory((history.messages?.length ?? 0) > 0);
+        }
+      } catch {
+        if (!cancelled) {
+          setCurrentChatHasHistory(null);
+        }
+      }
+    };
+
+    void checkCurrentChatHistory();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentChat?.id, refreshKey]);
+
+  useEffect(() => {
+    const handleWorkspaceUpdated = (
+      event: Event,
+    ) => {
+      const customEvent = event as CustomEvent<ChatWorkspaceUpdateDetail>;
+      void loadChatSpecs();
+      if (customEvent.detail?.refreshRuntime) {
+        setRefreshKey((prev) => prev + 1);
+      }
+    };
+
+    window.addEventListener(
+      CHAT_WORKSPACE_UPDATED_EVENT,
+      handleWorkspaceUpdated as EventListener,
+    );
+    return () => {
+      window.removeEventListener(
+        CHAT_WORKSPACE_UPDATED_EVENT,
+        handleWorkspaceUpdated as EventListener,
+      );
+    };
+  }, [loadChatSpecs]);
+
+  const refreshRuntimeSessions = useCallback(() => {
+    setRefreshKey((prev) => prev + 1);
+  }, []);
+
+  const handleCreateChat = useCallback(
+    async (job?: ChatJobContext | null) => {
+      try {
+        const created = await chatApi.createChat(buildChatPayload(job));
+        await loadChatSpecs();
+        refreshRuntimeSessions();
+        navigate(`/chat/${created.id}`);
+      } catch (error) {
+        message.error(error instanceof Error ? error.message : "创建聊天失败");
+      }
+    },
+    [loadChatSpecs, navigate, refreshRuntimeSessions],
+  );
 
   useEffect(() => {
     sessionApi.onSessionIdResolved = (realId) => {
@@ -448,15 +567,55 @@ export default function ChatPage() {
               },
             ]
           : lastInput;
+      const shouldInjectJobContext =
+        !!currentChat?.id &&
+        !!currentChatJobDetails &&
+        currentChatHasHistory === false &&
+        !sessionStorage.getItem(
+          `${JOB_CONTEXT_INJECTED_STORAGE_PREFIX}${currentChat.id}`,
+        );
+      const initialJobContextInput = shouldInjectJobContext
+        ? [
+            {
+              role: "system",
+              type: "message",
+              content: [
+                {
+                  type: "text",
+                  text: [
+                    "当前 chat 已经绑定职位，请把下面这份职位信息作为本轮对话的默认上下文继续推进。",
+                    `职位 ID：${currentChatJobDetails.jobId || "未提供"}`,
+                    `职位名称：${currentChatJobDetails.jobName}`,
+                    currentChatJobDetails.description
+                      ? `职位描述：${currentChatJobDetails.description}`
+                      : "",
+                    currentChatJobDetails.requirements
+                      ? `职位要求：${currentChatJobDetails.requirements}`
+                      : "",
+                  ]
+                    .filter(Boolean)
+                    .join("\n"),
+                },
+              ],
+            },
+          ]
+        : [];
 
       const requestBody = {
-        input: rewrittenInput,
+        input: [...initialJobContextInput, ...rewrittenInput],
         session_id: window.currentSessionId || session?.session_id || "",
         user_id: window.currentUserId || session?.user_id || DEFAULT_USER_ID,
         channel: window.currentChannel || session?.channel || DEFAULT_CHANNEL,
         stream: true,
         ...biz_params,
       };
+
+      if (shouldInjectJobContext) {
+        sessionStorage.setItem(
+          `${JOB_CONTEXT_INJECTED_STORAGE_PREFIX}${currentChat.id}`,
+          "1",
+        );
+      }
 
       const backendChatId =
         sessionApi.getRealIdForSession(requestBody.session_id) ??
@@ -482,7 +641,7 @@ export default function ChatPage() {
 
       return response;
     },
-    [selectedAgent],
+    [currentChat, currentChatHasHistory, currentChatJobDetails, selectedAgent],
   );
 
   const handleFileUpload = useCallback(
@@ -571,10 +730,9 @@ export default function ChatPage() {
           <>
             <ChatSessionInitializer />
             <RuntimeLoadingBridge bridgeRef={runtimeLoadingBridgeRef} />
-            <ChatHeaderTitle />
+            <ChatHeaderTitle currentChat={currentChat} />
             <span style={{ flex: 1 }} />
             <ModelSelector />
-            <ChatActionGroup />
           </>
         ),
       },
@@ -673,8 +831,10 @@ export default function ChatPage() {
       },
     } as unknown as IAgentScopeRuntimeWebUIOptions;
   }, [
+    currentChat,
     customFetch,
     copyResponse,
+    handleCreateChat,
     handleFileUpload,
     t,
     isDark,
@@ -682,20 +842,15 @@ export default function ChatPage() {
   ]);
 
   return (
-    <div
-      style={{
-        height: "100%",
-        width: "100%",
-        display: "flex",
-        flexDirection: "column",
-      }}
-    >
-      <div className={styles.chatMessagesArea}>
-        <AgentScopeRuntimeWebUI
-          ref={chatRef}
-          key={refreshKey}
-          options={options}
-        />
+    <div className={styles.chatWorkspaceLayout}>
+      <div className={styles.chatMainPanel}>
+        <div className={styles.chatMessagesArea}>
+          <AgentScopeRuntimeWebUI
+            ref={chatRef}
+            key={`${refreshKey}:${chatId || "new"}`}
+            options={options}
+          />
+        </div>
       </div>
 
       <Modal

@@ -1,17 +1,63 @@
+.headerContent {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
 .chatName {
   font-size: 16px;
   font-weight: 500;
   line-height: 22px;
   color: var(--colorText, rgba(0, 0, 0, 0.88));
-  max-width: 240px;
+  max-width: 280px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.chatMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-size: 12px;
+  line-height: 18px;
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.jobName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.metaTag {
+  padding: 0 8px;
+  border-radius: 999px;
+  background: rgba(255, 122, 0, 0.1);
+  color: #a85d00;
+  white-space: nowrap;
+}
+
+.unassignedText {
+  color: rgba(0, 0, 0, 0.45);
 }
 
 /* Dark mode */
 :global(.dark-mode) {
   .chatName {
     color: rgba(255, 255, 255, 0.95);
+  }
+
+  .chatMeta,
+  .unassignedText {
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  .metaTag {
+    background: rgba(255, 169, 64, 0.14);
+    color: rgba(255, 209, 153, 0.95);
   }
 }

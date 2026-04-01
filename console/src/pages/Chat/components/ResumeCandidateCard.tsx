@@ -13,10 +13,17 @@ type ResumeCandidateCardProps = {
 };
 
 type TimelineEntry = {
-  primary: string;
-  secondary?: string;
+  company?: string;
+  title?: string;
   period?: string;
+  summary?: string;
+  fallback?: string;
 };
+
+type WorkExperienceItem = Exclude<
+  NonNullable<ResumeCardPayload["work_experiences"]>[number],
+  string
+>;
 
 function getInitials(name: string): string {
   const trimmed = name.trim();
@@ -31,22 +38,79 @@ function normalizeTimelineEntries(
   return value
     .map((item) => {
       if (typeof item === "string") {
-        return { primary: item };
+        return { fallback: item.trim() };
       }
 
       const company = item.company?.trim() || "";
       const title = item.title?.trim() || "";
       const summary = item.summary?.trim() || "";
+      const period = formatWorkPeriod(item);
 
       return {
-        primary: [company, title].filter(Boolean).join(" | ") || summary,
-        secondary:
-          [summary].filter(Boolean).join(" ") ||
-          [company, title].filter(Boolean).join(" | "),
-        period: item.period?.trim() || "",
+        company,
+        title,
+        period,
+        summary,
+        fallback: [company, title, summary].filter(Boolean).join(" | "),
       };
     })
-    .filter((item) => item.primary);
+    .filter(
+      (item) =>
+        item.company || item.title || item.period || item.summary || item.fallback,
+    );
+}
+
+function normalizePeriodValue(value: string | undefined): string {
+  if (!value) return "";
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  return trimmed
+    .replace(/[年/]/g, ".")
+    .replace(/[月]/g, "")
+    .replace(/[–—~～至]+/g, "-")
+    .replace(/\s+/g, "")
+    .replace(/(\d{4})\.(\d{1})(?!\d)/g, "$1.$2");
+}
+
+function normalizePeriodPoint(value: string | undefined): string {
+  if (!value) return "";
+  const normalized = normalizePeriodValue(value);
+  if (!normalized) return "";
+
+  const yearMonthMatch = normalized.match(/^(\d{4})\.(\d{1,2})$/);
+  if (yearMonthMatch) {
+    return `${yearMonthMatch[1]}.${String(Number(yearMonthMatch[2]))}`;
+  }
+
+  const yearMatch = normalized.match(/^(\d{4})$/);
+  if (yearMatch) {
+    return yearMatch[1];
+  }
+
+  return normalized;
+}
+
+function formatWorkPeriod(item: WorkExperienceItem): string {
+  const explicitPeriod = normalizePeriodValue(item.period?.trim());
+  if (explicitPeriod) return explicitPeriod;
+
+  const start = normalizePeriodPoint(
+    item.start_date ||
+      item.start_time ||
+      item.start ||
+      item.from,
+  );
+  const endRaw =
+    item.end_date || item.end_time || item.end || item.to;
+  const end =
+    item.is_current || item.current || item.to_present || item.present
+      ? "至今"
+      : normalizePeriodPoint(endRaw);
+
+  if (start && end) return `${start}-${end}`;
+  if (start) return `${start}-至今`;
+  if (end) return end;
+  return "";
 }
 
 function normalizeEducationEntries(
@@ -102,7 +166,7 @@ export default function ResumeCandidateCard(
   const workSummary: TimelineEntry[] =
     workTimeline.length > 0
       ? workTimeline.slice(0, 3)
-      : highlights.map((item) => ({ primary: item } as TimelineEntry));
+      : highlights.map((item) => ({ fallback: item } as TimelineEntry));
   const reasonText = card.match_reason || card.summary || "";
   const updateLabel = card.updated_at || "";
 
@@ -110,6 +174,44 @@ export default function ResumeCandidateCard(
     if (!detailUrl) return;
     setLoaded(false);
     setOpen(true);
+  };
+
+  const renderTimelineEntry = (item: TimelineEntry, idx: number) => {
+    const fallback = item.fallback || "";
+    const showHeader = Boolean(item.company || item.period);
+    const showTitle = Boolean(item.title);
+    const showSummary = Boolean(item.summary);
+    const showFallback = !showHeader && !showTitle && !showSummary && fallback;
+
+    return (
+      <div
+        key={`${name}-${item.company || item.title || item.period || fallback}-${idx}`}
+        className={styles.resumeTimelineItem}
+      >
+        <div className={styles.resumeTimelineMarker} />
+        <div className={styles.resumeTimelineContent}>
+          {showHeader ? (
+            <div className={styles.resumeTimelineHeader}>
+              <div className={styles.resumeTimelineCompany}>
+                {item.company || fallback}
+              </div>
+              {item.period ? (
+                <div className={styles.resumeTimelinePeriod}>{item.period}</div>
+              ) : null}
+            </div>
+          ) : null}
+          {showTitle ? (
+            <div className={styles.resumeTimelineTitle}>{item.title}</div>
+          ) : null}
+          {showSummary ? (
+            <div className={styles.resumeTimelineSecondary}>{item.summary}</div>
+          ) : null}
+          {showFallback ? (
+            <div className={styles.resumeTimelineFallback}>{fallback}</div>
+          ) : null}
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -177,26 +279,7 @@ export default function ResumeCandidateCard(
 
           <div className={styles.resumeCardRight}>
             <div className={styles.resumeTimeline}>
-              {workSummary.map((item, idx) => (
-                <div
-                  key={`${name}-${item.primary}-${idx}`}
-                  className={styles.resumeTimelineItem}
-                >
-                  <div className={styles.resumeTimelineMarker} />
-                  <div className={styles.resumeTimelineContent}>
-                    <div className={styles.resumeTimelinePrimary}>{item.primary}</div>
-                    {item.secondary &&
-                    item.secondary !== item.primary ? (
-                      <div className={styles.resumeTimelineSecondary}>
-                        {item.secondary}
-                      </div>
-                    ) : null}
-                    {item.period ? (
-                      <div className={styles.resumeTimelinePeriod}>{item.period}</div>
-                    ) : null}
-                  </div>
-                </div>
-              ))}
+              {workSummary.map(renderTimelineEntry)}
             </div>
           </div>
         </div>

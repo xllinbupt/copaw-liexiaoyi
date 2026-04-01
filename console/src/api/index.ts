@@ -22,6 +22,7 @@ import { toolsApi } from "./modules/tools";
 import { securityApi } from "./modules/security";
 import { userTimezoneApi } from "./modules/userTimezone";
 import { languageApi } from "./modules/language";
+import { jobApi } from "./modules/job";
 
 export const api = {
   // Root
@@ -76,6 +77,9 @@ export const api = {
 
   // Language
   ...languageApi,
+
+  // Jobs
+  ...jobApi,
 };
 
 export default api;

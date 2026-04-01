@@ -237,6 +237,8 @@ async function getResumeDetail(browser, resumeIdEncode) {
 - `city`: 当前城市
 - `years_experience`: 工作年限
 - `education`: 最高学历或核心教育背景
+- `work_experiences`: 1 到 3 段核心工作经历；每段尽量带 `company`、`title`、`period`
+  - `period` 优先写绝对时间，例如 `2024.3-至今`、`2021.7-2024.2`
 - `tags`: 2 到 5 个标签
 - `highlights`: 2 到 4 条亮点
 - `match_reason`: 你为什么正式推荐他
@@ -254,6 +256,20 @@ async function getResumeDetail(browser, resumeIdEncode) {
   "city": "北京",
   "years_experience": 8,
   "education": "北京大学硕士",
+  "work_experiences": [
+    {
+      "company": "某头部互联网公司",
+      "title": "高级产品经理",
+      "period": "2022.4-至今",
+      "summary": "负责搜索推荐与 AI 产品策略。"
+    },
+    {
+      "company": "某 SaaS 公司",
+      "title": "产品经理",
+      "period": "2019.7-2022.3",
+      "summary": "负责中后台与数据产品。"
+    }
+  ],
   "tags": ["AI 产品", "搜索", "大厂背景"],
   "highlights": [
     "负责过搜索与推荐产品",

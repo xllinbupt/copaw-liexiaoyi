@@ -93,90 +93,66 @@ export const compareVersions = (a: string, b: string): number => {
 // ── Update markdown ───────────────────────────────────────────────────────
 
 export const UPDATE_MD: Record<string, string> = {
-  zh: `### CoPaw如何更新
+  zh: `### v0.0.2 更新日志
 
-要更新 CoPaw 到最新版本，可根据你的安装方式选择对应方法：
+- 新增全局“职位”对象，职位不再跟着 Agent 切换而消失；Chat 仍归属于当前 Agent。
+- Chat 支持绑定 0 或 1 个职位，并在左侧按“职位 -> 多个 Chat”分组展示；未绑定对话统一收进 \`playground\`。
+- 新增内置 \`job_creator\` 技能，可在未绑定职位的对话里创建职位，并自动把当前对话挂到该职位下。
+- 支持 Agent 在识别出“当前对话明确属于某个已有职位”时自动完成绑定；已绑定后不可改绑。
+- 默认 Agent 收敛为“猎小易”，并确保 \`job_creator\`、\`job_intake_consultant\`、\`duolie_talent\` 默认启用。
+- 简历卡片优化：工作经历改为结构化展示公司、职位、时间，优先显示绝对时间，例如 \`2024.3-至今\`。
+- Chat 工作台样式优化：左侧支持更紧凑的会话行、职位分组、按钮与版本提示样式调整。
 
-1. 如果你使用的是一键安装脚本，直接重新运行安装命令即可自动升级。
+### 升级方式
 
-2. 如果你是通过 pip 安装，在终端中执行以下命令升级：
+如果你是从源码部署，进入项目目录后执行：
 
 \`\`\`
-pip install --upgrade copaw
-\`\`\`
-
-3. 如果你是从源码安装，进入项目目录并拉取最新代码后重新安装：
-
-\`\`\`
-cd CoPaw
 git pull origin main
 pip install -e .
 \`\`\`
 
-4. 如果你使用的是 Docker，拉取最新镜像并重启容器：
+如果你使用 Docker，请基于最新代码重新构建并重启容器。`,
+
+  ru: `### v0.0.2 Release Notes
+
+- Added a global Job entity so jobs persist across Agent switching; chats still belong to the current Agent.
+- Chats can now bind to zero or one job and are grouped in the sidebar by “job -> chats”; unbound chats stay in \`playground\`.
+- Added built-in \`job_creator\` skill to create a job inside an unbound chat and bind the current chat automatically.
+- Agents can auto-bind an unbound chat to an existing job when the target job is uniquely clear.
+- Default agent is now simplified to LieXiaoYi with recruiting skills enabled by default.
+- Resume cards now render work experience in a structured way with absolute dates when available.
+- Chat workspace UI was refined with denser rows, grouped jobs, and updated button/version styling.
+
+### Update
+
+If installed from source:
 
 \`\`\`
-docker pull agentscope/copaw:latest
-docker run -p 127.0.0.1:8088:8088 -v copaw-data:/app/working agentscope/copaw:latest
-\`\`\`
-
-升级后重启服务 copaw app。`,
-
-  ru: `### Как обновить CoPaw
-
-Чтобы обновить CoPaw, выберите способ в зависимости от типа установки:
-
-1. Если вы устанавливали через однострочный скрипт, повторно запустите установщик для обновления.
-
-2. Если устанавливали через pip, выполните:
-
-\`\`\`
-pip install --upgrade copaw
-\`\`\`
-
-3. Если устанавливали из исходников, получите последние изменения и переустановите:
-
-\`\`\`
-cd CoPaw
 git pull origin main
 pip install -e .
 \`\`\`
 
-4. Если используете Docker, загрузите новый образ и перезапустите контейнер:
+If using Docker, rebuild your image from the latest code and restart the container.`,
+
+  en: `### v0.0.2 Release Notes
+
+- Added a global Job entity so jobs no longer disappear when switching Agents; chats still belong to the current Agent.
+- Chats can bind to zero or one job and are grouped in the sidebar by “job -> chats”; unbound chats live under \`playground\`.
+- Added the built-in \`job_creator\` skill so an unbound chat can create a job and auto-bind itself to that job.
+- Agents can now auto-bind an unbound chat to an existing job when the target job is uniquely clear.
+- Simplified the default setup to a single LieXiaoYi agent with \`job_creator\`, \`job_intake_consultant\`, and \`duolie_talent\` enabled by default.
+- Resume cards now render work experience in a structured layout with absolute dates when available.
+- Refined the Chat workspace UI with grouped jobs, denser rows, and updated button/version styling.
+
+### Update
+
+If installed from source:
 
 \`\`\`
-docker pull agentscope/copaw:latest
-docker run -p 127.0.0.1:8088:8088 -v copaw-data:/app/working agentscope/copaw:latest
-\`\`\`
-
-После обновления перезапустите сервис с помощью \`copaw app\`.`,
-
-  en: `### How to update CoPaw
-
-To update CoPaw, use the method matching your installation type:
-
-1. If installed via one-line script, re-run the installer to upgrade.
-
-2. If installed via pip, run:
-
-\`\`\`
-pip install --upgrade copaw
-\`\`\`
-
-3. If installed from source, pull the latest code and reinstall:
-
-\`\`\`
-cd CoPaw
 git pull origin main
 pip install -e .
 \`\`\`
 
-4. If using Docker, pull the latest image and restart the container:
-
-\`\`\`
-docker pull agentscope/copaw:latest
-docker run -p 127.0.0.1:8088:8088 -v copaw-data:/app/working agentscope/copaw:latest
-\`\`\`
-
-After upgrading, restart the service with \`copaw app\`.`,
+If using Docker, rebuild your image from the latest code and restart the container.`,
 };

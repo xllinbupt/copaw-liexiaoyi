@@ -9,8 +9,14 @@ import {
   Tooltip,
   type MenuProps,
 } from "antd";
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  type MouseEvent as ReactMouseEvent,
+} from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import AgentSelector from "../components/AgentSelector";
 import {
@@ -38,13 +44,28 @@ import {
 } from "@agentscope-ai/icons";
 import { clearAuthToken } from "../api/config";
 import { authApi } from "../api/modules/auth";
+import { chatApi } from "../api/modules/chat";
+import { jobApi } from "../api/modules/job";
+import type { ChatSpec, JobSpec } from "../api/types";
+import ChatWorkspaceSidebar from "../pages/Chat/components/ChatWorkspaceSidebar";
+import {
+  buildChatPayload,
+  notifyChatWorkspaceUpdated,
+  type ChatJobContext,
+} from "../pages/Chat/chatWorkspace";
 import styles from "./index.module.less";
 import { useTheme } from "../contexts/ThemeContext";
+import { useAgentStore } from "../stores/agentStore";
 import { KEY_TO_PATH, DEFAULT_OPEN_KEYS } from "./constants";
 
 // ── Layout ────────────────────────────────────────────────────────────────
 
 const { Sider } = Layout;
+const COLLAPSED_SIDEBAR_WIDTH = 72;
+const DEFAULT_SIDEBAR_WIDTH = 240;
+const MIN_SIDEBAR_WIDTH = 220;
+const MAX_SIDEBAR_WIDTH = 420;
+const SIDEBAR_WIDTH_STORAGE_KEY = "copaw-sidebar-width";
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -56,14 +77,32 @@ interface SidebarProps {
 
 export default function Sidebar({ selectedKey }: SidebarProps) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useTranslation();
   const { isDark } = useTheme();
+  const { selectedAgent } = useAgentStore();
   const [authEnabled, setAuthEnabled] = useState(false);
   const [accountModalOpen, setAccountModalOpen] = useState(false);
   const [accountLoading, setAccountLoading] = useState(false);
   const [accountForm] = Form.useForm();
   const [collapsed, setCollapsed] = useState(false);
   const [openKeys, setOpenKeys] = useState<string[]>(DEFAULT_OPEN_KEYS);
+  const [sidebarWidth, setSidebarWidth] = useState<number>(() => {
+    if (typeof window === "undefined") return DEFAULT_SIDEBAR_WIDTH;
+    const raw = window.localStorage.getItem(SIDEBAR_WIDTH_STORAGE_KEY);
+    const parsed = raw ? Number(raw) : NaN;
+    return Number.isFinite(parsed)
+      ? Math.min(MAX_SIDEBAR_WIDTH, Math.max(MIN_SIDEBAR_WIDTH, parsed))
+      : DEFAULT_SIDEBAR_WIDTH;
+  });
+  const [isResizing, setIsResizing] = useState(false);
+  const [chatSpecs, setChatSpecs] = useState<ChatSpec[]>([]);
+  const [jobs, setJobs] = useState<JobSpec[]>([]);
+  const [chatSidebarLoading, setChatSidebarLoading] = useState(false);
+  const currentChatId =
+    location.pathname.match(/^\/chat\/(.+)$/)?.[1] ?? undefined;
+  const resizeStartXRef = useRef(0);
+  const resizeStartWidthRef = useRef(sidebarWidth);
 
   // ── Effects ──────────────────────────────────────────────────────────────
 
@@ -73,6 +112,90 @@ export default function Sidebar({ selectedKey }: SidebarProps) {
       .then((res) => setAuthEnabled(res.enabled))
       .catch(() => {});
   }, []);
+
+  const loadWorkspaceSidebarData = useCallback(async (options?: { silent?: boolean }) => {
+    if (!options?.silent) {
+      setChatSidebarLoading(true);
+    }
+    try {
+      const [chats, nextJobs] = await Promise.all([
+        chatApi.listChats(),
+        jobApi.listJobs(),
+      ]);
+      setChatSpecs(chats);
+      setJobs(nextJobs);
+      return chats;
+    } catch (error) {
+      if (!options?.silent) {
+        message.error(
+          error instanceof Error ? error.message : "加载职位和聊天数据失败",
+        );
+      }
+      return [];
+    } finally {
+      if (!options?.silent) {
+        setChatSidebarLoading(false);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (collapsed || selectedKey !== "chat") return;
+    void loadWorkspaceSidebarData();
+  }, [
+    collapsed,
+    loadWorkspaceSidebarData,
+    location.pathname,
+    selectedAgent,
+    selectedKey,
+  ]);
+
+  useEffect(() => {
+    if (collapsed || selectedKey !== "chat") return;
+
+    const intervalId = window.setInterval(() => {
+      void loadWorkspaceSidebarData({ silent: true });
+    }, 4000);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [collapsed, loadWorkspaceSidebarData, selectedAgent, selectedKey]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(
+      SIDEBAR_WIDTH_STORAGE_KEY,
+      String(sidebarWidth),
+    );
+  }, [sidebarWidth]);
+
+  useEffect(() => {
+    if (!isResizing) return;
+
+    const handleMouseMove = (event: MouseEvent) => {
+      const nextWidth = resizeStartWidthRef.current + (event.clientX - resizeStartXRef.current);
+      setSidebarWidth(
+        Math.min(MAX_SIDEBAR_WIDTH, Math.max(MIN_SIDEBAR_WIDTH, nextWidth)),
+      );
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+    };
+
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+
+    return () => {
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isResizing]);
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
@@ -128,6 +251,66 @@ export default function Sidebar({ selectedKey }: SidebarProps) {
       setAccountLoading(false);
     }
   };
+
+  const handleCreateWorkspaceChat = useCallback(
+    async (job?: ChatJobContext | null) => {
+      try {
+        const created = await chatApi.createChat(buildChatPayload(job));
+        await loadWorkspaceSidebarData();
+        notifyChatWorkspaceUpdated({ refreshRuntime: true });
+        navigate(`/chat/${created.id}`);
+      } catch (error) {
+        message.error(error instanceof Error ? error.message : "创建聊天失败");
+      }
+    },
+    [loadWorkspaceSidebarData, navigate],
+  );
+
+  const handleRenameWorkspaceChat = useCallback(
+    async (chat: ChatSpec, nextName: string) => {
+      try {
+        await chatApi.updateChat(chat.id, {
+          ...chat,
+          name: nextName,
+          meta: chat.meta || {},
+        });
+        await loadWorkspaceSidebarData();
+        notifyChatWorkspaceUpdated({ refreshRuntime: false });
+      } catch (error) {
+        message.error(error instanceof Error ? error.message : "重命名聊天失败");
+        throw error;
+      }
+    },
+    [loadWorkspaceSidebarData],
+  );
+
+  const handleDeleteWorkspaceChat = useCallback(
+    async (chat: ChatSpec) => {
+      try {
+        await chatApi.deleteChat(chat.id);
+        await loadWorkspaceSidebarData();
+        notifyChatWorkspaceUpdated({ refreshRuntime: true });
+        if (chat.id === currentChatId) {
+          navigate("/chat");
+        }
+      } catch (error) {
+        message.error(error instanceof Error ? error.message : "删除聊天失败");
+        throw error;
+      }
+    },
+    [currentChatId, loadWorkspaceSidebarData, navigate],
+  );
+
+  const handleResizeStart = useCallback(
+    (event: ReactMouseEvent<HTMLDivElement>) => {
+      if (collapsed) return;
+      resizeStartXRef.current = event.clientX;
+      resizeStartWidthRef.current = sidebarWidth;
+      setIsResizing(true);
+      event.preventDefault();
+    },
+    [collapsed, sidebarWidth],
+  );
 
   // ── Collapsed nav items (all leaf pages) ──────────────────────────────
 
@@ -343,15 +526,21 @@ export default function Sidebar({ selectedKey }: SidebarProps) {
       ],
     },
   ];
+  const secondaryMenuItems =
+    selectedKey === "chat"
+      ? menuItems.filter((item) => item?.key !== "chat")
+      : menuItems;
 
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
     <Sider
-      width={collapsed ? 72 : 240}
+      width={collapsed ? COLLAPSED_SIDEBAR_WIDTH : sidebarWidth}
       className={`${styles.sider}${
         collapsed ? ` ${styles.siderCollapsed}` : ""
-      }${isDark ? ` ${styles.siderDark}` : ""}`}
+      }${isResizing ? ` ${styles.siderResizing}` : ""}${
+        isDark ? ` ${styles.siderDark}` : ""
+      }`}
     >
       <div className={styles.agentSelectorContainer}>
         <AgentSelector collapsed={collapsed} />
@@ -383,6 +572,39 @@ export default function Sidebar({ selectedKey }: SidebarProps) {
             );
           })}
         </nav>
+      ) : selectedKey === "chat" ? (
+        <div className={styles.sideMenuStack}>
+          <div className={styles.chatWorkspaceSlot}>
+            <ChatWorkspaceSidebar
+              chats={chatSpecs}
+              jobs={jobs}
+              currentChatId={currentChatId}
+              loading={chatSidebarLoading}
+              onSelectChat={(chatId) => navigate(`/chat/${chatId}`)}
+              onCreateChat={(job) => void handleCreateWorkspaceChat(job)}
+              onRenameChat={handleRenameWorkspaceChat}
+              onDeleteChat={(chat) => void handleDeleteWorkspaceChat(chat)}
+            />
+          </div>
+          <Menu
+            mode="inline"
+            selectedKeys={[]}
+            openKeys={openKeys}
+            onOpenChange={(nextOpenKeys) => {
+              const latestOpenKey = nextOpenKeys.find(
+                (key) => !openKeys.includes(key),
+              );
+              setOpenKeys(latestOpenKey ? [latestOpenKey] : []);
+            }}
+            onClick={({ key }) => {
+              const path = KEY_TO_PATH[String(key)];
+              if (path) navigate(path);
+            }}
+            items={secondaryMenuItems}
+            theme={isDark ? "dark" : "light"}
+            className={`${styles.sideMenu} ${styles.secondaryMenu}`}
+          />
+        </div>
       ) : (
         <Menu
           mode="inline"
@@ -398,7 +620,7 @@ export default function Sidebar({ selectedKey }: SidebarProps) {
             const path = KEY_TO_PATH[String(key)];
             if (path) navigate(path);
           }}
-          items={menuItems}
+          items={secondaryMenuItems}
           theme={isDark ? "dark" : "light"}
           className={styles.sideMenu}
         />
@@ -451,6 +673,16 @@ export default function Sidebar({ selectedKey }: SidebarProps) {
           className={styles.collapseToggle}
         />
       </div>
+
+      {!collapsed ? (
+        <div
+          className={styles.resizeHandle}
+          onMouseDown={handleResizeStart}
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Resize sidebar"
+        />
+      ) : null}
 
       <Modal
         open={accountModalOpen}

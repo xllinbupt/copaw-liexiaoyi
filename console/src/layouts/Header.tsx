@@ -20,6 +20,7 @@ import remarkGfm from "remark-gfm";
 import { CopyOutlined, CheckOutlined, TagOutlined } from "@ant-design/icons";
 
 const { Header: AntHeader } = Layout;
+const DISMISSED_UPDATE_VERSION_KEY = "copaw-dismissed-update-version";
 
 // ── Code block with copy button ───────────────────────────────────────────
 function UpdateCodeBlock({ code }: { code: string }) {
@@ -54,8 +55,20 @@ export default function Header() {
   }?v=liepin-wordmark-2`;
   const [version, setVersion] = useState<string>("");
   const [latestVersion, setLatestVersion] = useState<string>("");
+  const [dismissedUpdateVersion, setDismissedUpdateVersion] =
+    useState<string>("");
   const [updateModalOpen, setUpdateModalOpen] = useState(false);
   const [updateMarkdown, setUpdateMarkdown] = useState<string>("");
+
+  useEffect(() => {
+    try {
+      setDismissedUpdateVersion(
+        window.localStorage.getItem(DISMISSED_UPDATE_VERSION_KEY) || "",
+      );
+    } catch {
+      setDismissedUpdateVersion("");
+    }
+  }, []);
 
   useEffect(() => {
     api
@@ -109,33 +122,33 @@ export default function Header() {
   }, []);
 
   const hasUpdate =
-    !!version && !!latestVersion && compareVersions(latestVersion, version) > 0;
+    !!version &&
+    !!latestVersion &&
+    compareVersions(latestVersion, version) > 0 &&
+    compareVersions(latestVersion, dismissedUpdateVersion || "0.0.0") > 0;
+
+  const dismissUpdateDot = () => {
+    if (!latestVersion) return;
+    setDismissedUpdateVersion(latestVersion);
+    try {
+      window.localStorage.setItem(
+        DISMISSED_UPDATE_VERSION_KEY,
+        latestVersion,
+      );
+    } catch {
+      // Ignore storage failures; the dot will simply reappear on next load.
+    }
+  };
 
   const handleOpenUpdateModal = () => {
-    setUpdateMarkdown("");
-    setUpdateModalOpen(true);
+    dismissUpdateDot();
     const lang = i18n.language?.startsWith("zh")
       ? "zh"
       : i18n.language?.startsWith("ru")
       ? "ru"
       : "en";
-    const faqLang = lang === "zh" ? "zh" : "en";
-    const url = `https://copaw.agentscope.io/docs/faq.${faqLang}.md`;
-    fetch(url, { cache: "no-cache" })
-      .then((res) => (res.ok ? res.text() : Promise.reject()))
-      .then((text) => {
-        const zhPattern = /###\s*CoPaw如何更新[\s\S]*?(?=\n###|$)/;
-        const enPattern = /###\s*How to update CoPaw[\s\S]*?(?=\n###|$)/;
-        const match = text.match(faqLang === "zh" ? zhPattern : enPattern);
-        setUpdateMarkdown(
-          match && lang !== "ru"
-            ? match[0].trim()
-            : UPDATE_MD[lang] ?? UPDATE_MD.en,
-        );
-      })
-      .catch(() => {
-        setUpdateMarkdown(UPDATE_MD[lang] ?? UPDATE_MD.en);
-      });
+    setUpdateMarkdown(UPDATE_MD[lang] ?? UPDATE_MD.en);
+    setUpdateModalOpen(true);
   };
 
   const handleNavClick = (url: string) => {
@@ -159,26 +172,26 @@ export default function Header() {
             className={styles.logoImg}
           />
           <div className={styles.logoDivider} />
+        </div>
+        <Space size="middle" className={styles.headerActions}>
           {version && (
             <Badge
               dot={!!hasUpdate}
               color="rgba(255, 157, 77, 1)"
-              offset={[4, 28]}
+              offset={[4, 4]}
             >
               <span
                 className={`${styles.versionBadge} ${
-                  hasUpdate
+                  version
                     ? styles.versionBadgeClickable
                     : styles.versionBadgeDefault
                 }`}
-                onClick={() => hasUpdate && handleOpenUpdateModal()}
+                onClick={() => handleOpenUpdateModal()}
               >
                 v{version}
               </span>
             </Badge>
           )}
-        </div>
-        <Space size="middle">
           <LanguageSwitcher />
           <ThemeToggleButton />
         </Space>
@@ -196,7 +209,10 @@ export default function Header() {
             key="releases"
             type="primary"
             className={styles.updateViewReleasesBtn}
-            onClick={() => handleNavClick(getReleaseNotesUrl(i18n.language))}
+            onClick={() => {
+              dismissUpdateDot();
+              handleNavClick(getReleaseNotesUrl(i18n.language));
+            }}
           >
             {t("sidebar.updateModal.viewReleases")}
           </Button>,

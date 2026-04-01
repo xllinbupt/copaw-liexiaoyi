@@ -9,6 +9,10 @@ export interface ChatSpec {
   created_at: string | null; // Chat creation timestamp (ISO 8601)
   updated_at: string | null; // Chat last update timestamp (ISO 8601)
   meta?: Record<string, unknown>; // Additional metadata
+  job_id?: string | null; // Optional associated job id
+  job_name?: string | null; // Optional associated job name
+  job_status?: string | null; // Optional associated job status label
+  pending_feedback_count?: number | null; // Optional associated pending count
   status?: ChatStatus; // Conversation status: idle or running
 }
 

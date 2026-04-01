@@ -51,6 +51,18 @@ export type ResumeCardPayload = {
         company?: string;
         title?: string;
         period?: string;
+        start_date?: string;
+        end_date?: string;
+        start_time?: string;
+        end_time?: string;
+        start?: string;
+        end?: string;
+        from?: string;
+        to?: string;
+        is_current?: boolean;
+        current?: boolean;
+        to_present?: boolean;
+        present?: boolean;
         summary?: string;
       }
   >;
