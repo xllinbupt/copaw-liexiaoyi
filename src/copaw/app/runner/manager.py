@@ -113,6 +113,13 @@ class ChatManager:
                 logger.debug(
                     f"get_or_create_chat: Found existing chat: {existing.id}",
                 )
+                normalized_name = (name or "").strip()
+                if normalized_name and normalized_name != "New Chat" and (
+                    not (existing.name or "").strip()
+                    or existing.name == "New Chat"
+                ):
+                    existing = existing.model_copy(update={"name": normalized_name})
+                    await self._repo.upsert_chat(existing)
                 return existing
 
             # Create new

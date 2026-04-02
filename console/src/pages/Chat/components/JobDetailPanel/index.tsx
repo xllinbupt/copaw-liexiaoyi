@@ -7,7 +7,12 @@ import { Button, Empty, Modal, Spin, Tabs, message } from "antd";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { jobApi } from "../../../../api/modules/job";
 import type { JobDeleteResponse, JobSpec } from "../../../../api/types";
-import type { ChatJobDetails } from "../../chatWorkspace";
+import type {
+  ChatCandidateDetails,
+  ChatDetailPanelView,
+  ChatJobDetails,
+} from "../../chatWorkspace";
+import CandidateDetailPanel from "../CandidateDetailPanel";
 import JobPipelineBoard from "../JobPipelineBoard";
 import styles from "./index.module.less";
 
@@ -20,8 +25,12 @@ const CHAT_REVEAL_WIDTH = 360;
 
 interface JobDetailPanelProps {
   open: boolean;
-  job: ChatJobDetails | null;
+  view: ChatDetailPanelView | null;
+  canGoBack: boolean;
+  onBack: () => void;
   onClose: () => void;
+  onOpenJob: (job: ChatJobDetails) => void;
+  onOpenCandidate: (candidate: ChatCandidateDetails) => void;
   onCoverChatChange: (covered: boolean) => void;
   onDeleted?: (result: JobDeleteResponse) => void;
 }
@@ -57,8 +66,12 @@ function formatDateTime(raw?: string | null) {
 
 export default function JobDetailPanel({
   open,
-  job,
+  view,
+  canGoBack,
+  onBack,
   onClose,
+  onOpenJob,
+  onOpenCandidate,
   onCoverChatChange,
   onDeleted,
 }: JobDetailPanelProps) {
@@ -79,6 +92,9 @@ export default function JobDetailPanel({
   const resizeStartXRef = useRef(0);
   const resizeStartWidthRef = useRef(panelWidth);
   const resizeCleanupRef = useRef<(() => void) | null>(null);
+
+  const activeJob = view?.type === "job" ? view.job : null;
+  const activeCandidate = view?.type === "candidate" ? view.candidate : null;
 
   const handleResizeStart = (clientX: number) => {
     resizeCleanupRef.current?.();
@@ -172,7 +188,7 @@ export default function JobDetailPanel({
   }, [open]);
 
   useEffect(() => {
-    if (!open || !job?.jobId) {
+    if (!open || !activeJob?.jobId) {
       setLoading(false);
       setJobDetail(null);
       return;
@@ -182,7 +198,7 @@ export default function JobDetailPanel({
     setLoading(true);
 
     jobApi
-      .getJob(job.jobId)
+      .getJob(activeJob.jobId)
       .then((data) => {
         if (!cancelled) {
           setJobDetail(data);
@@ -202,7 +218,7 @@ export default function JobDetailPanel({
     return () => {
       cancelled = true;
     };
-  }, [open, job?.jobId]);
+  }, [activeJob?.jobId, open]);
 
   useEffect(() => {
     return () => {
@@ -210,16 +226,23 @@ export default function JobDetailPanel({
     };
   }, []);
 
-  const detail = useMemo(() => {
-    if (!job) return null;
+  const jobDetailView = useMemo(() => {
+    if (!activeJob) return null;
     return {
-      name: jobDetail?.name || job.jobName,
-      description: jobDetail?.description || job.description || "",
-      requirements: jobDetail?.requirements || job.requirements || "",
+      name: jobDetail?.name || activeJob.jobName,
+      description: jobDetail?.description || activeJob.description || "",
+      requirements: jobDetail?.requirements || activeJob.requirements || "",
       createdAt: jobDetail?.created_at || null,
       updatedAt: jobDetail?.updated_at || null,
     };
-  }, [job, jobDetail]);
+  }, [activeJob, jobDetail]);
+
+  const headerTitle = useMemo(() => {
+    if (view?.type === "candidate") {
+      return activeCandidate?.candidateName || "候选人详情";
+    }
+    return jobDetailView?.name || "未关联职位";
+  }, [activeCandidate?.candidateName, jobDetailView?.name, view?.type]);
 
   const remainingChatWidth =
     layoutWidth > 0 ? Math.max(0, layoutWidth - panelWidth) : 0;
@@ -242,7 +265,7 @@ export default function JobDetailPanel({
   if (!open) return null;
 
   const handleDelete = () => {
-    if (!job?.jobId) return;
+    if (!activeJob?.jobId) return;
 
     Modal.confirm({
       title: "确认删除这个职位？",
@@ -255,7 +278,7 @@ export default function JobDetailPanel({
       onOk: async () => {
         setDeleting(true);
         try {
-          const result = await jobApi.deleteJob(job.jobId as string);
+          const result = await jobApi.deleteJob(activeJob.jobId as string);
           message.success(
             `职位已删除，同时清除了 ${result.deleted_chat_count} 条相关记录`,
           );
@@ -291,30 +314,45 @@ export default function JobDetailPanel({
 
       <div className={styles.panelInner}>
         <div className={styles.header}>
-          {coverChat ? (
-            <Button
-              className={styles.revealChatButton}
-              icon={<LeftOutlined />}
-              onClick={() => {
-                setCoverChat(false);
-                onCoverChatChange(false);
-                if (!layoutWidth) {
-                  setPanelWidth(DEFAULT_PANEL_WIDTH);
-                  return;
-                }
-                setPanelWidth(
-                  clampPanelWidth(layoutWidth - CHAT_REVEAL_WIDTH, layoutWidth),
-                );
-              }}
-            >
-              展开聊天
-            </Button>
-          ) : null}
+          <div className={styles.headerLeft}>
+            {coverChat ? (
+              <Button
+                className={styles.revealChatButton}
+                icon={<LeftOutlined />}
+                onClick={() => {
+                  setCoverChat(false);
+                  onCoverChatChange(false);
+                  if (!layoutWidth) {
+                    setPanelWidth(DEFAULT_PANEL_WIDTH);
+                    return;
+                  }
+                  setPanelWidth(
+                    clampPanelWidth(
+                      layoutWidth - CHAT_REVEAL_WIDTH,
+                      layoutWidth,
+                    ),
+                  );
+                }}
+              >
+                展开聊天
+              </Button>
+            ) : null}
+            {canGoBack ? (
+              <Button
+                type="text"
+                icon={<LeftOutlined />}
+                className={styles.backButton}
+                onClick={onBack}
+              >
+                返回
+              </Button>
+            ) : null}
+          </div>
           <div className={styles.headerMain}>
-            <div className={styles.headerTitle}>{detail?.name || "未关联职位"}</div>
+            <div className={styles.headerTitle}>{headerTitle}</div>
           </div>
           <div className={styles.headerActions}>
-            {job?.jobId ? (
+            {view?.type === "job" && activeJob?.jobId ? (
               <Button
                 type="text"
                 danger
@@ -329,91 +367,90 @@ export default function JobDetailPanel({
               type="text"
               icon={<CloseOutlined />}
               onClick={onClose}
-              aria-label="关闭职位详情"
+              aria-label="关闭详情"
             />
           </div>
         </div>
 
-        {!detail ? (
-          <div className={styles.emptyWrap}>
-            <Empty description="当前聊天未关联职位" />
-          </div>
-        ) : (
-          <>
-            <div className={styles.content}>
-              {loading ? (
-                <div className={styles.loadingWrap}>
-                  <Spin />
-                </div>
-              ) : (
-                <Tabs
-                  className={styles.tabs}
-                  items={[
-                    {
-                      key: "detail",
-                      label: "详情",
-                      children: (
-                        <div className={styles.tabContent}>
-                          <section className={styles.detailSection}>
-                            <div className={styles.detailSectionTitle}>
-                              职位描述
-                            </div>
-                            <div className={styles.detailText}>
-                              {detail.description || "暂未填写职位描述"}
-                            </div>
-                          </section>
-
-                          <section className={styles.detailSection}>
-                            <div className={styles.detailSectionTitle}>
-                              职位要求
-                            </div>
-                            <div className={styles.detailText}>
-                              {detail.requirements || "暂未填写职位要求"}
-                            </div>
-                          </section>
-
-                          <section className={styles.detailSection}>
-                            <div className={styles.detailSectionTitle}>
-                              更新时间
-                            </div>
-                            <div className={styles.metaList}>
-                              <div className={styles.metaRow}>
-                                <span className={styles.metaKey}>创建时间</span>
-                                <span className={styles.metaValue}>
-                                  {formatDateTime(detail.createdAt)}
-                                </span>
-                              </div>
-                              <div className={styles.metaRow}>
-                                <span className={styles.metaKey}>最近更新</span>
-                                <span className={styles.metaValue}>
-                                  {formatDateTime(detail.updatedAt)}
-                                </span>
-                              </div>
-                            </div>
-                          </section>
-                        </div>
-                      ),
-                    },
-                    {
-                      key: "pipeline",
-                      label: "Pipeline",
-                      children: job?.jobId ? (
-                        <JobPipelineBoard jobId={job.jobId} />
-                      ) : (
-                        <div className={styles.placeholderWrap}>
-                          <Empty
-                            image={Empty.PRESENTED_IMAGE_SIMPLE}
-                            description="当前聊天还没有绑定可用职位"
-                          />
-                        </div>
-                      ),
-                    },
-                  ]}
-                />
-              )}
+        <div className={styles.content}>
+          {view?.type === "candidate" && activeCandidate ? (
+            <CandidateDetailPanel
+              candidate={activeCandidate}
+              onOpenJob={onOpenJob}
+            />
+          ) : !jobDetailView || !activeJob ? (
+            <div className={styles.emptyWrap}>
+              <Empty description="当前聊天未关联职位" />
             </div>
-          </>
-        )}
+          ) : loading ? (
+            <div className={styles.loadingWrap}>
+              <Spin />
+            </div>
+          ) : (
+            <Tabs
+              className={styles.tabs}
+              items={[
+                {
+                  key: "detail",
+                  label: "详情",
+                  children: (
+                    <div className={styles.tabContent}>
+                      <section className={styles.detailSection}>
+                        <div className={styles.detailSectionTitle}>职位描述</div>
+                        <div className={styles.detailText}>
+                          {jobDetailView.description || "暂未填写职位描述"}
+                        </div>
+                      </section>
+
+                      <section className={styles.detailSection}>
+                        <div className={styles.detailSectionTitle}>职位要求</div>
+                        <div className={styles.detailText}>
+                          {jobDetailView.requirements || "暂未填写职位要求"}
+                        </div>
+                      </section>
+
+                      <section className={styles.detailSection}>
+                        <div className={styles.detailSectionTitle}>更新时间</div>
+                        <div className={styles.metaList}>
+                          <div className={styles.metaRow}>
+                            <span className={styles.metaKey}>创建时间</span>
+                            <span className={styles.metaValue}>
+                              {formatDateTime(jobDetailView.createdAt)}
+                            </span>
+                          </div>
+                          <div className={styles.metaRow}>
+                            <span className={styles.metaKey}>最近更新</span>
+                            <span className={styles.metaValue}>
+                              {formatDateTime(jobDetailView.updatedAt)}
+                            </span>
+                          </div>
+                        </div>
+                      </section>
+                    </div>
+                  ),
+                },
+                {
+                  key: "pipeline",
+                  label: "Pipeline",
+                  children: activeJob.jobId ? (
+                    <JobPipelineBoard
+                      jobId={activeJob.jobId}
+                      job={activeJob}
+                      onOpenCandidate={onOpenCandidate}
+                    />
+                  ) : (
+                    <div className={styles.placeholderWrap}>
+                      <Empty
+                        image={Empty.PRESENTED_IMAGE_SIMPLE}
+                        description="当前聊天还没有绑定可用职位"
+                      />
+                    </div>
+                  ),
+                },
+              ]}
+            />
+          )}
+        </div>
       </div>
     </aside>
   );

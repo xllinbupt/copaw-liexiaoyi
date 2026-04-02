@@ -107,6 +107,7 @@ export interface PipelineStageDefinition {
 export interface PipelineEntryView {
   id: string;
   job_id: string;
+  job_name?: string;
   candidate_id: string;
   current_stage_id: string;
   system_stage: PipelineSystemStage;
@@ -126,6 +127,29 @@ export interface PipelineEntryView {
   updated_at: string | null;
   candidate: CandidateProfile;
   current_stage: PipelineStageDefinition;
+}
+
+export interface CandidatePipelineActivityView {
+  id: string;
+  pipeline_entry_id: string;
+  candidate_id: string;
+  job_id?: string;
+  job_name?: string;
+  action_type: "added" | "stage_changed" | "updated";
+  from_stage_id?: string;
+  from_stage_name?: string;
+  to_stage_id?: string;
+  to_stage_name?: string;
+  actor_type: PipelineAddedBy;
+  note?: string;
+  payload?: Record<string, unknown>;
+  created_at: string | null;
+}
+
+export interface CandidatePipelineDetailView {
+  candidate: CandidateProfile;
+  entries: PipelineEntryView[];
+  activities: CandidatePipelineActivityView[];
 }
 
 export interface JobPipelineView {

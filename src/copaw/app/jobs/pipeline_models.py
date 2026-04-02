@@ -121,6 +121,8 @@ class PipelineActivity(BaseModel):
 
     id: str = Field(default_factory=lambda: str(uuid4()))
     pipeline_entry_id: str
+    candidate_id: str = ""
+    job_id: str = ""
     action_type: PipelineActivityType
     from_stage_id: str = ""
     to_stage_id: str = ""
@@ -211,6 +213,7 @@ class UpdatePipelineEntryAssessmentRequest(BaseModel):
 class PipelineEntryView(PipelineEntry):
     """Pipeline entry enriched with candidate and stage metadata."""
 
+    job_name: str = ""
     candidate: CandidateProfile
     current_stage: PipelineStageDefinition
 
@@ -228,3 +231,30 @@ class JobPipelineView(BaseModel):
     job_id: str
     stages: list[PipelineStageDefinition] = Field(default_factory=list)
     entries: list[PipelineEntryView] = Field(default_factory=list)
+
+
+class CandidatePipelineActivityView(BaseModel):
+    """Candidate-centric activity timeline item."""
+
+    id: str
+    pipeline_entry_id: str
+    candidate_id: str
+    job_id: str = ""
+    job_name: str = ""
+    action_type: PipelineActivityType
+    from_stage_id: str = ""
+    from_stage_name: str = ""
+    to_stage_id: str = ""
+    to_stage_name: str = ""
+    actor_type: PipelineAddedBy = "system"
+    note: str = ""
+    payload: dict[str, Any] = Field(default_factory=dict)
+    created_at: datetime
+
+
+class CandidatePipelineDetailView(BaseModel):
+    """Candidate detail view with related jobs and timeline."""
+
+    candidate: CandidateProfile
+    entries: list[PipelineEntryView] = Field(default_factory=list)
+    activities: list[CandidatePipelineActivityView] = Field(default_factory=list)

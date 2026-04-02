@@ -28,6 +28,7 @@ import type {
   PipelineStageDefinition,
   RecruiterInterest,
 } from "../../../../api/types";
+import type { ChatCandidateDetails, ChatJobDetails } from "../../chatWorkspace";
 import {
   JOB_PIPELINE_UPDATED_EVENT,
   notifyJobPipelineUpdated,
@@ -37,6 +38,8 @@ import styles from "./index.module.less";
 
 interface JobPipelineBoardProps {
   jobId: string;
+  job: ChatJobDetails;
+  onOpenCandidate: (candidate: ChatCandidateDetails) => void;
 }
 
 type PipelineViewMode = "board" | "table";
@@ -265,6 +268,14 @@ export default function JobPipelineBoard(props: JobPipelineBoardProps) {
   const [columnWidths, setColumnWidths] =
     useState<ColumnWidths>(DEFAULT_COLUMN_WIDTHS);
 
+  const openCandidateDetail = (entry: PipelineEntryView) => {
+    props.onOpenCandidate({
+      candidateId: entry.candidate.id,
+      candidateName: entry.candidate.name,
+      job: props.job,
+    });
+  };
+
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
@@ -381,7 +392,13 @@ export default function JobPipelineBoard(props: JobPipelineBoardProps) {
         }),
         render: (_, entry) => (
           <div className={styles.tableCandidate}>
-            <div className={styles.entryName}>{entry.candidate.name}</div>
+            <button
+              type="button"
+              className={styles.candidateTrigger}
+              onClick={() => openCandidateDetail(entry)}
+            >
+              {entry.candidate.name}
+            </button>
           </div>
         ),
       },
@@ -881,7 +898,13 @@ export default function JobPipelineBoard(props: JobPipelineBoardProps) {
                           <div className={styles.entryHeader}>
                             <div>
                               <div className={styles.entryName}>
-                                {entry.candidate.name}
+                                <button
+                                  type="button"
+                                  className={styles.candidateTrigger}
+                                  onClick={() => openCandidateDetail(entry)}
+                                >
+                                  {entry.candidate.name}
+                                </button>
                               </div>
                               <div className={styles.entryFacts}>
                                 {[

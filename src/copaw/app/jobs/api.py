@@ -7,6 +7,7 @@ from fastapi import APIRouter, HTTPException
 from .models import DeleteJobResult, JobSpec
 from .pipeline_models import (
     AddPipelineCandidateRequest,
+    CandidatePipelineDetailView,
     JobPipelineView,
     PipelineEntryMutationResult,
     UpdatePipelineEntryAssessmentRequest,
@@ -14,6 +15,7 @@ from .pipeline_models import (
 )
 from .pipeline_service import (
     add_candidate_to_job_pipeline,
+    get_candidate_pipeline_detail,
     list_job_pipeline,
     update_pipeline_entry_assessment,
     update_pipeline_entry_stage,
@@ -54,6 +56,20 @@ async def get_job_pipeline_endpoint(job_id: str) -> JobPipelineView:
     try:
         return await list_job_pipeline(job_id)
     except JobNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.get(
+    "/pipeline/candidates/{candidate_id}",
+    response_model=CandidatePipelineDetailView,
+)
+async def get_candidate_pipeline_detail_endpoint(
+    candidate_id: str,
+) -> CandidatePipelineDetailView:
+    """Return the candidate detail view with cross-job timeline."""
+    try:
+        return await get_candidate_pipeline_detail(candidate_id)
+    except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 

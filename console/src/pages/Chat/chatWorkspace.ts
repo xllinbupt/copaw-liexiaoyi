@@ -26,6 +26,22 @@ export interface ChatJobGroup extends ChatJobContext {
   chats: ChatSpec[];
 }
 
+export interface ChatCandidateDetails {
+  candidateId: string;
+  candidateName: string;
+  job?: ChatJobDetails | null;
+}
+
+export type ChatDetailPanelView =
+  | {
+      type: "job";
+      job: ChatJobDetails;
+    }
+  | {
+      type: "candidate";
+      candidate: ChatCandidateDetails;
+    };
+
 export interface ChatWorkspaceUpdateDetail {
   refreshRuntime?: boolean;
 }

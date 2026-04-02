@@ -35,6 +35,8 @@ import {
   CHAT_WORKSPACE_UPDATED_EVENT,
   OPEN_JOB_DETAIL_PANEL_EVENT,
   buildChatPayload,
+  type ChatCandidateDetails,
+  type ChatDetailPanelView,
   getChatJobDetails,
   type ChatJobContext,
   type ChatJobDetails,
@@ -284,11 +286,11 @@ export default function ChatPage() {
     return match?.[1];
   }, [location.pathname]);
   const [showModelPrompt, setShowModelPrompt] = useState(false);
-  const [jobDetailPanelOpen, setJobDetailPanelOpen] = useState(false);
   const [jobDetailPanelCoversChat, setJobDetailPanelCoversChat] =
     useState(false);
-  const [jobDetailPanelJob, setJobDetailPanelJob] =
-    useState<ChatJobDetails | null>(null);
+  const [detailPanelStack, setDetailPanelStack] = useState<
+    ChatDetailPanelView[]
+  >([]);
   const { selectedAgent } = useAgentStore();
   const [refreshKey, setRefreshKey] = useState(0);
   const [chatSpecs, setChatSpecs] = useState<ChatSpec[]>([]);
@@ -328,22 +330,55 @@ export default function ChatPage() {
     () => (currentChat ? getChatJobDetails(currentChat) : null),
     [currentChat],
   );
-  const resolvedJobDetailPanelJob = jobDetailPanelJob ?? currentChatJobDetails;
+  const activeDetailPanelView = detailPanelStack[detailPanelStack.length - 1] ?? null;
+  const jobDetailPanelOpen = detailPanelStack.length > 0;
+
+  const openJobDetailPanel = useCallback((job: ChatJobDetails) => {
+    setDetailPanelStack((currentStack) => {
+      const nextView: ChatDetailPanelView = { type: "job", job };
+      const currentView = currentStack[currentStack.length - 1];
+      if (
+        currentView?.type === "job" &&
+        currentView.job.jobId &&
+        currentView.job.jobId === job.jobId
+      ) {
+        return currentStack;
+      }
+      return [...currentStack, nextView];
+    });
+  }, []);
+
+  const openCandidateDetailPanel = useCallback(
+    (candidate: ChatCandidateDetails) => {
+      setDetailPanelStack((currentStack) => {
+        const nextView: ChatDetailPanelView = {
+          type: "candidate",
+          candidate,
+        };
+        const currentView = currentStack[currentStack.length - 1];
+        if (
+          currentView?.type === "candidate" &&
+          currentView.candidate.candidateId === candidate.candidateId &&
+          currentView.candidate.job?.jobId === candidate.job?.jobId
+        ) {
+          return currentStack;
+        }
+        return [...currentStack, nextView];
+      });
+    },
+    [],
+  );
 
   const closeJobDetailPanel = useCallback(() => {
-    setJobDetailPanelOpen(false);
-    setJobDetailPanelJob(null);
+    setDetailPanelStack([]);
+  }, []);
+
+  const handleDetailPanelBack = useCallback(() => {
+    setDetailPanelStack((currentStack) => currentStack.slice(0, -1));
   }, []);
 
   useEffect(() => {
-    if (!resolvedJobDetailPanelJob) {
-      closeJobDetailPanel();
-      setJobDetailPanelCoversChat(false);
-    }
-  }, [closeJobDetailPanel, resolvedJobDetailPanelJob]);
-
-  useEffect(() => {
-    setJobDetailPanelJob(null);
+    setDetailPanelStack([]);
   }, [chatId]);
 
   // Tell sessionApi which session to put first in getSessionList, so the library's
@@ -441,8 +476,7 @@ export default function ChatPage() {
       const customEvent = event as CustomEvent<OpenJobDetailPanelDetail>;
       const nextJob = customEvent.detail?.job;
       if (!nextJob) return;
-      setJobDetailPanelJob(nextJob);
-      setJobDetailPanelOpen(true);
+      setDetailPanelStack([{ type: "job", job: nextJob }]);
     };
 
     window.addEventListener(
@@ -806,8 +840,7 @@ export default function ChatPage() {
               currentChat={currentChat}
               onJobClick={() => {
                 if (currentChatJobDetails) {
-                  setJobDetailPanelJob(null);
-                  setJobDetailPanelOpen(true);
+                  setDetailPanelStack([{ type: "job", job: currentChatJobDetails }]);
                 }
               }}
             />
@@ -939,8 +972,12 @@ export default function ChatPage() {
 
       <JobDetailPanel
         open={jobDetailPanelOpen}
-        job={resolvedJobDetailPanelJob}
+        view={activeDetailPanelView}
+        canGoBack={detailPanelStack.length > 1}
+        onBack={handleDetailPanelBack}
         onClose={closeJobDetailPanel}
+        onOpenJob={openJobDetailPanel}
+        onOpenCandidate={openCandidateDetailPanel}
         onCoverChatChange={setJobDetailPanelCoversChat}
         onDeleted={handleJobDeleted}
       />

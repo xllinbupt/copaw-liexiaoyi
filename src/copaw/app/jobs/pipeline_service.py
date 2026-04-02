@@ -14,6 +14,8 @@ from .paths import (
 )
 from .pipeline_models import (
     AddPipelineCandidateRequest,
+    CandidatePipelineActivityView,
+    CandidatePipelineDetailView,
     CandidateProfile,
     CandidateProfileInput,
     JobPipelineView,
@@ -85,6 +87,12 @@ async def _ensure_job_exists(job_id: str) -> None:
     job = await jobs_repo.get_job(job_id)
     if job is None:
         raise JobNotFoundError(f"未找到职位：{job_id}")
+
+
+async def _get_jobs_by_id() -> dict[str, Any]:
+    jobs_repo = JsonJobRepository(get_recruitment_jobs_path())
+    jobs = await jobs_repo.list_jobs()
+    return {job.id: job for job in jobs}
 
 
 async def _ensure_default_stages() -> list[PipelineStageDefinition]:
@@ -218,6 +226,7 @@ def _build_entry_view(
     *,
     candidates_by_id: dict[str, CandidateProfile],
     stages_by_id: dict[str, PipelineStageDefinition],
+    job_name: str = "",
 ) -> PipelineEntryView:
     candidate = candidates_by_id.get(entry.candidate_id)
     if candidate is None:
@@ -227,8 +236,52 @@ def _build_entry_view(
         raise ValueError(f"阶段不存在：{entry.current_stage_id}")
     return PipelineEntryView(
         **entry.model_dump(),
+        job_name=job_name,
         candidate=candidate,
         current_stage=stage,
+    )
+
+
+def _build_activity_view(
+    activity: PipelineActivity,
+    *,
+    entry: PipelineEntry | None,
+    stages_by_id: dict[str, PipelineStageDefinition],
+    jobs_by_id: dict[str, Any],
+) -> CandidatePipelineActivityView:
+    resolved_job_id = _trimmed(activity.job_id) or _trimmed(
+        activity.payload.get("job_id"),
+    )
+    if not resolved_job_id and entry is not None:
+        resolved_job_id = entry.job_id
+
+    resolved_candidate_id = _trimmed(activity.candidate_id) or _trimmed(
+        activity.payload.get("candidate_id"),
+    )
+    if not resolved_candidate_id and entry is not None:
+        resolved_candidate_id = entry.candidate_id
+
+    from_stage_id = _trimmed(activity.from_stage_id)
+    to_stage_id = _trimmed(activity.to_stage_id)
+    from_stage = stages_by_id.get(from_stage_id)
+    to_stage = stages_by_id.get(to_stage_id)
+    job = jobs_by_id.get(resolved_job_id)
+
+    return CandidatePipelineActivityView(
+        id=activity.id,
+        pipeline_entry_id=activity.pipeline_entry_id,
+        candidate_id=resolved_candidate_id,
+        job_id=resolved_job_id,
+        job_name=job.name if job is not None else "",
+        action_type=activity.action_type,
+        from_stage_id=from_stage_id,
+        from_stage_name=from_stage.name if from_stage is not None else "",
+        to_stage_id=to_stage_id,
+        to_stage_name=to_stage.name if to_stage is not None else "",
+        actor_type=activity.actor_type,
+        note=activity.note,
+        payload=activity.payload,
+        created_at=activity.created_at,
     )
 
 
@@ -236,6 +289,7 @@ async def list_job_pipeline(job_id: str) -> JobPipelineView:
     await _ensure_job_exists(job_id)
     stages = await _ensure_default_stages()
     stages_by_id = {stage.id: stage for stage in stages}
+    jobs_by_id = await _get_jobs_by_id()
 
     entries_repo = JsonPipelineEntryRepository(get_pipeline_entries_path())
     candidates_repo = JsonCandidateRepository(get_pipeline_candidates_path())
@@ -255,6 +309,9 @@ async def list_job_pipeline(job_id: str) -> JobPipelineView:
             entry,
             candidates_by_id=candidates_by_id,
             stages_by_id=stages_by_id,
+            job_name=jobs_by_id.get(entry.job_id).name
+            if jobs_by_id.get(entry.job_id) is not None
+            else "",
         )
         for entry in entries
         if entry.candidate_id in candidates_by_id
@@ -275,6 +332,7 @@ async def add_candidate_to_job_pipeline(
     await _ensure_job_exists(job_id)
     stages = await _ensure_default_stages()
     stages_by_id = {stage.id: stage for stage in stages}
+    jobs_by_id = await _get_jobs_by_id()
     target_stage = _find_stage(stages, system_stage=request.stage)
 
     candidate = await _upsert_candidate(request.candidate)
@@ -292,6 +350,9 @@ async def add_candidate_to_job_pipeline(
                 existing_entry,
                 candidates_by_id={candidate.id: candidate},
                 stages_by_id=stages_by_id,
+                job_name=jobs_by_id.get(job_id).name
+                if jobs_by_id.get(job_id) is not None
+                else "",
             ),
         )
 
@@ -320,6 +381,8 @@ async def add_candidate_to_job_pipeline(
     await activities_repo.append_activity(
         PipelineActivity(
             pipeline_entry_id=entry.id,
+            candidate_id=candidate.id,
+            job_id=job_id,
             action_type="added",
             to_stage_id=entry.current_stage_id,
             actor_type=request.added_by,
@@ -339,6 +402,9 @@ async def add_candidate_to_job_pipeline(
             entry,
             candidates_by_id={candidate.id: candidate},
             stages_by_id=stages_by_id,
+            job_name=jobs_by_id.get(job_id).name
+            if jobs_by_id.get(job_id) is not None
+            else "",
         ),
     )
 
@@ -356,6 +422,7 @@ async def update_pipeline_entry_stage(
     entries_repo = JsonPipelineEntryRepository(get_pipeline_entries_path())
     candidates_repo = JsonCandidateRepository(get_pipeline_candidates_path())
     activities_repo = JsonPipelineActivityRepository(get_pipeline_activities_path())
+    jobs_by_id = await _get_jobs_by_id()
 
     entry = await entries_repo.get_entry(entry_id)
     if entry is None or entry.job_id != job_id:
@@ -373,6 +440,8 @@ async def update_pipeline_entry_stage(
     await activities_repo.append_activity(
         PipelineActivity(
             pipeline_entry_id=entry.id,
+            candidate_id=entry.candidate_id,
+            job_id=job_id,
             action_type="stage_changed",
             from_stage_id=previous_stage_id,
             to_stage_id=target_stage.id,
@@ -396,6 +465,9 @@ async def update_pipeline_entry_stage(
             entry,
             candidates_by_id={candidate.id: candidate},
             stages_by_id=stages_by_id,
+            job_name=jobs_by_id.get(job_id).name
+            if jobs_by_id.get(job_id) is not None
+            else "",
         ),
     )
 
@@ -412,6 +484,7 @@ async def update_pipeline_entry_assessment(
     entries_repo = JsonPipelineEntryRepository(get_pipeline_entries_path())
     candidates_repo = JsonCandidateRepository(get_pipeline_candidates_path())
     activities_repo = JsonPipelineActivityRepository(get_pipeline_activities_path())
+    jobs_by_id = await _get_jobs_by_id()
 
     entry = await entries_repo.get_entry(entry_id)
     if entry is None or entry.job_id != job_id:
@@ -427,6 +500,8 @@ async def update_pipeline_entry_assessment(
     await activities_repo.append_activity(
         PipelineActivity(
             pipeline_entry_id=entry.id,
+            candidate_id=entry.candidate_id,
+            job_id=job_id,
             action_type="updated",
             actor_type=request.actor_type,
             note=_trimmed(request.note),
@@ -450,7 +525,72 @@ async def update_pipeline_entry_assessment(
             entry,
             candidates_by_id={candidate.id: candidate},
             stages_by_id=stages_by_id,
+            job_name=jobs_by_id.get(job_id).name
+            if jobs_by_id.get(job_id) is not None
+            else "",
         ),
+    )
+
+
+async def get_candidate_pipeline_detail(
+    candidate_id: str,
+) -> CandidatePipelineDetailView:
+    stages = await _ensure_default_stages()
+    stages_by_id = {stage.id: stage for stage in stages}
+    jobs_by_id = await _get_jobs_by_id()
+
+    candidates_repo = JsonCandidateRepository(get_pipeline_candidates_path())
+    entries_repo = JsonPipelineEntryRepository(get_pipeline_entries_path())
+    activities_repo = JsonPipelineActivityRepository(get_pipeline_activities_path())
+
+    candidate = await candidates_repo.get_candidate(candidate_id)
+    if candidate is None:
+        raise ValueError(f"未找到候选人：{candidate_id}")
+
+    entries = await entries_repo.list_entries_by_candidate(candidate_id)
+    entries = sorted(entries, key=lambda item: item.latest_activity_at, reverse=True)
+    entry_ids = {entry.id for entry in entries}
+    entry_by_id = {entry.id: entry for entry in entries}
+
+    entry_views = [
+        _build_entry_view(
+            entry,
+            candidates_by_id={candidate.id: candidate},
+            stages_by_id=stages_by_id,
+            job_name=jobs_by_id.get(entry.job_id).name
+            if jobs_by_id.get(entry.job_id) is not None
+            else "",
+        )
+        for entry in entries
+        if entry.current_stage_id in stages_by_id
+    ]
+
+    activities = await activities_repo.list_activities()
+    activity_views: list[CandidatePipelineActivityView] = []
+    for activity in activities:
+        entry = entry_by_id.get(activity.pipeline_entry_id)
+        resolved_candidate_id = _trimmed(activity.candidate_id) or _trimmed(
+            activity.payload.get("candidate_id"),
+        )
+        if not resolved_candidate_id and entry is not None:
+            resolved_candidate_id = entry.candidate_id
+        if resolved_candidate_id != candidate_id and activity.pipeline_entry_id not in entry_ids:
+            continue
+
+        activity_views.append(
+            _build_activity_view(
+                activity,
+                entry=entry,
+                stages_by_id=stages_by_id,
+                jobs_by_id=jobs_by_id,
+            )
+        )
+
+    activity_views.sort(key=lambda item: item.created_at, reverse=True)
+    return CandidatePipelineDetailView(
+        candidate=candidate,
+        entries=entry_views,
+        activities=activity_views,
     )
 
 

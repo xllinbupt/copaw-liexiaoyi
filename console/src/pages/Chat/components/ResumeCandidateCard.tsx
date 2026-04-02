@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Button, Empty, Modal, Spin, Tag, message } from "antd";
+import { Button, Drawer, Empty, Spin, Tag, message } from "antd";
 import { LinkOutlined, PlusOutlined } from "@ant-design/icons";
 import { useLocation } from "react-router-dom";
 import { chatApi } from "../../../api/modules/chat";
@@ -446,12 +446,13 @@ export default function ResumeCandidateCard(
         </div>
       </div>
 
-      <Modal
+      <Drawer
         open={open}
-        onCancel={() => setOpen(false)}
+        onClose={() => setOpen(false)}
         title={name}
-        width={1120}
-        footer={[
+        width={960}
+        placement="right"
+        extra={[
           <Button key="close" onClick={() => setOpen(false)}>
             关闭
           </Button>,
@@ -494,7 +495,7 @@ export default function ResumeCandidateCard(
             <Empty description="暂无可预览的简历详情链接" />
           </div>
         )}
-      </Modal>
+      </Drawer>
     </>
   );
 }

@@ -21,12 +21,46 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/console", tags=["console"])
 
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024
+DEFAULT_CHAT_NAME = "New Chat"
+MAX_CHAT_NAME_LENGTH = 12
 
 
 def _safe_filename(name: str) -> str:
     """Safe basename, alphanumeric/./-/_, max 200 chars."""
     base = Path(name).name if name else "file"
     return re.sub(r"[^\w.\-]", "_", base)[:200] or "file"
+
+
+def _normalize_chat_name(text: str) -> str:
+    normalized = re.sub(r"\s+", " ", (text or "").strip())
+    if not normalized:
+        return DEFAULT_CHAT_NAME
+    return normalized[:MAX_CHAT_NAME_LENGTH]
+
+
+def _extract_title_from_input(input_data: list) -> str:
+    for item in reversed(input_data or []):
+        role = getattr(item, "role", None)
+        content = getattr(item, "content", None)
+        if isinstance(item, dict):
+            role = item.get("role", role)
+            content = item.get("content", content)
+        if role != "user" or not content:
+            continue
+        text_parts: list[str] = []
+        for part in content:
+            if isinstance(part, dict):
+                if part.get("type") == "text" and part.get("text"):
+                    text_parts.append(str(part["text"]))
+            elif getattr(part, "type", None) == "text" and getattr(
+                part,
+                "text",
+                None,
+            ):
+                text_parts.append(str(part.text))
+        if text_parts:
+            return _normalize_chat_name(" ".join(text_parts))
+    return DEFAULT_CHAT_NAME
 
 
 def _extract_session_and_payload(request_data: Union[AgentRequest, dict]):
@@ -100,12 +134,17 @@ async def post_console_chat(
         sender_id=native_payload["sender_id"],
         channel_meta=native_payload["meta"],
     )
-    name = "New Chat"
-    if len(native_payload["content_parts"]) > 0:
+    if isinstance(request_data, AgentRequest):
+        name = _extract_title_from_input(list(request_data.input or []))
+    else:
+        name = _extract_title_from_input(list(request_data.get("input", [])))
+    if name == DEFAULT_CHAT_NAME and len(native_payload["content_parts"]) > 0:
         content = native_payload["content_parts"][0]
-        if content:
-            name = content.text[:10]
-        else:
+        if content and getattr(content, "text", None):
+            name = _normalize_chat_name(content.text)
+        elif isinstance(content, dict) and content.get("text"):
+            name = _normalize_chat_name(str(content["text"]))
+        elif content:
             name = "Media Message"
     chat = await workspace.chat_manager.get_or_create_chat(
         session_id,

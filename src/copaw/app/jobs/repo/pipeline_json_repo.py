@@ -139,6 +139,16 @@ class JsonPipelineEntryRepository(_JsonFileStore):
             if entry.job_id == job_id
         ]
 
+    async def list_entries_by_candidate(
+        self,
+        candidate_id: str,
+    ) -> list[PipelineEntry]:
+        return [
+            entry
+            for entry in (await self.load()).entries
+            if entry.candidate_id == candidate_id
+        ]
+
     async def find_entry(
         self,
         *,

@@ -1,0 +1,268 @@
+.panelContent {
+  padding: 16px 20px 28px;
+}
+
+.profileSection,
+.section {
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.04);
+  padding: 14px 16px;
+}
+
+.section + .section,
+.profileSection + .section {
+  margin-top: 16px;
+}
+
+.profileHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.profileName {
+  color: rgba(0, 0, 0, 0.88);
+  font-size: 20px;
+  line-height: 1.4;
+  font-weight: 700;
+}
+
+.profileFacts {
+  margin-top: 4px;
+  color: rgba(0, 0, 0, 0.48);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.profileTag {
+  margin-inline-end: 0;
+}
+
+.profileMeta {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.metaRow {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.metaLabel {
+  color: rgba(0, 0, 0, 0.45);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.metaValue {
+  color: rgba(0, 0, 0, 0.72);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.sectionTitle {
+  color: rgba(0, 0, 0, 0.8);
+  font-size: 13px;
+  line-height: 1.5;
+  font-weight: 700;
+}
+
+.jobList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.jobCard {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.86);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 0.18s ease,
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.jobCard:hover {
+  border-color: rgba(255, 122, 26, 0.28);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.06);
+}
+
+.jobCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.jobCardName {
+  color: rgba(0, 0, 0, 0.86);
+  font-size: 14px;
+  line-height: 1.5;
+  font-weight: 600;
+}
+
+.jobCardMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  margin-top: 8px;
+  color: rgba(0, 0, 0, 0.48);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.jobCardSummary {
+  margin-top: 8px;
+  color: rgba(0, 0, 0, 0.66);
+  font-size: 12px;
+  line-height: 1.6;
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.timeline {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 4px;
+}
+
+.timeline::before {
+  content: "";
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 7px;
+  width: 1px;
+  background: rgba(15, 23, 42, 0.1);
+}
+
+.timelineItem {
+  position: relative;
+  display: flex;
+  gap: 12px;
+}
+
+.timelineMarker {
+  position: relative;
+  z-index: 1;
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  margin-top: 4px;
+  border: 3px solid rgba(255, 122, 26, 0.2);
+  border-radius: 999px;
+  background: rgba(255, 122, 26, 0.92);
+}
+
+.timelineContent {
+  min-width: 0;
+  flex: 1;
+}
+
+.timelineTopRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.timelineTitle {
+  color: rgba(0, 0, 0, 0.78);
+  font-size: 13px;
+  line-height: 1.6;
+  font-weight: 600;
+}
+
+.timelineTime {
+  flex: 0 0 auto;
+  color: rgba(0, 0, 0, 0.38);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.timelineJobLink {
+  padding: 0 !important;
+  height: auto !important;
+  margin-top: 4px;
+  color: #ff7a1a !important;
+}
+
+.timelineNote {
+  margin-top: 4px;
+  color: rgba(0, 0, 0, 0.58);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.loadingWrap,
+.emptyWrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 220px;
+  padding: 24px;
+}
+
+.emptyInline {
+  color: rgba(0, 0, 0, 0.4);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+:global(.dark) {
+  .profileSection,
+  .section {
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .profileName,
+  .jobCardName,
+  .timelineTitle {
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  .profileFacts,
+  .metaLabel,
+  .jobCardMeta,
+  .timelineTime,
+  .emptyInline {
+    color: rgba(255, 255, 255, 0.45);
+  }
+
+  .metaValue,
+  .jobCardSummary,
+  .timelineNote {
+    color: rgba(255, 255, 255, 0.68);
+  }
+
+  .jobCard {
+    border-color: rgba(255, 255, 255, 0.08);
+    background: rgba(18, 18, 18, 0.86);
+  }
+
+  .timeline::before {
+    background: rgba(255, 255, 255, 0.1);
+  }
+}

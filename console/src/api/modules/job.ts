@@ -1,6 +1,7 @@
 import { request } from "../request";
 import type {
   AddPipelineCandidateRequest,
+  CandidatePipelineDetailView,
   JobDeleteResponse,
   JobPipelineView,
   JobSpec,
@@ -17,6 +18,11 @@ export const jobApi = {
 
   getJobPipeline: (jobId: string) =>
     request<JobPipelineView>(`/jobs/${encodeURIComponent(jobId)}/pipeline`),
+
+  getPipelineCandidateDetail: (candidateId: string) =>
+    request<CandidatePipelineDetailView>(
+      `/jobs/pipeline/candidates/${encodeURIComponent(candidateId)}`,
+    ),
 
   addPipelineCandidate: (
     jobId: string,

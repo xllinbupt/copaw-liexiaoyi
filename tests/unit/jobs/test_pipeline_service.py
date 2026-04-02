@@ -17,6 +17,7 @@ from copaw.app.jobs.pipeline_models import (
 )
 from copaw.app.jobs.pipeline_service import (
     add_candidate_to_job_pipeline,
+    get_candidate_pipeline_detail,
     list_job_pipeline,
     update_pipeline_entry_assessment,
     update_pipeline_entry_stage,
@@ -260,3 +261,85 @@ async def test_delete_job_removes_related_pipeline_records(
     assert await activities_repo.list_activities() == []
     candidates = await candidates_repo.list_candidates()
     assert [candidate.id for candidate in candidates] == [added.entry.candidate.id]
+
+
+@pytest.mark.asyncio
+async def test_get_candidate_pipeline_detail_aggregates_cross_job_history(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setattr(job_paths, "WORKING_DIR", tmp_path)
+
+    jobs_repo = JsonJobRepository(tmp_path / "recruitment_jobs.json")
+    await jobs_repo.upsert_job(_build_job("job-1"))
+    await jobs_repo.upsert_job(
+        _build_job("job-2").model_copy(
+            update={
+                "id": "job-2",
+                "name": "增长产品经理",
+            }
+        )
+    )
+
+    request = AddPipelineCandidateRequest(
+        candidate=CandidateProfileInput(
+            name="周七",
+            source_platform="duolie",
+            source_candidate_key="resume-777",
+            current_title="高级产品经理",
+            current_company="某平台公司",
+        ),
+        source_type="outbound",
+        added_by="agent",
+        summary="先加入 pipeline",
+        source_resume_id="resume-777",
+    )
+
+    first = await add_candidate_to_job_pipeline("job-1", request)
+    second = await add_candidate_to_job_pipeline("job-2", request)
+
+    pipeline = await list_job_pipeline("job-1")
+    active_stage = next(
+        stage
+        for stage in pipeline.stages
+        if stage.system_stage == "active"
+    )
+
+    await update_pipeline_entry_stage(
+        "job-1",
+        first.entry.id,
+        UpdatePipelineEntryStageRequest(
+            stage_id=active_stage.id,
+            note="已开始联系",
+            actor_type="user",
+        ),
+    )
+    await update_pipeline_entry_assessment(
+        "job-2",
+        second.entry.id,
+        UpdatePipelineEntryAssessmentRequest(
+            recruiter_interest="yes",
+            note="先继续观察",
+            actor_type="agent",
+        ),
+    )
+
+    detail = await get_candidate_pipeline_detail(first.entry.candidate.id)
+
+    assert detail.candidate.name == "周七"
+    assert [entry.job_id for entry in detail.entries] == ["job-2", "job-1"]
+    assert {entry.job_name for entry in detail.entries} == {
+        "AI 产品经理",
+        "增长产品经理",
+    }
+    assert len(detail.activities) == 4
+    assert {activity.job_id for activity in detail.activities} == {
+        "job-1",
+        "job-2",
+    }
+    assert detail.activities[0].candidate_id == first.entry.candidate.id
+    assert any(
+        activity.to_stage_name == "推进中"
+        for activity in detail.activities
+        if activity.action_type == "stage_changed"
+    )
