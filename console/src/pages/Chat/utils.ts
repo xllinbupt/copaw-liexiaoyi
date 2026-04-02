@@ -375,6 +375,11 @@ type ParsedResumeCardsResult = {
   remainingText: string;
 };
 
+type PendingCardBlockResult = {
+  remainingText: string;
+  pending: boolean;
+};
+
 function coerceResumeCards(value: unknown): ResumeCardPayload[] {
   if (Array.isArray(value)) {
     return value.filter(isResumeCardPayload).map(normalizeResumeCardPayload);
@@ -425,6 +430,71 @@ export function parseResumeCardsFromText(
     cards,
     remainingText: remainingText.replace(/\n{3,}/g, "\n\n").trim(),
   };
+}
+
+function hidePendingCardBlock(
+  text: string | undefined,
+  cardType: "resume_card" | "job_card",
+): PendingCardBlockResult {
+  if (!text || !text.includes(cardType)) {
+    return {
+      remainingText: text || "",
+      pending: false,
+    };
+  }
+
+  const fenceMatches = [...text.matchAll(/```/g)];
+  if (fenceMatches.length % 2 === 1) {
+    const pendingStart = fenceMatches[fenceMatches.length - 1]?.index ?? -1;
+    if (pendingStart >= 0) {
+      const pendingBlock = text.slice(pendingStart);
+      if (pendingBlock.includes(cardType)) {
+        return {
+          remainingText: text.slice(0, pendingStart).replace(/\n{3,}/g, "\n\n").trim(),
+          pending: true,
+        };
+      }
+    }
+  }
+
+  const rawJsonStartCandidates = [
+    text.lastIndexOf("\n{"),
+    text.lastIndexOf("\n["),
+    text.startsWith("{") ? 0 : -1,
+    text.startsWith("[") ? 0 : -1,
+  ].filter((value) => value >= 0);
+
+  const rawJsonStart = rawJsonStartCandidates.length
+    ? Math.max(...rawJsonStartCandidates)
+    : -1;
+
+  if (rawJsonStart >= 0) {
+    const pendingBlock = text.slice(rawJsonStart).trimStart();
+    if (pendingBlock.includes(cardType)) {
+      try {
+        JSON.parse(pendingBlock);
+      } catch {
+        return {
+          remainingText: text
+            .slice(0, rawJsonStart)
+            .replace(/\n{3,}/g, "\n\n")
+            .trim(),
+          pending: true,
+        };
+      }
+    }
+  }
+
+  return {
+    remainingText: text,
+    pending: false,
+  };
+}
+
+export function hidePendingResumeCardBlock(
+  text: string | undefined,
+): PendingCardBlockResult {
+  return hidePendingCardBlock(text, "resume_card");
 }
 
 export function isJobCardPayload(
@@ -519,4 +589,10 @@ export function parseJobCardsFromText(
     cards,
     remainingText: remainingText.replace(/\n{3,}/g, "\n\n").trim(),
   };
+}
+
+export function hidePendingJobCardBlock(
+  text: string | undefined,
+): PendingCardBlockResult {
+  return hidePendingCardBlock(text, "job_card");
 }

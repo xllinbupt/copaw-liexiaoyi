@@ -17,6 +17,7 @@ export interface SkillSpec {
     status?: SkillSyncStatus;
     pool_name?: string;
   };
+  protected?: boolean;
   config?: Record<string, unknown>;
 }
 

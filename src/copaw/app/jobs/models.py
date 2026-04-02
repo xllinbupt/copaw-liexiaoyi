@@ -67,3 +67,13 @@ class BindJobToChatRequest(BaseModel):
     channel: str = DEFAULT_CHANNEL
     job_id: str | None = None
     job_name: str | None = None
+
+
+class DeleteJobResult(BaseModel):
+    """Delete result for a job and its related chat records."""
+
+    deleted: bool = True
+    job_id: str
+    deleted_chat_ids: list[str] = Field(default_factory=list)
+    deleted_chat_count: int = 0
+    deleted_session_count: int = 0

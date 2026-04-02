@@ -37,6 +37,7 @@ DEFAULT_AGENT_FIRST_RUN_SKILL_NAMES: tuple[str, ...] = (
     "job_creator",
     "job_intake_consultant",
     "duolie_talent",
+    "pipeline_manager",
 )
 
 # Workspace items to migrate: (name, is_directory)
@@ -57,6 +58,23 @@ _WORKSPACE_JSON_DEFAULTS: list[tuple[str, dict]] = [
     ("chats.json", {"version": 1, "chats": []}),
     ("jobs.json", {"version": 1, "jobs": []}),
 ]
+
+
+def _sync_default_agent_prompt_rules(
+    workspace_dir: Path,
+    agent_config: AgentProfileConfig,
+) -> None:
+    """Keep the default agent's AGENTS.md aligned with packaged rules."""
+    language = agent_config.language or "zh"
+    agents_md = (
+        Path(__file__).parent.parent / "agents" / "md_files" / language / "AGENTS.md"
+    )
+    if not agents_md.exists():
+        return
+    try:
+        shutil.copy2(agents_md, workspace_dir / "AGENTS.md")
+    except Exception as exc:  # pragma: no cover - defensive logging
+        logger.warning("Failed to sync default AGENTS.md: %s", exc)
 
 
 def _has_legacy_workspace_content(root: Path) -> bool:
@@ -130,15 +148,18 @@ def _seed_default_agent_workspace(
     from ..agents.skills_manager import (
         SkillService,
         ensure_skill_pool_initialized,
+        import_builtin_skills,
     )
     from .routers.agents import _initialize_agent_workspace
 
     ensure_skill_pool_initialized()
+    import_builtin_skills(list(DEFAULT_AGENT_FIRST_RUN_SKILL_NAMES))
     _initialize_agent_workspace(
         workspace_dir,
         agent_config,
         skill_names=list(DEFAULT_AGENT_FIRST_RUN_SKILL_NAMES),
     )
+    _sync_default_agent_prompt_rules(workspace_dir, agent_config)
     save_agent_config("default", agent_config)
 
     skill_service = SkillService(workspace_dir)
@@ -164,15 +185,18 @@ def _ensure_default_agent_skills_enabled(
     from ..agents.skills_manager import (
         SkillService,
         ensure_skill_pool_initialized,
+        import_builtin_skills,
     )
     from .routers.agents import _initialize_agent_workspace
 
     ensure_skill_pool_initialized()
+    import_builtin_skills(list(DEFAULT_AGENT_FIRST_RUN_SKILL_NAMES))
     _initialize_agent_workspace(
         workspace_dir,
         agent_config,
         skill_names=list(DEFAULT_AGENT_FIRST_RUN_SKILL_NAMES),
     )
+    _sync_default_agent_prompt_rules(workspace_dir, agent_config)
 
     skill_service = SkillService(workspace_dir)
     for skill_name in DEFAULT_AGENT_FIRST_RUN_SKILL_NAMES:

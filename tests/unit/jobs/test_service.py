@@ -1,18 +1,29 @@
 # -*- coding: utf-8 -*-
 """Tests for minimal job creation bound to chat context."""
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
 
-from copaw.app.jobs.models import BindJobToChatRequest, CreateJobFromChatRequest
+from copaw.app.jobs import paths as job_paths
 from copaw.app.jobs import service as jobs_service
+from copaw.app.jobs.models import (
+    BindJobToChatRequest,
+    CreateJobFromChatRequest,
+    JobSpec,
+)
+from copaw.app.jobs.repo.json_repo import JsonJobRepository
 from copaw.app.jobs.service import (
     JobAlreadyBoundError,
     JobAmbiguousError,
     bind_job_to_chat,
     create_job_from_chat,
+    delete_job,
 )
+from copaw.app.runner.models import ChatSpec
+from copaw.app.runner.repo.json_repo import JsonChatRepository
+from copaw.app.runner.session import SafeJSONSession
 
 
 def _write_workspace_files(workspace_dir: Path, *, meta: dict | None = None) -> None:
@@ -45,6 +56,14 @@ def _write_jobs_file(jobs_path: Path, jobs: list[dict]) -> None:
         json.dumps({"version": 1, "jobs": jobs}, ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
+
+
+class _FakeStateModule:
+    def __init__(self, payload: dict):
+        self.payload = payload
+
+    def state_dict(self) -> dict:
+        return self.payload
 
 
 @pytest.mark.asyncio
@@ -229,3 +248,125 @@ async def test_bind_job_to_chat_rejects_ambiguous_job_name(
 
     with pytest.raises(JobAmbiguousError):
         await bind_job_to_chat(workspace_dir, request)
+
+
+@pytest.mark.asyncio
+async def test_delete_job_removes_related_chats_and_sessions(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    now = datetime.now(timezone.utc)
+    workspace_dir = tmp_path / "workspaces" / "default"
+    workspace_dir.mkdir(parents=True, exist_ok=True)
+
+    monkeypatch.setattr(jobs_service, "WORKING_DIR", tmp_path)
+    monkeypatch.setattr(job_paths, "WORKING_DIR", tmp_path)
+
+    target_job = JobSpec(
+        id="job-delete-1",
+        name="AI 产品经理",
+        description="负责 AI 产品规划",
+        requirements="有 AI 经验",
+        status="未开始",
+        pending_feedback_count=0,
+        source_session_id="console:default:1",
+        source_user_id="default",
+        source_channel="console",
+        created_at=now,
+        updated_at=now,
+    )
+    retained_job = JobSpec(
+        id="job-keep-1",
+        name="后端工程师",
+        description="负责后端服务开发",
+        requirements="熟悉 Java",
+        status="未开始",
+        pending_feedback_count=0,
+        source_session_id="console:default:2",
+        source_user_id="default",
+        source_channel="console",
+        created_at=now,
+        updated_at=now,
+    )
+
+    jobs_repo = JsonJobRepository(tmp_path / "recruitment_jobs.json")
+    await jobs_repo.upsert_job(target_job)
+    await jobs_repo.upsert_job(retained_job)
+
+    target_chat = ChatSpec(
+        id="chat-target",
+        name="目标职位聊天",
+        session_id="console:default:session-target",
+        user_id="default",
+        channel="console",
+        meta={
+            "job": {
+                "id": target_job.id,
+                "name": target_job.name,
+            },
+            "job_id": target_job.id,
+            "job_name": target_job.name,
+        },
+        created_at=now,
+        updated_at=now,
+    )
+    retained_chat = ChatSpec(
+        id="chat-retained",
+        name="保留聊天",
+        session_id="console:default:session-retained",
+        user_id="default",
+        channel="console",
+        meta={
+            "job": {
+                "id": retained_job.id,
+                "name": retained_job.name,
+            },
+            "job_id": retained_job.id,
+            "job_name": retained_job.name,
+        },
+        created_at=now,
+        updated_at=now,
+    )
+
+    chats_repo = JsonChatRepository(workspace_dir / "chats.json")
+    await chats_repo.upsert_chat(target_chat)
+    await chats_repo.upsert_chat(retained_chat)
+
+    session_store = SafeJSONSession(save_dir=str(workspace_dir / "sessions"))
+    await session_store.save_session_state(
+        target_chat.session_id,
+        user_id=target_chat.user_id,
+        agent=_FakeStateModule({"memory": {"content": ["target"]}}),
+    )
+    await session_store.save_session_state(
+        retained_chat.session_id,
+        user_id=retained_chat.user_id,
+        agent=_FakeStateModule({"memory": {"content": ["retained"]}}),
+    )
+
+    result = await delete_job(target_job.id)
+
+    assert result.deleted is True
+    assert result.job_id == target_job.id
+    assert result.deleted_chat_ids == [target_chat.id]
+    assert result.deleted_chat_count == 1
+    assert result.deleted_session_count == 1
+
+    remaining_jobs = await jobs_repo.list_jobs()
+    assert [job.id for job in remaining_jobs] == [retained_job.id]
+
+    remaining_chats = await chats_repo.list_chats()
+    assert [chat.id for chat in remaining_chats] == [retained_chat.id]
+
+    assert (
+        await session_store.get_session_state_dict(
+            target_chat.session_id,
+            user_id=target_chat.user_id,
+        )
+    ) == {}
+    assert (
+        await session_store.get_session_state_dict(
+            retained_chat.session_id,
+            user_id=retained_chat.user_id,
+        )
+    ) != {}

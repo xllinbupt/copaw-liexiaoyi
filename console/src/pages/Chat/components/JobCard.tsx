@@ -1,13 +1,6 @@
 import { useMemo } from "react";
-import { Tag } from "antd";
-import {
-  openJobDetailPanel,
-  type ChatJobDetails,
-} from "../chatWorkspace";
-import {
-  normalizeJobCardPayload,
-  type JobCardPayload,
-} from "../utils";
+import { openJobDetailPanel, type ChatJobDetails } from "../chatWorkspace";
+import { normalizeJobCardPayload, type JobCardPayload } from "../utils";
 import styles from "./resumeCards.module.less";
 
 type JobCardProps = {
@@ -21,7 +14,11 @@ function splitRequirementLines(value: string): string[] {
     .split(/\n+|[；;]+/)
     .map((item) => item.replace(/^\s*[-*•\d.]+\s*/, "").trim())
     .filter(Boolean)
-    .slice(0, 4);
+    .slice(0, 2);
+}
+
+function summarizeText(value: string): string {
+  return value.replace(/\s+/g, " ").trim();
 }
 
 function readPendingFeedbackCount(value: unknown): number {
@@ -59,15 +56,11 @@ export default function JobCard(props: JobCardProps) {
     typeof card.description === "string" ? card.description.trim() : "";
   const requirements =
     typeof card.requirements === "string" ? card.requirements.trim() : "";
+  const descriptionSummary = summarizeText(description);
   const requirementLines = splitRequirementLines(requirements);
-  const tags = (Array.isArray(card.tags) ? card.tags : []).filter(Boolean);
-  const highlights = (Array.isArray(card.highlights) ? card.highlights : [])
-    .filter(Boolean)
-    .slice(0, 4);
-  const normalizedTags = tags.filter((item): item is string => typeof item === "string");
-  const normalizedHighlights = highlights.filter(
-    (item): item is string => typeof item === "string",
-  );
+  const requirementsSummary = requirementLines.length
+    ? requirementLines.join("；")
+    : summarizeText(requirements);
   const pendingFeedbackCount = readPendingFeedbackCount(card.pending_feedback_count);
 
   const detail: ChatJobDetails = {
@@ -104,50 +97,29 @@ export default function JobCard(props: JobCardProps) {
 
       <div className={styles.jobCardTitle}>{jobName}</div>
 
-      <div className={styles.jobCardMetaRow}>
-        {jobId ? (
-          <span className={styles.jobCardMetaItem}>职位 ID {jobId}</span>
-        ) : null}
-        {city ? <span className={styles.jobCardMetaItem}>{city}</span> : null}
-        {salaryRange ? (
-          <span className={styles.jobCardMetaItem}>{salaryRange}</span>
-        ) : null}
-      </div>
-
-      {description ? (
-        <div className={styles.jobCardSection}>
-          <div className={styles.jobCardSectionLabel}>职位描述</div>
-          <div className={styles.jobCardSectionText}>{description}</div>
+      {city || salaryRange ? (
+        <div className={styles.jobCardMetaRow}>
+          {city ? <span className={styles.jobCardMetaItem}>{city}</span> : null}
+          {salaryRange ? (
+            <span className={styles.jobCardMetaItem}>{salaryRange}</span>
+          ) : null}
         </div>
       ) : null}
 
-      {requirementLines.length > 0 || requirements ? (
-        <div className={styles.jobCardSection}>
-          <div className={styles.jobCardSectionLabel}>职位要求</div>
-          {requirementLines.length > 0 ? (
-            <div className={styles.jobCardBulletList}>
-              {requirementLines.map((item) => (
-                <div key={`${jobName}-${item}`} className={styles.jobCardBulletItem}>
-                  {item}
-                </div>
-              ))}
+      {descriptionSummary || requirementsSummary ? (
+        <div className={styles.jobCardBody}>
+          {descriptionSummary ? (
+            <div className={styles.jobCardSummaryRow}>
+              <div className={styles.jobCardSummaryLabel}>描述</div>
+              <div className={styles.jobCardSummaryText}>{descriptionSummary}</div>
             </div>
-          ) : (
-            <div className={styles.jobCardSectionText}>{requirements}</div>
-          )}
-        </div>
-      ) : null}
-
-      {normalizedTags.length > 0 || normalizedHighlights.length > 0 ? (
-        <div className={styles.jobCardTagRow}>
-          {normalizedTags.slice(0, 4).map((tag) => (
-            <Tag key={`${jobName}-tag-${tag}`} color="orange">
-              {tag}
-            </Tag>
-          ))}
-          {normalizedHighlights.map((item) => (
-            <Tag key={`${jobName}-highlight-${item}`}>{item}</Tag>
-          ))}
+          ) : null}
+          {requirementsSummary ? (
+            <div className={styles.jobCardSummaryRow}>
+              <div className={styles.jobCardSummaryLabel}>要求</div>
+              <div className={styles.jobCardSummaryText}>{requirementsSummary}</div>
+            </div>
+          ) : null}
         </div>
       ) : null}
     </div>

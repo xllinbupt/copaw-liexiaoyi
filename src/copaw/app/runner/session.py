@@ -234,3 +234,24 @@ class SafeJSONSession(SessionBase):
             f"Failed to get session state for file {session_save_path} "
             "because it does not exist.",
         )
+
+    async def delete_session_state(
+        self,
+        session_id: str,
+        user_id: str = "",
+    ) -> bool:
+        """Delete the persisted session state file if it exists."""
+        session_save_path = self._get_save_path(session_id, user_id=user_id)
+        if not os.path.exists(session_save_path):
+            logger.info(
+                "Session file %s does not exist. Skip deleting session state.",
+                session_save_path,
+            )
+            return False
+
+        os.remove(session_save_path)
+        logger.info(
+            "Deleted session state file %s successfully.",
+            session_save_path,
+        )
+        return True

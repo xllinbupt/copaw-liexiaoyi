@@ -488,7 +488,11 @@ function SkillsPage() {
                 onMouseEnter={() => setHoverKey(skill.name)}
                 onMouseLeave={() => setHoverKey(null)}
                 onToggleEnabled={(e) => handleToggleEnabled(skill, e)}
-                onDelete={(e) => handleDelete(skill, e)}
+                onDelete={
+                  skill.protected
+                    ? undefined
+                    : (e) => handleDelete(skill, e)
+                }
               />
             ))}
         </div>

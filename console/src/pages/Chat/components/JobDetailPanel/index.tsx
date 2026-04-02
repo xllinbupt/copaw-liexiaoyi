@@ -1,9 +1,14 @@
-import { CloseOutlined, LeftOutlined } from "@ant-design/icons";
-import { Button, Empty, Spin, Tabs } from "antd";
+import {
+  CloseOutlined,
+  DeleteOutlined,
+  LeftOutlined,
+} from "@ant-design/icons";
+import { Button, Empty, Modal, Spin, Tabs, message } from "antd";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { jobApi } from "../../../../api/modules/job";
-import type { JobSpec } from "../../../../api/types";
+import type { JobDeleteResponse, JobSpec } from "../../../../api/types";
 import type { ChatJobDetails } from "../../chatWorkspace";
+import JobPipelineBoard from "../JobPipelineBoard";
 import styles from "./index.module.less";
 
 const PANEL_WIDTH_STORAGE_KEY = "copaw-chat-job-panel-width";
@@ -18,6 +23,7 @@ interface JobDetailPanelProps {
   job: ChatJobDetails | null;
   onClose: () => void;
   onCoverChatChange: (covered: boolean) => void;
+  onDeleted?: (result: JobDeleteResponse) => void;
 }
 
 function getMaxPanelWidth(layoutWidth?: number) {
@@ -54,6 +60,7 @@ export default function JobDetailPanel({
   job,
   onClose,
   onCoverChatChange,
+  onDeleted,
 }: JobDetailPanelProps) {
   const [panelWidth, setPanelWidth] = useState<number>(() => {
     if (typeof window === "undefined") return DEFAULT_PANEL_WIDTH;
@@ -63,14 +70,61 @@ export default function JobDetailPanel({
       ? clampPanelWidth(parsed)
       : DEFAULT_PANEL_WIDTH;
   });
-  const [isResizing, setIsResizing] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [jobDetail, setJobDetail] = useState<JobSpec | null>(null);
   const [coverChat, setCoverChat] = useState(false);
   const [layoutWidth, setLayoutWidth] = useState(0);
   const panelRef = useRef<HTMLElement | null>(null);
   const resizeStartXRef = useRef(0);
   const resizeStartWidthRef = useRef(panelWidth);
+  const resizeCleanupRef = useRef<(() => void) | null>(null);
+
+  const handleResizeStart = (clientX: number) => {
+    resizeCleanupRef.current?.();
+    resizeStartXRef.current = clientX;
+
+    if (coverChat && layoutWidth > 0) {
+      const initialWidth = clampPanelWidth(
+        layoutWidth - CHAT_REVEAL_WIDTH,
+        layoutWidth,
+      );
+      resizeStartWidthRef.current = initialWidth;
+      setPanelWidth(initialWidth);
+      setCoverChat(false);
+      onCoverChatChange(false);
+    } else {
+      resizeStartWidthRef.current = panelWidth;
+    }
+
+    const previousCursor = document.body.style.cursor;
+    const previousUserSelect = document.body.style.userSelect;
+
+    const handleMouseMove = (event: MouseEvent) => {
+      const delta = resizeStartXRef.current - event.clientX;
+      setPanelWidth(
+        clampPanelWidth(resizeStartWidthRef.current + delta, layoutWidth),
+      );
+    };
+
+    const cleanup = () => {
+      document.body.style.cursor = previousCursor;
+      document.body.style.userSelect = previousUserSelect;
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+      resizeCleanupRef.current = null;
+    };
+
+    const handleMouseUp = () => {
+      cleanup();
+    };
+
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+    resizeCleanupRef.current = cleanup;
+  };
 
   useEffect(() => {
     if (!open) {
@@ -151,31 +205,10 @@ export default function JobDetailPanel({
   }, [open, job?.jobId]);
 
   useEffect(() => {
-    if (!isResizing) return;
-
-    const handleMouseMove = (event: MouseEvent) => {
-      const delta = resizeStartXRef.current - event.clientX;
-      setPanelWidth(
-        clampPanelWidth(resizeStartWidthRef.current + delta, layoutWidth),
-      );
-    };
-
-    const handleMouseUp = () => {
-      setIsResizing(false);
-    };
-
-    document.body.style.cursor = "col-resize";
-    document.body.style.userSelect = "none";
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseup", handleMouseUp);
-
     return () => {
-      document.body.style.cursor = "";
-      document.body.style.userSelect = "";
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", handleMouseUp);
+      resizeCleanupRef.current?.();
     };
-  }, [isResizing]);
+  }, []);
 
   const detail = useMemo(() => {
     if (!job) return null;
@@ -208,6 +241,37 @@ export default function JobDetailPanel({
 
   if (!open) return null;
 
+  const handleDelete = () => {
+    if (!job?.jobId) return;
+
+    Modal.confirm({
+      title: "确认删除这个职位？",
+      content:
+        "删除操作会把该职位下所有记录全部清除，包括沟通内容与聊天记录。删除后无法恢复，请谨慎操作。",
+      okText: "确认删除",
+      cancelText: "取消",
+      okButtonProps: { danger: true },
+      centered: true,
+      onOk: async () => {
+        setDeleting(true);
+        try {
+          const result = await jobApi.deleteJob(job.jobId as string);
+          message.success(
+            `职位已删除，同时清除了 ${result.deleted_chat_count} 条相关记录`,
+          );
+          onDeleted?.(result);
+        } catch (error) {
+          const errorMessage =
+            error instanceof Error ? error.message : "删除职位失败";
+          message.error(errorMessage);
+          throw error;
+        } finally {
+          setDeleting(false);
+        }
+      },
+    });
+  };
+
   return (
     <aside
       ref={panelRef}
@@ -215,16 +279,12 @@ export default function JobDetailPanel({
       style={{ width: effectivePanelWidth }}
     >
       <div
-        className={styles.resizeHandle}
+        className={`${styles.resizeHandle} ${
+          coverChat ? styles.resizeHandleCovered : ""
+        }`}
         onMouseDown={(event) => {
-          resizeStartXRef.current = event.clientX;
-          resizeStartWidthRef.current =
-            coverChat && layoutWidth > 0 ? layoutWidth : panelWidth;
-          if (coverChat) {
-            setCoverChat(false);
-            onCoverChatChange(false);
-          }
-          setIsResizing(true);
+          event.preventDefault();
+          handleResizeStart(event.clientX);
         }}
         aria-hidden
       />
@@ -251,15 +311,27 @@ export default function JobDetailPanel({
             </Button>
           ) : null}
           <div className={styles.headerMain}>
-            <div className={styles.headerEyebrow}>职位详情</div>
             <div className={styles.headerTitle}>{detail?.name || "未关联职位"}</div>
           </div>
-          <Button
-            type="text"
-            icon={<CloseOutlined />}
-            onClick={onClose}
-            aria-label="关闭职位详情"
-          />
+          <div className={styles.headerActions}>
+            {job?.jobId ? (
+              <Button
+                type="text"
+                danger
+                icon={<DeleteOutlined />}
+                onClick={handleDelete}
+                loading={deleting}
+              >
+                删除职位
+              </Button>
+            ) : null}
+            <Button
+              type="text"
+              icon={<CloseOutlined />}
+              onClick={onClose}
+              aria-label="关闭职位详情"
+            />
+          </div>
         </div>
 
         {!detail ? (
@@ -325,11 +397,13 @@ export default function JobDetailPanel({
                     {
                       key: "pipeline",
                       label: "Pipeline",
-                      children: (
+                      children: job?.jobId ? (
+                        <JobPipelineBoard jobId={job.jobId} />
+                      ) : (
                         <div className={styles.placeholderWrap}>
                           <Empty
                             image={Empty.PRESENTED_IMAGE_SIMPLE}
-                            description="Pipeline 面板预留中"
+                            description="当前聊天还没有绑定可用职位"
                           />
                         </div>
                       ),

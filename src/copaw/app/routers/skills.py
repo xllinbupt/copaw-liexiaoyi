@@ -101,6 +101,7 @@ class SkillSpec(SkillInfo):
     enabled: bool = False
     channels: list[str] = Field(default_factory=lambda: ["all"])
     sync_to_pool: dict[str, Any] = Field(default_factory=dict)
+    protected: bool = False
     config: dict[str, Any] = Field(default_factory=dict)
 
 
@@ -466,6 +467,7 @@ def _build_workspace_skill_specs(workspace_dir: Path) -> list[SkillSpec]:
                 enabled=entry.get("enabled", False),
                 channels=entry.get("channels") or ["all"],
                 sync_to_pool=entry.get("sync_to_pool") or {},
+                protected=bool(entry.get("protected", False)),
                 config=entry.get("config") or {},
             ),
         )

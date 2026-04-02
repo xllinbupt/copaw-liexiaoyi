@@ -108,6 +108,10 @@ BUILTIN_QA_AGENT_SKILL_NAMES: tuple[str, ...] = (
     "copaw_source_index",
 )
 
+PROTECTED_BUILTIN_SKILL_NAMES: tuple[str, ...] = (
+    "pipeline_manager",
+)
+
 TOKEN_USAGE_FILE = EnvVarLoader.get_str(
     "COPAW_TOKEN_USAGE_FILE",
     "token_usage.json",

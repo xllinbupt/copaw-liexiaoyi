@@ -4,6 +4,96 @@
   margin: 8px 0 16px;
 }
 
+.cardLoading {
+  border: 1px solid rgba(20, 20, 20, 0.08);
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, rgba(255, 248, 240, 0.88) 0%, rgba(255, 255, 255, 1) 100%);
+  padding: 12px 14px;
+  overflow: hidden;
+}
+
+.cardLoadingHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cardLoadingLabel {
+  color: rgba(0, 0, 0, 0.48);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.cardLoadingChip,
+.cardLoadingTitle,
+.cardLoadingMeta,
+.cardLoadingRow,
+.cardLoadingRowShort {
+  position: relative;
+  overflow: hidden;
+  background: rgba(15, 23, 42, 0.06);
+}
+
+.cardLoadingChip::after,
+.cardLoadingTitle::after,
+.cardLoadingMeta::after,
+.cardLoadingRow::after,
+.cardLoadingRowShort::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.65) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: cardLoadingShimmer 1.25s ease-in-out infinite;
+}
+
+.cardLoadingChip {
+  width: 54px;
+  height: 22px;
+  border-radius: 999px;
+}
+
+.cardLoadingTitle {
+  width: min(360px, 72%);
+  height: 18px;
+  border-radius: 10px;
+  margin-top: 10px;
+}
+
+.cardLoadingMeta {
+  width: min(200px, 42%);
+  height: 12px;
+  border-radius: 8px;
+  margin-top: 8px;
+}
+
+.cardLoadingRow {
+  width: 100%;
+  height: 52px;
+  border-radius: 12px;
+  margin-top: 10px;
+}
+
+.cardLoadingRowShort {
+  width: 86%;
+  height: 40px;
+  border-radius: 12px;
+  margin-top: 8px;
+}
+
+@keyframes cardLoadingShimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
 .resumeCard {
   border: 1px solid rgba(20, 20, 20, 0.08);
   border-radius: 14px;
@@ -280,6 +370,17 @@
   line-height: 1.55;
 }
 
+.resumeCardActions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+
+  :global(.ant-btn) {
+    box-shadow: none;
+    border-color: rgba(15, 23, 42, 0.08);
+  }
+}
+
 .resumeModalNotice {
   margin-bottom: 12px;
 }
@@ -322,7 +423,7 @@
   border-radius: 14px;
   background:
     linear-gradient(180deg, rgba(255, 248, 240, 0.9) 0%, rgba(255, 255, 255, 1) 100%);
-  padding: 14px 16px;
+  padding: 12px 14px;
   cursor: pointer;
   transition:
     transform 0.14s ease,
@@ -368,11 +469,11 @@
 }
 
 .jobCardTitle {
-  margin-top: 10px;
+  margin-top: 8px;
   color: #1f1f1f;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
-  line-height: 1.35;
+  line-height: 1.4;
   word-break: break-word;
 }
 
@@ -380,7 +481,8 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px 10px;
-  margin-top: 8px;
+  margin-top: 6px;
+  min-height: 18px;
 }
 
 .jobCardMetaItem {
@@ -389,59 +491,38 @@
   line-height: 1.45;
 }
 
-.jobCardSection {
-  margin-top: 14px;
-  padding: 12px 14px;
+.jobCardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.jobCardSummaryRow {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 8px;
+  padding: 10px 12px;
   border-radius: 12px;
   background: rgba(15, 23, 42, 0.035);
 }
 
-.jobCardSectionLabel {
-  margin-bottom: 6px;
-  color: rgba(0, 0, 0, 0.5);
+.jobCardSummaryLabel {
+  color: rgba(0, 0, 0, 0.48);
   font-size: 12px;
   font-weight: 600;
-  line-height: 1.4;
+  line-height: 1.5;
 }
 
-.jobCardSectionText {
-  color: rgba(0, 0, 0, 0.76);
-  font-size: 13px;
-  line-height: 1.65;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
-.jobCardBulletList {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.jobCardBulletItem {
-  position: relative;
-  padding-left: 12px;
+.jobCardSummaryText {
   color: rgba(0, 0, 0, 0.76);
   font-size: 13px;
   line-height: 1.55;
-
-  &::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 8px;
-    width: 5px;
-    height: 5px;
-    border-radius: 999px;
-    background: rgba(255, 127, 22, 0.72);
-  }
-}
-
-.jobCardTagRow {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 12px;
+  word-break: break-word;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
 }
 
 :global(.dark) .resumeCard {
@@ -450,6 +531,12 @@
 }
 
 :global(.dark) .jobCard {
+  background:
+    linear-gradient(180deg, rgba(58, 37, 20, 0.88) 0%, rgba(31, 31, 31, 1) 100%);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+:global(.dark) .cardLoading {
   background:
     linear-gradient(180deg, rgba(58, 37, 20, 0.88) 0%, rgba(31, 31, 31, 1) 100%);
   border-color: rgba(255, 255, 255, 0.08);
@@ -464,22 +551,53 @@
   color: rgba(255, 255, 255, 0.9);
 }
 
+:global(.dark) .cardLoadingLabel {
+  color: rgba(255, 255, 255, 0.48);
+}
+
+:global(.dark) .cardLoadingChip,
+:global(.dark) .cardLoadingTitle,
+:global(.dark) .cardLoadingMeta,
+:global(.dark) .cardLoadingRow,
+:global(.dark) .cardLoadingRowShort {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+:global(.dark) .cardLoadingChip::after,
+:global(.dark) .cardLoadingTitle::after,
+:global(.dark) .cardLoadingMeta::after,
+:global(.dark) .cardLoadingRow::after,
+:global(.dark) .cardLoadingRowShort::after {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.18) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+}
+
 :global(.dark) .resumeEducationInline,
 :global(.dark) .resumeTimelineTitle,
 :global(.dark) .resumeTimelineSecondary,
 :global(.dark) .resumeTimelineFallback,
 :global(.dark) .resumeCardReasonText,
 :global(.dark) .jobCardMetaItem,
-:global(.dark) .jobCardSectionText {
+:global(.dark) .jobCardSummaryText {
   color: rgba(255, 255, 255, 0.66);
 }
 
+:global(.dark) .resumeCardActions :global(.ant-btn) {
+  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.86);
+}
+
 :global(.dark) .jobCardStatus,
-:global(.dark) .jobCardSectionLabel {
+:global(.dark) .jobCardSummaryLabel {
   color: rgba(255, 255, 255, 0.5);
 }
 
-:global(.dark) .jobCardSection {
+:global(.dark) .jobCardSummaryRow {
   background: rgba(255, 255, 255, 0.05);
 }
 

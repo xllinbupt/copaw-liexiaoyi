@@ -3,7 +3,7 @@ name: duolie_talent
 description: "多猎人才搜索与简历查看。适用于用户要按城市、年龄、职位、学历、公司背景等条件搜索候选人，或通过 resumeId 查看完整简历详情的场景。只要进入正式推荐候选人阶段，必须输出结构化 `resume_card`，不要只给表格、列表或长段落。"
 metadata:
   {
-    "builtin_skill_version": "1.0",
+    "builtin_skill_version": "1.1",
     "copaw":
       {
         "emoji": "🎯",
@@ -21,6 +21,7 @@ metadata:
 - 默认应在聊天区直接返回候选人卡片，而不是只给文字总结。
 - 只有在样本校准、条件澄清、搜索试探阶段，才可以先不给 `resume_card`，只给判断结论。
 - 如果已经进入正式推荐阶段，每位正式推荐的候选人都应对应一张 `resume_card`。
+- 如果这批候选人很可能后续会被加入职位 Pipeline，卡片里应尽量带全这些信息：`age`、学校、教育经历、最近一段工作经历。
 
 ## 核心能力
 
@@ -226,6 +227,7 @@ async function getResumeDetail(browser, resumeIdEncode) {
 
 - 搜索结果优先按「匹配关键词 / 当前岗位 / 学历 / 城市 / 年限 / 当前公司」整理摘要
 - 查看简历详情时，优先提炼：基本信息、最近工作经历、教育背景、求职意向、匹配点、风险点与待核实问题
+- 如果本轮推荐后很可能要加入职位 Pipeline，优先把学校、教育经历和最近一段工作经历结构化产出，方便后续直接落库
 
 ## 正式推荐输出协议
 
@@ -242,13 +244,16 @@ async function getResumeDetail(browser, resumeIdEncode) {
 - `type`: 固定为 `resume_card`
 - `candidate_id`: 候选人唯一标识；没有时可留空字符串，但优先填写
 - `candidate_name`: 候选人姓名
+- `age`: 年龄；如果简历里有，尽量填写
 - `current_title`: 当前职位
 - `current_company`: 当前公司
 - `city`: 当前城市
 - `years_experience`: 工作年限
 - `education`: 最高学历或核心教育背景
+- `education_experiences`: 教育经历；如有学校信息，第一段优先补 `school`
 - `work_experiences`: 1 到 3 段核心工作经历；每段尽量带 `company`、`title`、`period`
   - `period` 优先写绝对时间，例如 `2024.3-至今`、`2021.7-2024.2`
+  - 如果信息足够，第一段优先放最近一段工作经历
 - `tags`: 2 到 5 个标签
 - `highlights`: 2 到 4 条亮点
 - `match_reason`: 你为什么正式推荐他
@@ -261,11 +266,19 @@ async function getResumeDetail(browser, resumeIdEncode) {
   "type": "resume_card",
   "candidate_id": "duolie_123",
   "candidate_name": "张三",
+  "age": 29,
   "current_title": "AI 产品经理",
   "current_company": "某头部互联网公司",
   "city": "北京",
   "years_experience": 8,
   "education": "北京大学硕士",
+  "education_experiences": [
+    {
+      "school": "北京大学",
+      "major": "信息管理",
+      "degree": "硕士"
+    }
+  ],
   "work_experiences": [
     {
       "company": "某头部互联网公司",

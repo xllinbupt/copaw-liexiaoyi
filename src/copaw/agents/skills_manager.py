@@ -23,6 +23,7 @@ from typing import Any, TypeVar
 
 import frontmatter
 from pydantic import BaseModel, Field
+from ..constant import PROTECTED_BUILTIN_SKILL_NAMES
 from ..security.skill_scanner import scan_skill_directory
 from .utils.file_handling import read_text_file_with_encoding_fallback
 
@@ -343,6 +344,10 @@ def _is_pool_builtin_entry(entry: dict[str, Any] | None) -> bool:
     return bool(entry) and str(entry.get("source", "") or "") == "builtin"
 
 
+def _is_protected_builtin_skill(skill_name: str) -> bool:
+    return skill_name in PROTECTED_BUILTIN_SKILL_NAMES
+
+
 def _classify_pool_skill_source(
     skill_name: str,
     skill_dir: Path,
@@ -356,6 +361,7 @@ def _classify_pool_skill_source(
     already exists. This lets an outdated builtin remain a builtin slot,
     while same-name customized copies stay customized.
     """
+    is_protected = _is_protected_builtin_skill(skill_name)
     if not _is_builtin_skill(skill_name, builtin_names):
         return "customized", False
 
@@ -365,13 +371,13 @@ def _classify_pool_skill_source(
 
     if existing:
         if _is_pool_builtin_entry(existing):
-            return "builtin", False
+            return "builtin", is_protected
         return "customized", False
 
     pool_signature = _build_signature(skill_dir)
     builtin_signature = _build_signature(src_skill_dir)
     if pool_signature == builtin_signature:
-        return "builtin", False
+        return "builtin", is_protected
     return "customized", False
 
 
@@ -847,7 +853,7 @@ def import_builtin_skills(
                 skill_name,
                 target,
                 source="builtin",
-                protected=False,
+                protected=_is_protected_builtin_skill(skill_name),
             )
             if "config" in existing:
                 entry["config"] = existing.get("config")
@@ -1069,19 +1075,26 @@ def reconcile_workspace_manifest(workspace_dir: Path) -> dict[str, Any]:
                     if workspace_signature == pool_signature
                     else "customized"
                 )
+                protected = (
+                    bool(pool_entry.get("protected", False))
+                    if pool_entry and source == "builtin"
+                    else False
+                )
             else:
                 source = "customized"
+                protected = False
 
             metadata = _build_skill_metadata(
                 skill_name,
                 skill_dir,
                 source=source,
-                protected=False,
+                protected=protected,
             )
             next_entry = {
                 "enabled": enabled,
                 "channels": channels,
                 "source": source,
+                "protected": protected,
                 "metadata": metadata,
                 "requirements": metadata["requirements"],
                 "sync_to_pool": _compute_sync_to_pool(
@@ -1283,7 +1296,7 @@ def update_single_builtin(skill_name: str) -> dict[str, Any]:
             skill_name,
             target,
             source="builtin",
-            protected=False,
+            protected=_is_protected_builtin_skill(skill_name),
         )
         if "config" in existing:
             entry["config"] = existing["config"]
@@ -1959,7 +1972,11 @@ class SkillService:
         skill_name = str(name or "")
         manifest = self._manifest()
         entry = manifest.get("skills", {}).get(skill_name)
-        if entry is None or entry.get("enabled", False):
+        if (
+            entry is None
+            or entry.get("enabled", False)
+            or entry.get("protected", False)
+        ):
             return False
 
         skill_dir = get_workspace_skills_dir(self.workspace_dir) / skill_name
@@ -2208,7 +2225,7 @@ class SkillPoolService:
         skill_name = str(name or "")
         manifest = reconcile_pool_manifest()
         entry = manifest.get("skills", {}).get(skill_name)
-        if entry is None:
+        if entry is None or entry.get("protected", False):
             return False
 
         skill_dir = get_skill_pool_dir() / skill_name
@@ -2488,18 +2505,20 @@ class SkillPoolService:
 
         def _update(payload: dict[str, Any]) -> None:
             payload.setdefault("skills", {})
+            protected = bool(entry.get("protected", False))
             metadata = _build_skill_metadata(
                 final_name,
                 target_dir,
                 source="builtin"
                 if entry.get("source") == "builtin"
                 else "customized",
-                protected=False,
+                protected=protected,
             )
             payload["skills"][final_name] = {
                 "enabled": True,
                 "channels": ["all"],
                 "source": metadata["source"],
+                "protected": protected,
                 "config": pool_config,
                 "metadata": metadata,
                 "requirements": metadata["requirements"],

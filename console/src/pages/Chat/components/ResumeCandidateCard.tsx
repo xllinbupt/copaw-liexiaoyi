@@ -1,10 +1,18 @@
 import { useMemo, useState } from "react";
-import { Button, Empty, Modal, Spin, Tag } from "antd";
-import { LinkOutlined } from "@ant-design/icons";
+import { Button, Empty, Modal, Spin, Tag, message } from "antd";
+import { LinkOutlined, PlusOutlined } from "@ant-design/icons";
+import { useLocation } from "react-router-dom";
+import { chatApi } from "../../../api/modules/chat";
+import { jobApi } from "../../../api/modules/job";
 import {
   normalizeResumeCardPayload,
   type ResumeCardPayload,
 } from "../utils";
+import {
+  getChatJobDetails,
+  notifyJobPipelineUpdated,
+  openJobDetailPanel,
+} from "../chatWorkspace";
 import styles from "./resumeCards.module.less";
 
 type ResumeCandidateCardProps = {
@@ -132,12 +140,36 @@ function normalizeEducationEntries(
     .filter(Boolean);
 }
 
+function getPrimarySchool(
+  value: ResumeCardPayload["education_experiences"],
+): string {
+  if (!Array.isArray(value)) return "";
+  for (const item of value) {
+    if (typeof item !== "string" && item.school?.trim()) {
+      return item.school.trim();
+    }
+  }
+  return "";
+}
+
+function getLatestWorkExperienceSummary(item?: TimelineEntry): string {
+  if (!item) return "";
+  const header = [item.company, item.title, item.period].filter(Boolean).join(" | ");
+  return item.summary ? [header, item.summary].filter(Boolean).join(" | ") : (header || item.fallback || "");
+}
+
 export default function ResumeCandidateCard(
   props: ResumeCandidateCardProps,
 ) {
+  const location = useLocation();
   const [open, setOpen] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const [addingToPipeline, setAddingToPipeline] = useState(false);
   const card = useMemo(() => normalizeResumeCardPayload(props.card), [props.card]);
+  const chatId = useMemo(() => {
+    const match = location.pathname.match(/^\/chat\/(.+)$/);
+    return match?.[1] || "";
+  }, [location.pathname]);
 
   const name =
     card.candidate_name || card.name || `候选人 ${String(props.index + 1)}`;
@@ -158,22 +190,121 @@ export default function ResumeCandidateCard(
   ].filter(Boolean);
   const salaryLine = [
     card.expected_salary ? `期望薪资 ${card.expected_salary}` : "",
-    card.current_salary ? `目前薪资 ${card.current_salary}` : "",
   ].filter(Boolean);
   const educationEntries = normalizeEducationEntries(card.education_experiences);
+  const primarySchool = getPrimarySchool(card.education_experiences);
   const educationText = educationEntries[0] || card.education || "暂无教育信息";
   const workTimeline = normalizeTimelineEntries(card.work_experiences);
+  const latestWorkExperience = getLatestWorkExperienceSummary(workTimeline[0]);
   const workSummary: TimelineEntry[] =
     workTimeline.length > 0
       ? workTimeline.slice(0, 3)
       : highlights.map((item) => ({ fallback: item } as TimelineEntry));
   const reasonText = card.match_reason || card.summary || "";
   const updateLabel = card.updated_at || "";
+  const sourceCandidateKey =
+    (typeof card.resIdEncode === "string" && card.resIdEncode.trim()) ||
+    (typeof card.resumeIdEncode === "string" && card.resumeIdEncode.trim()) ||
+    (typeof card.candidate_id === "string" && card.candidate_id.trim()) ||
+    "";
+  const sourcePlatform =
+    (typeof card.source === "string" && card.source.trim()) ||
+    (sourceCandidateKey || detailUrl.includes("duolie.com") ? "duolie" : "");
 
   const openPreview = () => {
     if (!detailUrl) return;
     setLoaded(false);
     setOpen(true);
+  };
+
+  const handleAddToPipeline = async (event: {
+    preventDefault: () => void;
+    stopPropagation: () => void;
+  }) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (!chatId) {
+      message.warning("请先进入一个具体聊天，再把候选人加入 Pipeline");
+      return;
+    }
+
+    setAddingToPipeline(true);
+    try {
+      const chats = await chatApi.listChats({
+        user_id: "default",
+        channel: "console",
+      });
+      const currentChat = chats.find((chat) => chat.id === chatId);
+      if (!currentChat) {
+        message.warning("没有找到当前聊天，请刷新后重试");
+        return;
+      }
+
+      const jobDetails = getChatJobDetails(currentChat);
+      if (!jobDetails?.jobId) {
+        message.warning("当前聊天还没有绑定职位，请先绑定职位");
+        return;
+      }
+
+      const result = await jobApi.addPipelineCandidate(jobDetails.jobId, {
+        candidate: {
+          source_platform: sourcePlatform,
+          source_candidate_key: sourceCandidateKey,
+          name,
+          gender,
+          age: card.age,
+          school: primarySchool,
+          education_experience: educationText,
+          current_title: title,
+          current_company: company,
+          latest_work_experience: latestWorkExperience,
+          city: card.city || card.location || "",
+          years_experience: card.years_experience,
+          education: card.education || educationText,
+          current_salary: card.current_salary || "",
+          expected_salary: card.expected_salary || "",
+          resume_detail_url: detailUrl,
+          avatar_url: card.avatar_url || "",
+          resume_snapshot: {
+            candidate_name: name,
+            current_title: title,
+            current_company: company,
+            city: card.city || card.location || "",
+            years_experience: card.years_experience,
+            education: card.education || educationText,
+            expected_salary: card.expected_salary || "",
+            match_reason: reasonText,
+            summary: card.summary || "",
+            tags,
+            highlights,
+          },
+        },
+        stage: "lead",
+        source_type: "outbound",
+        recruiter_interest: "unsure",
+        candidate_interest: "unknown",
+        summary: reasonText,
+        added_by: "agent",
+        source_chat_id: currentChat.id,
+        source_session_id: currentChat.session_id,
+        source_resume_id: sourceCandidateKey,
+      });
+
+      notifyJobPipelineUpdated(jobDetails.jobId);
+      openJobDetailPanel(jobDetails);
+      message.success(
+        result.created
+          ? `已加入 ${jobDetails.jobName} 的 Pipeline`
+          : "该候选人已经在这个职位的 Pipeline 里了",
+      );
+    } catch (error) {
+      message.error(
+        error instanceof Error ? error.message : "加入 Pipeline 失败",
+      );
+    } finally {
+      setAddingToPipeline(false);
+    }
   };
 
   const renderTimelineEntry = (item: TimelineEntry, idx: number) => {
@@ -300,6 +431,19 @@ export default function ResumeCandidateCard(
             <span className={styles.resumeCardReasonText}>{reasonText}</span>
           </div>
         ) : null}
+
+        <div className={styles.resumeCardActions}>
+          <Button
+            size="small"
+            icon={<PlusOutlined />}
+            loading={addingToPipeline}
+            onClick={(event) => {
+              void handleAddToPipeline(event);
+            }}
+          >
+            加入 Pipeline
+          </Button>
+        </div>
       </div>
 
       <Modal

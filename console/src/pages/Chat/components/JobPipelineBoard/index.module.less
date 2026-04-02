@@ -1,0 +1,379 @@
+.boardWrap {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.summaryBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px 0;
+}
+
+.summaryText {
+  color: rgba(0, 0, 0, 0.5);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.summaryActions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.viewToggle {
+  background: rgba(15, 23, 42, 0.05);
+}
+
+.viewToggleLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.boardScroller {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 14px 20px 24px;
+}
+
+.tableWrap {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 14px 20px 24px;
+}
+
+.resizableHeaderCell {
+  position: relative;
+  user-select: none;
+}
+
+.resizableHeaderInner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 100%;
+  padding-right: 12px;
+}
+
+.resizeHandle {
+  position: absolute;
+  top: 50%;
+  right: -8px;
+  width: 16px;
+  height: calc(100% - 12px);
+  transform: translateY(-50%);
+  cursor: col-resize;
+  z-index: 2;
+}
+
+.resizeHandle::before {
+  content: "";
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  left: 50%;
+  width: 2px;
+  transform: translateX(-50%);
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.08);
+  transition: background-color 0.18s ease;
+}
+
+.resizableHeaderCell:hover .resizeHandle::before,
+.resizeHandle:hover::before {
+  background: rgba(255, 122, 26, 0.42);
+}
+
+.boardGrid {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(240px, 1fr);
+  gap: 14px;
+  min-width: max-content;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.82);
+  overflow: hidden;
+  transition:
+    border-color 0.18s ease,
+    background-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.columnDropActive {
+  border-color: rgba(255, 122, 26, 0.38);
+  background: rgba(255, 248, 241, 0.98);
+  box-shadow: inset 0 0 0 1px rgba(255, 122, 26, 0.08);
+}
+
+.columnHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px 14px 12px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.columnTitle {
+  color: rgba(0, 0, 0, 0.88);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.columnCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.06);
+  color: rgba(0, 0, 0, 0.55);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.columnBody {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+}
+
+.emptyColumn {
+  padding: 28px 14px;
+  border-radius: 12px;
+  border: 1px dashed rgba(15, 23, 42, 0.1);
+  text-align: center;
+  color: rgba(0, 0, 0, 0.35);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.entryCard {
+  padding: 10px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.94);
+  cursor: grab;
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.entryCardDragging {
+  opacity: 0.52;
+  transform: scale(0.985);
+  border-color: rgba(255, 122, 26, 0.22);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+}
+
+.entryHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.entryFieldsRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.entryField {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  flex: 0 0 auto;
+}
+
+.entryFieldLabel {
+  color: rgba(0, 0, 0, 0.45);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.entryName {
+  color: rgba(0, 0, 0, 0.88);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.entryFacts,
+.entryEducation,
+.entryLatestWork {
+  margin-top: 2px;
+  color: rgba(0, 0, 0, 0.52);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.entryFacts,
+.entryEducation {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+.entryLatestWork {
+  color: rgba(0, 0, 0, 0.6);
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.tableCandidate {
+  min-width: 0;
+}
+
+.tableEducation {
+  min-width: 0;
+}
+
+.tableCandidateMeta {
+  margin-top: 3px;
+  color: rgba(0, 0, 0, 0.58);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.tableSummary {
+  color: rgba(0, 0, 0, 0.66);
+  font-size: 12px;
+  line-height: 1.6;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.tableCellMuted {
+  color: rgba(0, 0, 0, 0.44);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.entryTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.entrySummary {
+  margin-top: 10px;
+  color: rgba(0, 0, 0, 0.68);
+  font-size: 12px;
+  line-height: 1.6;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+}
+
+.entryFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.entryFooterLeft {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+
+.entryTime {
+  color: rgba(0, 0, 0, 0.4);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.entryAssessmentSelect {
+  min-width: 104px;
+}
+
+.entryStageSelect {
+  min-width: 104px;
+}
+
+.loadingWrap,
+.emptyWrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 220px;
+  padding: 24px;
+}
+
+:global(.dark) {
+  .summaryText,
+  .entryFacts,
+  .entryEducation,
+  .entryLatestWork,
+  .entrySummary,
+  .tableCandidateMeta,
+  .tableSummary,
+  .tableCellMuted {
+    color: rgba(255, 255, 255, 0.62);
+  }
+
+  .column,
+  .entryCard {
+    border-color: rgba(255, 255, 255, 0.08);
+    background: rgba(24, 24, 24, 0.92);
+  }
+
+  .columnDropActive {
+    border-color: rgba(255, 163, 92, 0.45);
+    background: rgba(44, 31, 19, 0.95);
+    box-shadow: inset 0 0 0 1px rgba(255, 163, 92, 0.1);
+  }
+
+  .columnHeader {
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .columnTitle,
+  .entryName {
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  .columnCount {
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.6);
+  }
+
+  .emptyColumn,
+  .entryTime {
+    color: rgba(255, 255, 255, 0.4);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+}

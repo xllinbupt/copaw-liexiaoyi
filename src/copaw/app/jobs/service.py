@@ -9,11 +9,18 @@ from typing import Any
 from ...constant import WORKING_DIR
 from ..runner.models import ChatSpec
 from ..runner.repo.json_repo import JsonChatRepository
-from .models import BindJobToChatRequest, CreateJobFromChatRequest, JobSpec
+from ..runner.session import SafeJSONSession
+from .models import (
+    BindJobToChatRequest,
+    CreateJobFromChatRequest,
+    DeleteJobResult,
+    JobSpec,
+)
+from .paths import get_recruitment_jobs_path
 from .repo.json_repo import JsonJobRepository
 
 DEFAULT_JOB_STATUS = "未开始"
-GLOBAL_RECRUITMENT_JOBS_FILE = "recruitment_jobs.json"
+WORKSPACES_DIR = "workspaces"
 
 
 class JobChatNotFoundError(RuntimeError):
@@ -22,6 +29,10 @@ class JobChatNotFoundError(RuntimeError):
 
 class JobAlreadyBoundError(RuntimeError):
     """Raised when the chat is already bound to a job."""
+
+
+class JobChatNotBoundError(RuntimeError):
+    """Raised when the chat is not yet bound to any job."""
 
 
 class JobNotFoundError(RuntimeError):
@@ -74,12 +85,6 @@ def job_binding_from_chat(chat: ChatSpec) -> dict[str, str] | None:
         "job_id": job_id or "",
         "job_name": job_name or "",
     }
-
-
-def get_recruitment_jobs_path() -> Path:
-    """Return dedicated storage for global recruitment jobs."""
-    return (WORKING_DIR / GLOBAL_RECRUITMENT_JOBS_FILE).expanduser()
-
 
 def _isoformat_utc(value: datetime) -> str:
     return value.isoformat().replace("+00:00", "Z")
@@ -212,6 +217,109 @@ async def bind_job_to_chat(
     chat = _apply_job_binding(chat, job, now=now)
     await chats_repo.upsert_chat(chat)
     return job, chat
+
+
+async def get_bound_job_for_chat(
+    workspace_dir: str | Path,
+    *,
+    session_id: str,
+    user_id: str,
+    channel: str,
+) -> tuple[JobSpec, ChatSpec]:
+    """Return the job currently bound to the target chat."""
+    workspace_dir = Path(workspace_dir).expanduser()
+    chats_repo = JsonChatRepository(workspace_dir / "chats.json")
+    jobs_repo = JsonJobRepository(get_recruitment_jobs_path())
+
+    chat = await chats_repo.get_chat_by_id(
+        session_id=session_id,
+        user_id=user_id,
+        channel=channel,
+    )
+    if chat is None:
+        raise JobChatNotFoundError("当前对话不存在，无法读取绑定职位")
+
+    binding = job_binding_from_chat(chat)
+    if binding is None:
+        raise JobChatNotBoundError("当前对话还没有绑定职位")
+
+    job = await _resolve_job(
+        jobs_repo,
+        job_id=_read_string(binding.get("job_id")),
+        job_name=_read_string(binding.get("job_name")),
+    )
+    return job, chat
+
+
+def _chat_belongs_to_job(chat: ChatSpec, job: JobSpec) -> bool:
+    binding = job_binding_from_chat(chat)
+    if binding is None:
+        return False
+    if binding["job_id"]:
+        return binding["job_id"] == job.id
+    return binding["job_name"] == job.name
+
+
+def _iter_active_workspace_dirs() -> list[Path]:
+    root = (WORKING_DIR / WORKSPACES_DIR).expanduser()
+    if not root.exists():
+        return []
+
+    workspace_dirs: list[Path] = []
+    for child in root.iterdir():
+        if not child.is_dir():
+            continue
+        if ".backup-" in child.name:
+            continue
+        workspace_dirs.append(child)
+    return workspace_dirs
+
+
+async def delete_job(job_id: str) -> DeleteJobResult:
+    """Delete a job plus all bound chat specs and session files."""
+    from .pipeline_service import delete_job_pipeline_records
+
+    jobs_repo = JsonJobRepository(get_recruitment_jobs_path())
+    job = await jobs_repo.get_job(job_id)
+    if job is None:
+        raise JobNotFoundError(f"未找到职位：{job_id}")
+
+    deleted_chat_ids: list[str] = []
+    deleted_session_count = 0
+
+    for workspace_dir in _iter_active_workspace_dirs():
+        chats_repo = JsonChatRepository(workspace_dir / "chats.json")
+        chats = await chats_repo.list_chats()
+        related_chats = [chat for chat in chats if _chat_belongs_to_job(chat, job)]
+        if not related_chats:
+            continue
+
+        related_chat_ids = [chat.id for chat in related_chats]
+        await chats_repo.delete_chats(related_chat_ids)
+        deleted_chat_ids.extend(related_chat_ids)
+
+        session_store = SafeJSONSession(save_dir=str(workspace_dir / "sessions"))
+        for chat in related_chats:
+            deleted_session_count += int(
+                await session_store.delete_session_state(
+                    chat.session_id,
+                    user_id=chat.user_id,
+                )
+            )
+
+    await delete_job_pipeline_records(job_id)
+
+    deleted = await jobs_repo.delete_job(job_id)
+    if not deleted:
+        raise JobNotFoundError(f"未找到职位：{job_id}")
+
+    return DeleteJobResult(
+        deleted=True,
+        job_id=job_id,
+        deleted_chat_ids=deleted_chat_ids,
+        deleted_chat_count=len(deleted_chat_ids),
+        deleted_session_count=deleted_session_count,
+    )
 
 
 async def list_jobs() -> list[JobSpec]:

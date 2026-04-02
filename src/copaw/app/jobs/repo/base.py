@@ -44,3 +44,12 @@ class BaseJobRepository(ABC):
         else:
             jf.jobs.append(spec)
         await self.save(jf)
+
+    async def delete_job(self, job_id: str) -> bool:
+        jf = await self.load()
+        before = len(jf.jobs)
+        jf.jobs = [job for job in jf.jobs if job.id != job_id]
+        if len(jf.jobs) == before:
+            return False
+        await self.save(jf)
+        return True

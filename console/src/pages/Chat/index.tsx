@@ -15,7 +15,12 @@ import { chatApi } from "../../api/modules/chat";
 import { getApiUrl } from "../../api/config";
 import { buildAuthHeaders } from "../../api/authHeaders";
 import { providerApi } from "../../api/modules/provider";
-import type { ProviderInfo, ModelInfo, ChatSpec } from "../../api/types";
+import type {
+  ProviderInfo,
+  ModelInfo,
+  ChatSpec,
+  JobDeleteResponse,
+} from "../../api/types";
 import ModelSelector from "./ModelSelector";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useAgentStore } from "../../stores/agentStore";
@@ -455,6 +460,26 @@ export default function ChatPage() {
   const refreshRuntimeSessions = useCallback(() => {
     setRefreshKey((prev) => prev + 1);
   }, []);
+
+  const handleJobDeleted = useCallback(
+    async (result: JobDeleteResponse) => {
+      closeJobDetailPanel();
+      setJobDetailPanelCoversChat(false);
+      await loadChatSpecs({ silent: true });
+      refreshRuntimeSessions();
+
+      if (chatId && result.deleted_chat_ids.includes(chatId)) {
+        navigate("/");
+      }
+    },
+    [
+      chatId,
+      closeJobDetailPanel,
+      loadChatSpecs,
+      navigate,
+      refreshRuntimeSessions,
+    ],
+  );
 
   const handleCreateChat = useCallback(
     async (job?: ChatJobContext | null) => {
@@ -917,6 +942,7 @@ export default function ChatPage() {
         job={resolvedJobDetailPanelJob}
         onClose={closeJobDetailPanel}
         onCoverChatChange={setJobDetailPanelCoversChat}
+        onDeleted={handleJobDeleted}
       />
 
       <Modal

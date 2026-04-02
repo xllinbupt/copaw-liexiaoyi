@@ -16,6 +16,8 @@ import {
 } from "@agentscope-ai/chat/lib/AgentScopeRuntimeWebUI/core/AgentScopeRuntime/types";
 import { useChatAnywhereOptions } from "@agentscope-ai/chat/lib/AgentScopeRuntimeWebUI/core/Context/ChatAnywhereOptionsContext";
 import {
+  hidePendingJobCardBlock,
+  hidePendingResumeCardBlock,
   isJobCardPayload,
   normalizeJobCardPayload,
   parseJobCardsFromText,
@@ -38,18 +40,47 @@ type SplitMessageResult = {
   visibleMessage: IAgentScopeRuntimeMessage | null;
   jobCards: JobCardPayload[];
   cards: ResumeCardPayload[];
+  pendingJobCards: number;
+  pendingResumeCards: number;
 };
+
+function CardLoadingPlaceholder(props: {
+  kind: "job" | "resume";
+}) {
+  return (
+    <div className={styles.cardLoading} aria-hidden>
+      <div className={styles.cardLoadingHeader}>
+        <span className={styles.cardLoadingLabel}>
+          {props.kind === "job" ? "职位卡片生成中" : "简历卡片生成中"}
+        </span>
+        <span className={styles.cardLoadingChip} />
+      </div>
+      <div className={styles.cardLoadingTitle} />
+      <div className={styles.cardLoadingMeta} />
+      <div className={styles.cardLoadingRow} />
+      <div className={styles.cardLoadingRowShort} />
+    </div>
+  );
+}
 
 function splitResumeCards(
   message: IAgentScopeRuntimeMessage,
 ): SplitMessageResult {
   if (!Array.isArray(message.content) || message.content.length === 0) {
-    return { visibleMessage: message, jobCards: [], cards: [] };
+    return {
+      visibleMessage: message,
+      jobCards: [],
+      cards: [],
+      pendingJobCards: 0,
+      pendingResumeCards: 0,
+    };
   }
 
   const jobCards: JobCardPayload[] = [];
   const cards: ResumeCardPayload[] = [];
   const content: IContent[] = [];
+  let pendingJobCards = 0;
+  let pendingResumeCards = 0;
 
   message.content.forEach((item) => {
     if (item?.type === AgentScopeRuntimeContentType.DATA) {
@@ -81,15 +112,35 @@ function splitResumeCards(
         jobCards.push(...parsedJobs.cards);
       }
 
-      const parsedResumes = parseResumeCardsFromText(parsedJobs.remainingText);
-      if (parsedJobs.cards.length > 0 || parsedResumes.cards.length > 0) {
+      const pendingJobs = hidePendingJobCardBlock(parsedJobs.remainingText);
+      if (pendingJobs.pending) {
+        pendingJobCards += 1;
+      }
+
+      const parsedResumes = parseResumeCardsFromText(pendingJobs.remainingText);
+      if (parsedResumes.cards.length > 0) {
         cards.push(...parsedResumes.cards);
-        if (!parsedResumes.remainingText) {
+      }
+
+      const pendingResumes = hidePendingResumeCardBlock(
+        parsedResumes.remainingText,
+      );
+      if (pendingResumes.pending) {
+        pendingResumeCards += 1;
+      }
+
+      if (
+        parsedJobs.cards.length > 0 ||
+        parsedResumes.cards.length > 0 ||
+        pendingJobs.pending ||
+        pendingResumes.pending
+      ) {
+        if (!pendingResumes.remainingText) {
           return;
         }
         content.push({
           ...(item as IContent),
-          text: parsedResumes.remainingText,
+          text: pendingResumes.remainingText,
         } as IContent);
         return;
       }
@@ -102,21 +153,21 @@ function splitResumeCards(
     visibleMessage: content.length > 0 ? { ...message, content } : null,
     jobCards,
     cards,
+    pendingJobCards,
+    pendingResumeCards,
   };
 }
 
 export default function ResumeResponseCard(props: ResumeResponseCardProps) {
   const avatar = useChatAnywhereOptions((value) => value.welcome?.avatar);
   const nick = useChatAnywhereOptions((value) => value.welcome?.nick);
+  const isGenerating = AgentScopeRuntimeResponseBuilder.maybeGenerating(props.data);
 
   const messages = useMemo(() => {
     return AgentScopeRuntimeResponseBuilder.mergeToolMessages(props.data.output);
   }, [props.data.output]);
 
-  if (
-    !messages?.length &&
-    AgentScopeRuntimeResponseBuilder.maybeGenerating(props.data)
-  ) {
+  if (!messages?.length && isGenerating) {
     return <Bubble.Spin />;
   }
 
@@ -132,7 +183,13 @@ export default function ResumeResponseCard(props: ResumeResponseCardProps) {
       {messages.map((item) => {
         switch (item.type) {
           case AgentScopeRuntimeMessageType.MESSAGE: {
-            const { visibleMessage, jobCards, cards } = splitResumeCards(item);
+            const {
+              visibleMessage,
+              jobCards,
+              cards,
+              pendingJobCards,
+              pendingResumeCards,
+            } = splitResumeCards(item);
             return (
               <div key={item.id}>
                 {visibleMessage ? <Message data={visibleMessage} /> : null}
@@ -143,6 +200,16 @@ export default function ResumeResponseCard(props: ResumeResponseCardProps) {
                         key={card.job_id || card.id || `${item.id}-job-${index}`}
                         card={card}
                         index={index}
+                      />
+                    ))}
+                  </div>
+                ) : null}
+                {isGenerating && pendingJobCards > 0 ? (
+                  <div className={styles.resumeCardList}>
+                    {Array.from({ length: pendingJobCards }).map((_, index) => (
+                      <CardLoadingPlaceholder
+                        key={`${item.id}-job-loading-${index}`}
+                        kind="job"
                       />
                     ))}
                   </div>
@@ -158,6 +225,16 @@ export default function ResumeResponseCard(props: ResumeResponseCardProps) {
                         }
                         card={card}
                         index={index}
+                      />
+                    ))}
+                  </div>
+                ) : null}
+                {isGenerating && pendingResumeCards > 0 ? (
+                  <div className={styles.resumeCardList}>
+                    {Array.from({ length: pendingResumeCards }).map((_, index) => (
+                      <CardLoadingPlaceholder
+                        key={`${item.id}-resume-loading-${index}`}
+                        kind="resume"
                       />
                     ))}
                   </div>
