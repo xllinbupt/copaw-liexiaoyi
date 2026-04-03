@@ -6,6 +6,7 @@ const DEFAULT_SESSION_NAME = "New Chat";
 export const CHAT_WORKSPACE_UPDATED_EVENT = "copaw-chat-workspace-updated";
 export const OPEN_JOB_DETAIL_PANEL_EVENT = "copaw-open-job-detail-panel";
 export const JOB_PIPELINE_UPDATED_EVENT = "copaw-job-pipeline-updated";
+export const INSERT_CHAT_REFERENCE_EVENT = "copaw-insert-chat-reference";
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -32,10 +33,13 @@ export interface ChatCandidateDetails {
   job?: ChatJobDetails | null;
 }
 
+export type JobDetailTabKey = "detail" | "pipeline";
+
 export type ChatDetailPanelView =
   | {
       type: "job";
       job: ChatJobDetails;
+      tab?: JobDetailTabKey;
     }
   | {
       type: "candidate";
@@ -52,6 +56,10 @@ export interface OpenJobDetailPanelDetail {
 
 export interface JobPipelineUpdatedDetail {
   jobId: string;
+}
+
+export interface InsertChatReferenceDetail {
+  text: string;
 }
 
 function isRecord(value: unknown): value is UnknownRecord {
@@ -311,6 +319,15 @@ export function notifyJobPipelineUpdated(jobId: string): void {
   window.dispatchEvent(
     new CustomEvent<JobPipelineUpdatedDetail>(JOB_PIPELINE_UPDATED_EVENT, {
       detail: { jobId },
+    }),
+  );
+}
+
+export function insertChatReference(text: string): void {
+  if (typeof window === "undefined" || !text.trim()) return;
+  window.dispatchEvent(
+    new CustomEvent<InsertChatReferenceDetail>(INSERT_CHAT_REFERENCE_EVENT, {
+      detail: { text },
     }),
   );
 }

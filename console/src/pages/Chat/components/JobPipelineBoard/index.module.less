@@ -14,9 +14,13 @@
 }
 
 .summaryText {
+  min-width: 0;
   color: rgba(0, 0, 0, 0.5);
   font-size: 12px;
   line-height: 1.5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .summaryActions {
@@ -54,12 +58,32 @@
   user-select: none;
 }
 
+.resizableHeaderCellDragOver {
+  background: rgba(255, 122, 26, 0.08);
+}
+
 .resizableHeaderInner {
   position: relative;
   display: flex;
   align-items: center;
   min-height: 100%;
   padding-right: 12px;
+}
+
+.headerDragLabel {
+  display: inline-flex;
+  align-items: center;
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+}
+
+.headerDragLabelDraggable {
+  cursor: grab;
+}
+
+.headerDragLabelDraggable:active {
+  cursor: grabbing;
 }
 
 .resizeHandle {
@@ -284,6 +308,32 @@
   overflow: hidden;
 }
 
+.tableWorkSummary {
+  min-width: 0;
+}
+
+.tableWorkCompany {
+  color: rgba(0, 0, 0, 0.88);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.5;
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+.tableWorkMeta {
+  margin-top: 2px;
+  color: rgba(0, 0, 0, 0.56);
+  font-size: 12px;
+  line-height: 1.5;
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
 .tableCellMuted {
   color: rgba(0, 0, 0, 0.44);
   font-size: 12px;
@@ -354,9 +404,14 @@
   .entryLatestWork,
   .entrySummary,
   .tableCandidateMeta,
+  .tableWorkMeta,
   .tableSummary,
   .tableCellMuted {
     color: rgba(255, 255, 255, 0.62);
+  }
+
+  .tableWorkCompany {
+    color: rgba(255, 255, 255, 0.92);
   }
 
   .column,

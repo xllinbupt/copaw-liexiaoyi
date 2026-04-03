@@ -11,6 +11,7 @@ import type {
   ChatCandidateDetails,
   ChatDetailPanelView,
   ChatJobDetails,
+  JobDetailTabKey,
 } from "../../chatWorkspace";
 import CandidateDetailPanel from "../CandidateDetailPanel";
 import JobPipelineBoard from "../JobPipelineBoard";
@@ -29,6 +30,7 @@ interface JobDetailPanelProps {
   canGoBack: boolean;
   onBack: () => void;
   onClose: () => void;
+  onJobTabChange: (tab: JobDetailTabKey) => void;
   onOpenJob: (job: ChatJobDetails) => void;
   onOpenCandidate: (candidate: ChatCandidateDetails) => void;
   onCoverChatChange: (covered: boolean) => void;
@@ -70,6 +72,7 @@ export default function JobDetailPanel({
   canGoBack,
   onBack,
   onClose,
+  onJobTabChange,
   onOpenJob,
   onOpenCandidate,
   onCoverChatChange,
@@ -95,6 +98,7 @@ export default function JobDetailPanel({
 
   const activeJob = view?.type === "job" ? view.job : null;
   const activeCandidate = view?.type === "candidate" ? view.candidate : null;
+  const activeJobTab = view?.type === "job" ? view.tab ?? "detail" : "detail";
 
   const handleResizeStart = (clientX: number) => {
     resizeCleanupRef.current?.();
@@ -389,6 +393,10 @@ export default function JobDetailPanel({
           ) : (
             <Tabs
               className={styles.tabs}
+              activeKey={activeJobTab}
+              onChange={(key) => {
+                onJobTabChange(key as JobDetailTabKey);
+              }}
               items={[
                 {
                   key: "detail",
@@ -431,7 +439,7 @@ export default function JobDetailPanel({
                 },
                 {
                   key: "pipeline",
-                  label: "Pipeline",
+                  label: "候选人",
                   children: activeJob.jobId ? (
                     <JobPipelineBoard
                       jobId={activeJob.jobId}

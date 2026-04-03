@@ -30,6 +30,8 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/agents", tags=["agents"])
 
+DEFAULT_NEW_AGENT_SKILL_NAMES: tuple[str, ...] = ("cron",)
+
 
 class AgentSummary(BaseModel):
     """Agent summary information."""
@@ -260,7 +262,9 @@ async def create_agent(
         workspace_dir,
         agent_config,
         skill_names=(
-            request.skill_names if request.skill_names is not None else []
+            request.skill_names
+            if request.skill_names is not None
+            else list(DEFAULT_NEW_AGENT_SKILL_NAMES)
         ),
     )
 

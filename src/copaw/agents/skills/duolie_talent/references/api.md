@@ -36,7 +36,7 @@
 
 ### 入参格式
 
-所有入参通过 `input` 字段包装为 JSON：
+所有入参通过 `input` 字段包装为 JSON，且应进行 URL 编码：
 
 ```text
 body = "input=" + encodeURIComponent(JSON.stringify({ keyword: "Java", city: "上海 北京", workYearLow: 3 }))
@@ -92,6 +92,14 @@ projects[]              项目经历列表（可为 null）
 |------|------|
 | 未登录 / Cookie 过期 / Token 无效 | `code: "-1401"`，`msg` 包含“过期”或“重新登录” |
 | 系统错误（通常是入参格式错误） | `code: "-1"`，`msg: "系统错误"`，检查 `input` 包装是否正确 |
+| 请求参数错误 / 请求头缺失 | `code: "-1400"` 或 HTTP `400`，优先检查 `input` 是否 URL 编码、`x-fscp-*` 请求头是否完整 |
 | 简历不存在或 `resumeIdEncode` 非法 | BizException 提示 |
 
 **凭据过期时**：需要重新执行完整登录流程。
+
+**搜索排障建议**：
+
+- 如果搜索接口连续返回 `400`、`-1400` 或 `-1`，不要切到页面实际搜索
+- 优先检查 `input` 是否已 URL 编码、请求头是否完整、`referer` 是否稳定、XSRF token 是否有效
+- 建议先用最小参数集验证接口，再逐步加回城市、年限、学历、关键词等筛选项
+- 如果某轮请求失败，要明确定位是“编码问题 / 字段问题 / 请求头问题 / 登录态问题”，再继续沿 API 修复

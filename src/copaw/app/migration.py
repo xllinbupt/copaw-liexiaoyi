@@ -38,6 +38,7 @@ DEFAULT_AGENT_FIRST_RUN_SKILL_NAMES: tuple[str, ...] = (
     "job_intake_consultant",
     "duolie_talent",
     "pipeline_manager",
+    "cron",
 )
 
 # Workspace items to migrate: (name, is_directory)

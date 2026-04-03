@@ -492,7 +492,14 @@ async def update_pipeline_entry_assessment(
 
     now = datetime.now(timezone.utc)
     previous_interest = entry.recruiter_interest
+    previous_stage_id = entry.current_stage_id
     entry.recruiter_interest = request.recruiter_interest
+    if request.recruiter_interest == "no":
+        closed_stage = stages_by_id.get("closed")
+        if closed_stage is not None:
+            entry.current_stage_id = closed_stage.id
+            entry.system_stage = closed_stage.system_stage
+            entry.status = "closed"
     entry.latest_activity_at = now
     entry.updated_at = now
     await entries_repo.upsert_entry(entry)
@@ -514,6 +521,25 @@ async def update_pipeline_entry_assessment(
             created_at=now,
         )
     )
+
+    if entry.current_stage_id != previous_stage_id:
+        await activities_repo.append_activity(
+            PipelineActivity(
+                pipeline_entry_id=entry.id,
+                candidate_id=entry.candidate_id,
+                job_id=job_id,
+                action_type="stage_changed",
+                actor_type=request.actor_type,
+                note="因匹配度更新为淘汰，自动归档",
+                payload={
+                    "job_id": job_id,
+                    "from_stage_id": previous_stage_id,
+                    "to_stage_id": entry.current_stage_id,
+                    "reason": "recruiter_interest_no",
+                },
+                created_at=now,
+            )
+        )
 
     candidate = await candidates_repo.get_candidate(entry.candidate_id)
     if candidate is None:

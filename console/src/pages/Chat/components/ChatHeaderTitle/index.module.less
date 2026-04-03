@@ -31,21 +31,49 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-weight: 500;
 }
 
 .jobNameButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   min-width: 0;
   max-width: 320px;
-  padding: 0;
-  border: none;
-  background: transparent;
-  color: inherit;
+  padding: 2px 8px;
+  border: 1px solid rgba(255, 122, 0, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 122, 0, 0.06);
+  color: #8a4b00;
   cursor: pointer;
   text-align: left;
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    transform 0.18s ease;
 }
 
-.jobNameButton:hover .jobName {
+.jobNameButton:hover {
+  background: rgba(255, 122, 0, 0.1);
+  border-color: rgba(255, 122, 0, 0.24);
   color: #ff7f16;
+  transform: translateY(-1px);
+}
+
+.jobNameButton:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(255, 122, 0, 0.14);
+}
+
+.jobNameButton:active {
+  transform: translateY(0);
+}
+
+.jobNameIcon {
+  flex: 0 0 auto;
+  font-size: 10px;
+  opacity: 0.75;
 }
 
 .metaTag {
@@ -71,8 +99,20 @@
     color: rgba(255, 255, 255, 0.5);
   }
 
-  .jobNameButton:hover .jobName {
+  .jobNameButton {
+    border-color: rgba(255, 179, 107, 0.16);
+    background: rgba(255, 179, 107, 0.1);
+    color: rgba(255, 209, 153, 0.92);
+  }
+
+  .jobNameButton:hover {
+    background: rgba(255, 179, 107, 0.16);
+    border-color: rgba(255, 179, 107, 0.28);
     color: #ffb36b;
+  }
+
+  .jobNameButton:focus-visible {
+    box-shadow: 0 0 0 3px rgba(255, 179, 107, 0.12);
   }
 
   .metaTag {

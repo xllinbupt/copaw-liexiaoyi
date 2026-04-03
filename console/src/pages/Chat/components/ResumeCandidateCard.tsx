@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
-import { Button, Drawer, Empty, Spin, Tag, message } from "antd";
-import { LinkOutlined, PlusOutlined } from "@ant-design/icons";
+import { Button, Drawer, Empty, Tag, message } from "antd";
+import { LinkOutlined, MessageOutlined, PlusOutlined } from "@ant-design/icons";
 import { useLocation } from "react-router-dom";
 import { chatApi } from "../../../api/modules/chat";
 import { jobApi } from "../../../api/modules/job";
@@ -10,6 +10,7 @@ import {
 } from "../utils";
 import {
   getChatJobDetails,
+  insertChatReference,
   notifyJobPipelineUpdated,
   openJobDetailPanel,
 } from "../chatWorkspace";
@@ -158,12 +159,20 @@ function getLatestWorkExperienceSummary(item?: TimelineEntry): string {
   return item.summary ? [header, item.summary].filter(Boolean).join(" | ") : (header || item.fallback || "");
 }
 
+function buildCandidateReferenceText(params: {
+  name: string;
+  candidateId: string;
+}) {
+  return params.candidateId
+    ? `@候选人 ${params.name}（ID：${params.candidateId}）`
+    : `@候选人 ${params.name}`;
+}
+
 export default function ResumeCandidateCard(
   props: ResumeCandidateCardProps,
 ) {
   const location = useLocation();
   const [open, setOpen] = useState(false);
-  const [loaded, setLoaded] = useState(false);
   const [addingToPipeline, setAddingToPipeline] = useState(false);
   const card = useMemo(() => normalizeResumeCardPayload(props.card), [props.card]);
   const chatId = useMemo(() => {
@@ -213,8 +222,23 @@ export default function ResumeCandidateCard(
 
   const openPreview = () => {
     if (!detailUrl) return;
-    setLoaded(false);
     setOpen(true);
+  };
+
+  const handleInsertReference = (event: {
+    preventDefault: () => void;
+    stopPropagation: () => void;
+  }) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    insertChatReference(
+      buildCandidateReferenceText({
+        name,
+        candidateId: sourceCandidateKey,
+      }),
+    );
+    message.success("已把候选人卡片引用插入输入框");
   };
 
   const handleAddToPipeline = async (event: {
@@ -309,7 +333,7 @@ export default function ResumeCandidateCard(
 
   const renderTimelineEntry = (item: TimelineEntry, idx: number) => {
     const fallback = item.fallback || "";
-    const showHeader = Boolean(item.company || item.period);
+    const showHeader = Boolean(item.company || item.title || item.period);
     const showTitle = Boolean(item.title);
     const showSummary = Boolean(item.summary);
     const showFallback = !showHeader && !showTitle && !showSummary && fallback;
@@ -323,16 +347,24 @@ export default function ResumeCandidateCard(
         <div className={styles.resumeTimelineContent}>
           {showHeader ? (
             <div className={styles.resumeTimelineHeader}>
-              <div className={styles.resumeTimelineCompany}>
-                {item.company || fallback}
-              </div>
+              {item.company || fallback ? (
+                <div className={styles.resumeTimelineCompany}>
+                  {item.company || fallback}
+                </div>
+              ) : null}
+              {(item.company || fallback) && item.title ? (
+                <div className={styles.resumeTimelineDivider}>|</div>
+              ) : null}
+              {item.title ? (
+                <div className={styles.resumeTimelineTitle}>{item.title}</div>
+              ) : null}
+              {(item.period && ((item.company || fallback) || item.title)) ? (
+                <div className={styles.resumeTimelineDivider}>|</div>
+              ) : null}
               {item.period ? (
                 <div className={styles.resumeTimelinePeriod}>{item.period}</div>
               ) : null}
             </div>
-          ) : null}
-          {showTitle ? (
-            <div className={styles.resumeTimelineTitle}>{item.title}</div>
           ) : null}
           {showSummary ? (
             <div className={styles.resumeTimelineSecondary}>{item.summary}</div>
@@ -425,24 +457,35 @@ export default function ResumeCandidateCard(
           </div>
         ) : null}
 
-        {reasonText ? (
-          <div className={styles.resumeCardReasonBar}>
-            <span className={styles.resumeCardReasonLabel}>推荐理由</span>
-            <span className={styles.resumeCardReasonText}>{reasonText}</span>
-          </div>
-        ) : null}
+        <div className={styles.resumeCardFooter}>
+          {reasonText ? (
+            <div className={styles.resumeCardReasonBar}>
+              <span className={styles.resumeCardReasonLabel}>推荐理由</span>
+              <span className={styles.resumeCardReasonText}>{reasonText}</span>
+            </div>
+          ) : (
+            <div />
+          )}
 
-        <div className={styles.resumeCardActions}>
-          <Button
-            size="small"
-            icon={<PlusOutlined />}
-            loading={addingToPipeline}
-            onClick={(event) => {
-              void handleAddToPipeline(event);
-            }}
-          >
-            加入 Pipeline
-          </Button>
+          <div className={styles.resumeCardActions}>
+            <Button
+              size="small"
+              icon={<MessageOutlined />}
+              onClick={handleInsertReference}
+            >
+              引用
+            </Button>
+            <Button
+              size="small"
+              icon={<PlusOutlined />}
+              loading={addingToPipeline}
+              onClick={(event) => {
+                void handleAddToPipeline(event);
+              }}
+            >
+              加入职位
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -472,23 +515,98 @@ export default function ResumeCandidateCard(
         ]}
         destroyOnHidden
       >
-        <div className={styles.resumeModalNotice}>
-          当前为站内弹窗预览。如果目标站点不支持内嵌，请使用“新标签打开”。
-        </div>
-
         {detailUrl ? (
-          <div className={styles.resumePreviewShell}>
-            {!loaded ? (
-              <div className={styles.resumePreviewLoading}>
-                <Spin tip="正在加载简历详情..." />
+          <div className={styles.resumeDetailPanel}>
+            <div className={styles.resumeDetailPrimary}>
+              <div className={styles.resumeDetailHeader}>
+                <div className={styles.resumeDetailTitleBlock}>
+                  <div className={styles.resumeDetailName}>{name}</div>
+                  <div className={styles.resumeDetailHeadline}>
+                    {[title, company].filter(Boolean).join(" | ") || "暂无当前职位信息"}
+                  </div>
+                </div>
+                <Button
+                  type="link"
+                  icon={<LinkOutlined />}
+                  onClick={() => {
+                    window.open(detailUrl, "_blank", "noopener,noreferrer");
+                  }}
+                >
+                  查看原始简历 URL
+                </Button>
               </div>
-            ) : null}
-            <iframe
-              className={styles.resumePreviewFrame}
-              src={detailUrl}
-              title={`${name} 简历详情`}
-              onLoad={() => setLoaded(true)}
-            />
+
+              <div className={styles.resumeDetailGrid}>
+                <div className={styles.resumeDetailItem}>
+                  <div className={styles.resumeDetailLabel}>基础信息</div>
+                  <div className={styles.resumeDetailValue}>
+                    {metaLine.length > 0 ? metaLine.join(" · ") : "暂无"}
+                  </div>
+                </div>
+                <div className={styles.resumeDetailItem}>
+                  <div className={styles.resumeDetailLabel}>期望薪资</div>
+                  <div className={styles.resumeDetailValue}>
+                    {card.expected_salary || "暂无"}
+                  </div>
+                </div>
+                <div className={styles.resumeDetailItem}>
+                  <div className={styles.resumeDetailLabel}>学校 / 教育</div>
+                  <div className={styles.resumeDetailValue}>{educationText || "暂无"}</div>
+                </div>
+                <div className={styles.resumeDetailItem}>
+                  <div className={styles.resumeDetailLabel}>最近更新</div>
+                  <div className={styles.resumeDetailValue}>{updateLabel || "暂无"}</div>
+                </div>
+              </div>
+
+              {reasonText ? (
+                <section className={styles.resumeDetailSection}>
+                  <div className={styles.resumeDetailSectionTitle}>推荐理由</div>
+                  <div className={styles.resumeDetailSectionBody}>{reasonText}</div>
+                </section>
+              ) : null}
+
+              {latestWorkExperience ? (
+                <section className={styles.resumeDetailSection}>
+                  <div className={styles.resumeDetailSectionTitle}>最新工作经历</div>
+                  <div className={styles.resumeDetailSectionBody}>{latestWorkExperience}</div>
+                </section>
+              ) : null}
+
+              {workSummary.length > 0 ? (
+                <section className={styles.resumeDetailSection}>
+                  <div className={styles.resumeDetailSectionTitle}>工作经历摘要</div>
+                  <div className={styles.resumeDetailTimeline}>
+                    {workSummary.map(renderTimelineEntry)}
+                  </div>
+                </section>
+              ) : null}
+
+              {tags.length > 0 ? (
+                <section className={styles.resumeDetailSection}>
+                  <div className={styles.resumeDetailSectionTitle}>标签</div>
+                  <div className={styles.resumeDetailTags}>
+                    {tags.map((tag) => (
+                      <Tag key={`${name}-detail-${tag}`} color="orange">
+                        {tag}
+                      </Tag>
+                    ))}
+                  </div>
+                </section>
+              ) : null}
+
+              <section className={styles.resumeDetailSection}>
+                <div className={styles.resumeDetailSectionTitle}>原始链接</div>
+                <a
+                  className={styles.resumeDetailLink}
+                  href={detailUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {detailUrl}
+                </a>
+              </section>
+            </div>
           </div>
         ) : (
           <div className={styles.resumePreviewEmpty}>

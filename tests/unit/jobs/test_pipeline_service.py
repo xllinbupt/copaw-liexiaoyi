@@ -217,6 +217,61 @@ async def test_update_pipeline_entry_assessment(
 
 
 @pytest.mark.asyncio
+async def test_update_pipeline_entry_assessment_marks_closed_when_rejected(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setattr(job_paths, "WORKING_DIR", tmp_path)
+
+    jobs_repo = JsonJobRepository(tmp_path / "recruitment_jobs.json")
+    await jobs_repo.upsert_job(_build_job("job-1"))
+
+    created = await add_candidate_to_job_pipeline(
+        "job-1",
+        AddPipelineCandidateRequest(
+            candidate=CandidateProfileInput(
+                name="钱七",
+                source_platform="duolie",
+                source_candidate_key="resume-010",
+                current_title="产品经理",
+            ),
+            source_type="outbound",
+            added_by="agent",
+            summary="先加入 pipeline",
+            source_resume_id="resume-010",
+        ),
+    )
+
+    updated = await update_pipeline_entry_assessment(
+        "job-1",
+        created.entry.id,
+        UpdatePipelineEntryAssessmentRequest(
+            recruiter_interest="no",
+            actor_type="user",
+        ),
+    )
+
+    assert updated.created is False
+    assert updated.entry.recruiter_interest == "no"
+    assert updated.entry.current_stage.id == "closed"
+    assert updated.entry.current_stage.name == "已归档"
+    assert updated.entry.system_stage == "closed"
+
+    activities_repo = JsonPipelineActivityRepository(
+        tmp_path / "recruitment_pipeline_activities.json",
+    )
+    activities = await activities_repo.list_activities()
+    assert [activity.action_type for activity in activities] == [
+        "added",
+        "updated",
+        "stage_changed",
+    ]
+    assert activities[-1].payload["from_stage_id"] == "lead"
+    assert activities[-1].payload["to_stage_id"] == "closed"
+    assert activities[-1].payload["reason"] == "recruiter_interest_no"
+
+
+@pytest.mark.asyncio
 async def test_delete_job_removes_related_pipeline_records(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,

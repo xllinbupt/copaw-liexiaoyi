@@ -128,7 +128,27 @@ async function duolieLogin(browser) {
 }
 ```
 
-### Step 2：搜索人才（浏览器内 API）
+### Step 2：搜索人才（只使用浏览器内 API，不切页面搜索）
+
+默认顺序：
+
+1. 先在已登录的多猎页面上下文里调用浏览器内 API
+2. 如果出现 `400`、`-1400`、`系统错误`、请求头校验失败、参数格式错误，不要切到页面实际搜索
+3. 应优先沿 API 路径定位问题：检查 `input` URL 编码、最小化参数、逐步加回筛选条件、校正 `x-fscp-*` / `referer` / `x-xsrf-token`
+4. 只有在明确确认是登录态失效时，才重新登录后继续走 API
+
+也就是说：
+
+- API 是默认快路径
+- API 也是唯一允许的搜索路径
+- 只要 API 路径不稳定，就继续排查并修正 API 请求本身，而不是改走页面搜索
+
+API 排障时的要求：
+
+- 先用最小参数集验证接口可用，再逐步补充城市、年限、学历等筛选条件
+- 保留稳定的 `referer`、`origin`、`x-fscp-*`、`x-xsrf-token`
+- 搜索失败时优先输出“哪个参数或哪类请求头可能导致问题”，而不是泛泛地说“接口坏了”
+- 如需重试，优先减少参数组合、检查编码方式与字段名，而不是盲目重复同一个请求
 
 ```javascript
 async function searchTalent(browser, params) {
@@ -146,7 +166,7 @@ async function searchTalent(browser, params) {
     }
   }
 
-  const body = "input=" + JSON.stringify(requestBody)
+  const body = "input=" + encodeURIComponent(JSON.stringify(requestBody))
   const result = await browser.act({
     kind: "evaluate",
     fn: `(async function(body){
@@ -172,8 +192,14 @@ async function searchTalent(browser, params) {
         credentials: 'include',
         body: body
       });
+      if (response.status === 400) {
+        throw new Error('搜索接口返回 400，请优先检查 input 编码、请求头和筛选参数格式');
+      }
       const result = await response.json();
       if(result.code === '-1401') throw new Error('Token 已过期，需要重新登录');
+      if(result.code === '-1400' || result.code === '-1') {
+        throw new Error('搜索接口参数或请求头不稳定，请继续沿 API 路径排查编码、字段和请求头');
+      }
       return JSON.stringify(result);
     })('${body}')`
   })

@@ -33,6 +33,7 @@ import JobDetailPanel from "./components/JobDetailPanel";
 import ChatSessionInitializer from "./components/ChatSessionInitializer";
 import {
   CHAT_WORKSPACE_UPDATED_EVENT,
+  INSERT_CHAT_REFERENCE_EVENT,
   OPEN_JOB_DETAIL_PANEL_EVENT,
   buildChatPayload,
   type ChatCandidateDetails,
@@ -40,6 +41,8 @@ import {
   getChatJobDetails,
   type ChatJobContext,
   type ChatJobDetails,
+  type InsertChatReferenceDetail,
+  type JobDetailTabKey,
   type OpenJobDetailPanelDetail,
   type ChatWorkspaceUpdateDetail,
 } from "./chatWorkspace";
@@ -335,16 +338,39 @@ export default function ChatPage() {
 
   const openJobDetailPanel = useCallback((job: ChatJobDetails) => {
     setDetailPanelStack((currentStack) => {
-      const nextView: ChatDetailPanelView = { type: "job", job };
+      const nextView: ChatDetailPanelView = { type: "job", job, tab: "detail" };
       const currentView = currentStack[currentStack.length - 1];
       if (
         currentView?.type === "job" &&
         currentView.job.jobId &&
         currentView.job.jobId === job.jobId
       ) {
-        return currentStack;
+        return [
+          ...currentStack.slice(0, -1),
+          {
+            ...currentView,
+            job,
+            tab: currentView.tab ?? "detail",
+          },
+        ];
       }
       return [...currentStack, nextView];
+    });
+  }, []);
+
+  const handleJobDetailTabChange = useCallback((tab: JobDetailTabKey) => {
+    setDetailPanelStack((currentStack) => {
+      const currentView = currentStack[currentStack.length - 1];
+      if (!currentView || currentView.type !== "job" || currentView.tab === tab) {
+        return currentStack;
+      }
+      return [
+        ...currentStack.slice(0, -1),
+        {
+          ...currentView,
+          tab,
+        },
+      ];
     });
   }, []);
 
@@ -375,6 +401,47 @@ export default function ChatPage() {
 
   const handleDetailPanelBack = useCallback(() => {
     setDetailPanelStack((currentStack) => currentStack.slice(0, -1));
+  }, []);
+
+  const insertReferenceIntoComposer = useCallback((text: string) => {
+    const textarea = document.querySelector(
+      '[class*="chat-anywhere-input"] textarea',
+    ) as HTMLTextAreaElement | null;
+    if (!textarea) return false;
+
+    const nativeSetter = Object.getOwnPropertyDescriptor(
+      HTMLTextAreaElement.prototype,
+      "value",
+    )?.set;
+    const currentValue = textarea.value || "";
+    const hasSelection =
+      typeof textarea.selectionStart === "number" &&
+      typeof textarea.selectionEnd === "number";
+    const selectionStart = hasSelection
+      ? (textarea.selectionStart ?? currentValue.length)
+      : currentValue.length;
+    const selectionEnd = hasSelection
+      ? (textarea.selectionEnd ?? currentValue.length)
+      : currentValue.length;
+    const prefix =
+      currentValue && !currentValue.endsWith("\n") ? "\n\n" : currentValue ? "\n" : "";
+    const nextText = `${prefix}${text.trim()}`;
+    const nextValue =
+      currentValue.slice(0, selectionStart) +
+      nextText +
+      currentValue.slice(selectionEnd);
+
+    if (nativeSetter) {
+      nativeSetter.call(textarea, nextValue);
+    } else {
+      textarea.value = nextValue;
+    }
+
+    textarea.dispatchEvent(new Event("input", { bubbles: true }));
+    const cursor = selectionStart + nextText.length;
+    textarea.focus();
+    textarea.setSelectionRange(cursor, cursor);
+    return true;
   }, []);
 
   useEffect(() => {
@@ -490,6 +557,28 @@ export default function ChatPage() {
       );
     };
   }, []);
+
+  useEffect(() => {
+    const handleInsertReference = (event: Event) => {
+      const customEvent = event as CustomEvent<InsertChatReferenceDetail>;
+      const text = customEvent.detail?.text?.trim();
+      if (!text) return;
+      if (!insertReferenceIntoComposer(text)) {
+        message.warning("没有找到当前聊天输入框，请先激活聊天输入区");
+      }
+    };
+
+    window.addEventListener(
+      INSERT_CHAT_REFERENCE_EVENT,
+      handleInsertReference as EventListener,
+    );
+    return () => {
+      window.removeEventListener(
+        INSERT_CHAT_REFERENCE_EVENT,
+        handleInsertReference as EventListener,
+      );
+    };
+  }, [insertReferenceIntoComposer]);
 
   const refreshRuntimeSessions = useCallback(() => {
     setRefreshKey((prev) => prev + 1);
@@ -976,6 +1065,7 @@ export default function ChatPage() {
         canGoBack={detailPanelStack.length > 1}
         onBack={handleDetailPanelBack}
         onClose={closeJobDetailPanel}
+        onJobTabChange={handleJobDetailTabChange}
         onOpenJob={openJobDetailPanel}
         onOpenCandidate={openCandidateDetailPanel}
         onCoverChatChange={setJobDetailPanelCoversChat}

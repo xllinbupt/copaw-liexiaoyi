@@ -1,4 +1,5 @@
 import React from "react";
+import { RightOutlined } from "@ant-design/icons";
 import type { ChatSpec } from "../../../../api/types";
 import { getChatJobContext } from "../../chatWorkspace";
 import styles from "./index.module.less";
@@ -28,6 +29,7 @@ const ChatHeaderTitle: React.FC<ChatHeaderTitleProps> = ({
               title={`查看职位详情：${jobContext.jobName}`}
             >
               <span className={styles.jobName}>{jobContext.jobName}</span>
+              <RightOutlined className={styles.jobNameIcon} />
             </button>
             {jobContext.pendingFeedbackCount > 0 ? (
               <span className={styles.metaTag}>

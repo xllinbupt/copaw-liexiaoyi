@@ -3,6 +3,7 @@ import {
   useMemo,
   useState,
   type DragEvent,
+  type DragEvent as ReactDragEvent,
   type ThHTMLAttributes,
 } from "react";
 import {
@@ -62,10 +63,17 @@ interface ResizableHeaderCellProps
   width?: number;
   minWidth?: number;
   onResize?: (deltaX: number) => void;
+  draggableColumn?: boolean;
+  isDragOver?: boolean;
+  onColumnDragStart?: (event: ReactDragEvent<HTMLElement>) => void;
+  onColumnDragEnter?: (event: ReactDragEvent<HTMLElement>) => void;
+  onColumnDragOver?: (event: ReactDragEvent<HTMLElement>) => void;
+  onColumnDrop?: (event: ReactDragEvent<HTMLElement>) => void;
+  onColumnDragEnd?: (event: ReactDragEvent<HTMLElement>) => void;
 }
 
 const DEFAULT_COLUMN_WIDTHS: ColumnWidths = {
-  candidate: 180,
+  candidate: 144,
   current_stage: 148,
   latest_work_experience: 260,
   age: 96,
@@ -78,7 +86,7 @@ const DEFAULT_COLUMN_WIDTHS: ColumnWidths = {
 };
 
 const MIN_COLUMN_WIDTHS: ColumnWidths = {
-  candidate: 148,
+  candidate: 120,
   current_stage: 132,
   latest_work_experience: 220,
   age: 80,
@@ -91,6 +99,20 @@ const MIN_COLUMN_WIDTHS: ColumnWidths = {
 };
 
 const TABLE_WIDTH_STORAGE_KEY = "copaw-job-pipeline-table-widths";
+const VIEW_MODE_STORAGE_KEY_PREFIX = "copaw-job-pipeline-view-mode";
+const COLUMN_ORDER_STORAGE_KEY = "copaw-job-pipeline-table-order";
+
+const DEFAULT_MOVABLE_COLUMN_ORDER: PipelineTableColumnKey[] = [
+  "current_stage",
+  "latest_work_experience",
+  "age",
+  "education_experience",
+  "source_type",
+  "recruiter_interest",
+  "candidate_interest",
+  "summary",
+  "latest_activity_at",
+];
 
 const SOURCE_TYPE_LABELS: Record<string, string> = {
   inbound: "主动投递",
@@ -124,8 +146,22 @@ const CANDIDATE_INTEREST_LABELS: Record<string, string> = {
 };
 
 function ResizableHeaderCell(props: ResizableHeaderCellProps) {
-  const { width, minWidth, onResize, children, className, style, ...restProps } =
-    props;
+  const {
+    width,
+    minWidth,
+    onResize,
+    children,
+    className,
+    style,
+    draggableColumn,
+    isDragOver,
+    onColumnDragStart,
+    onColumnDragEnter,
+    onColumnDragOver,
+    onColumnDrop,
+    onColumnDragEnd,
+    ...restProps
+  } = props;
 
   const handleMouseDown = (event: React.MouseEvent<HTMLSpanElement>) => {
     if (!onResize) return;
@@ -157,15 +193,29 @@ function ResizableHeaderCell(props: ResizableHeaderCellProps) {
   return (
     <th
       {...restProps}
-      className={`${className ?? ""} ${styles.resizableHeaderCell}`.trim()}
+      className={`${className ?? ""} ${styles.resizableHeaderCell} ${
+        isDragOver ? styles.resizableHeaderCellDragOver : ""
+      }`.trim()}
       style={{
         ...style,
         width,
         minWidth: minWidth ?? width,
       }}
+      onDragEnter={onColumnDragEnter}
+      onDragOver={onColumnDragOver}
+      onDrop={onColumnDrop}
+      onDragEnd={onColumnDragEnd}
     >
       <div className={styles.resizableHeaderInner}>
-        <span>{children}</span>
+        <span
+          draggable={draggableColumn}
+          className={`${styles.headerDragLabel} ${
+            draggableColumn ? styles.headerDragLabelDraggable : ""
+          }`.trim()}
+          onDragStart={onColumnDragStart}
+        >
+          {children}
+        </span>
         {onResize ? (
           <span
             role="presentation"
@@ -249,6 +299,66 @@ function getLatestWorkText(entry: PipelineEntryView): string {
   );
 }
 
+function getLatestWorkDisplay(entry: PipelineEntryView): {
+  company: string;
+  title: string;
+  period: string;
+  fallback: string;
+} {
+  const fallback = getLatestWorkText(entry);
+  const company = entry.candidate.current_company?.trim() || "";
+  const title = entry.candidate.current_title?.trim() || "";
+  const raw = fallback.trim();
+
+  if (!raw) {
+    return { company, title, period: "", fallback: "" };
+  }
+
+  const periodMatch = raw.match(
+    /((?:19|20)\d{2}\.\d{1,2}\s*[-~—–至]+\s*(?:至今|(?:19|20)\d{2}\.\d{1,2}))$/,
+  );
+  const period = periodMatch?.[1]?.trim() || "";
+  const body = period ? raw.slice(0, raw.length - period.length).trim() : raw;
+
+  if (body.includes("|")) {
+    const parts = body
+      .split("|")
+      .map((item) => item.trim())
+      .filter(Boolean);
+    return {
+      company: parts[0] || company,
+      title: parts.slice(1).join(" | ") || title,
+      period,
+      fallback: raw,
+    };
+  }
+
+  if (company && body.startsWith(company)) {
+    return {
+      company,
+      title: body.slice(company.length).trim() || title,
+      period,
+      fallback: raw,
+    };
+  }
+
+  if (title && body.endsWith(title)) {
+    return {
+      company: body.slice(0, body.length - title.length).trim() || company,
+      title,
+      period,
+      fallback: raw,
+    };
+  }
+
+  return {
+    company: company || body,
+    title,
+    period,
+    fallback: raw,
+  };
+}
+
 function buildColumnEntries(
   entries: PipelineEntryView[],
   stageId: string,
@@ -267,6 +377,13 @@ export default function JobPipelineBoard(props: JobPipelineBoardProps) {
   const [viewMode, setViewMode] = useState<PipelineViewMode>("board");
   const [columnWidths, setColumnWidths] =
     useState<ColumnWidths>(DEFAULT_COLUMN_WIDTHS);
+  const [columnOrder, setColumnOrder] = useState<PipelineTableColumnKey[]>(
+    DEFAULT_MOVABLE_COLUMN_ORDER,
+  );
+  const [draggingColumnKey, setDraggingColumnKey] =
+    useState<PipelineTableColumnKey | null>(null);
+  const [dragOverColumnKey, setDragOverColumnKey] =
+    useState<PipelineTableColumnKey | null>(null);
 
   const openCandidateDetail = (entry: PipelineEntryView) => {
     props.onOpenCandidate({
@@ -293,11 +410,63 @@ export default function JobPipelineBoard(props: JobPipelineBoardProps) {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem(COLUMN_ORDER_STORAGE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return;
+      const normalized = parsed.filter((value): value is PipelineTableColumnKey =>
+        DEFAULT_MOVABLE_COLUMN_ORDER.includes(value as PipelineTableColumnKey),
+      );
+      const merged = [
+        ...normalized,
+        ...DEFAULT_MOVABLE_COLUMN_ORDER.filter(
+          (value) => !normalized.includes(value),
+        ),
+      ];
+      setColumnOrder(merged);
+    } catch {
+      setColumnOrder(DEFAULT_MOVABLE_COLUMN_ORDER);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem(
+        `${VIEW_MODE_STORAGE_KEY_PREFIX}:${props.jobId}`,
+      );
+      if (raw === "board" || raw === "table") {
+        setViewMode(raw);
+        return;
+      }
+    } catch {}
+    setViewMode("board");
+  }, [props.jobId]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
     window.localStorage.setItem(
       TABLE_WIDTH_STORAGE_KEY,
       JSON.stringify(columnWidths),
     );
   }, [columnWidths]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(
+      COLUMN_ORDER_STORAGE_KEY,
+      JSON.stringify(columnOrder),
+    );
+  }, [columnOrder]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(
+      `${VIEW_MODE_STORAGE_KEY_PREFIX}:${props.jobId}`,
+      viewMode,
+    );
+  }, [props.jobId, viewMode]);
 
   useEffect(() => {
     let cancelled = false;
@@ -370,9 +539,85 @@ export default function JobPipelineBoard(props: JobPipelineBoardProps) {
 
   const tableColumns = useMemo<
     NonNullable<TableProps<PipelineEntryView>["columns"]>
-  >(
-    () => [
-      {
+  >(() => {
+    const moveColumn = (
+      sourceKey: PipelineTableColumnKey,
+      targetKey: PipelineTableColumnKey,
+    ) => {
+      if (
+        sourceKey === targetKey ||
+        sourceKey === "candidate" ||
+        targetKey === "candidate"
+      ) {
+        return;
+      }
+      setColumnOrder((current) => {
+        const sourceIndex = current.indexOf(sourceKey);
+        const targetIndex = current.indexOf(targetKey);
+        if (sourceIndex < 0 || targetIndex < 0) return current;
+        const next = [...current];
+        const [moved] = next.splice(sourceIndex, 1);
+        next.splice(targetIndex, 0, moved);
+        return next;
+      });
+    };
+
+    const getHeaderCellProps = (key: PipelineTableColumnKey) => ({
+      draggableColumn: key !== "candidate",
+      isDragOver: dragOverColumnKey === key && draggingColumnKey !== key,
+      onColumnDragStart:
+        key !== "candidate"
+          ? (event: ReactDragEvent<HTMLElement>) => {
+              setDraggingColumnKey(key);
+              setDragOverColumnKey(key);
+              event.dataTransfer.effectAllowed = "move";
+              event.dataTransfer.setData("text/plain", key);
+            }
+          : undefined,
+      onColumnDragEnter:
+        key !== "candidate"
+          ? (event: ReactDragEvent<HTMLElement>) => {
+              if (!draggingColumnKey || draggingColumnKey === key) return;
+              event.preventDefault();
+              setDragOverColumnKey(key);
+            }
+          : undefined,
+      onColumnDragOver:
+        key !== "candidate"
+          ? (event: ReactDragEvent<HTMLElement>) => {
+              if (!draggingColumnKey || draggingColumnKey === key) return;
+              event.preventDefault();
+              event.dataTransfer.dropEffect = "move";
+              setDragOverColumnKey(key);
+            }
+          : undefined,
+      onColumnDrop:
+        key !== "candidate"
+          ? (event: ReactDragEvent<HTMLElement>) => {
+              event.preventDefault();
+              const sourceKey =
+                (event.dataTransfer.getData("text/plain") as PipelineTableColumnKey) ||
+                draggingColumnKey;
+              if (!sourceKey) return;
+              moveColumn(sourceKey, key);
+              setDraggingColumnKey(null);
+              setDragOverColumnKey(null);
+            }
+          : undefined,
+      onColumnDragEnd:
+        key !== "candidate"
+          ? () => {
+              setDraggingColumnKey(null);
+              setDragOverColumnKey(null);
+            }
+          : undefined,
+    });
+
+    const columnConfig: Record<
+      PipelineTableColumnKey,
+      NonNullable<TableProps<PipelineEntryView>["columns"]>[number]
+    > = {
+      candidate: {
         title: "候选人",
         dataIndex: "candidate",
         key: "candidate",
@@ -389,6 +634,7 @@ export default function JobPipelineBoard(props: JobPipelineBoardProps) {
               ),
             }));
           },
+          ...getHeaderCellProps("candidate"),
         }),
         render: (_, entry) => (
           <div className={styles.tableCandidate}>
@@ -402,7 +648,7 @@ export default function JobPipelineBoard(props: JobPipelineBoardProps) {
           </div>
         ),
       },
-      {
+      current_stage: {
         title: "当前节点",
         dataIndex: "current_stage",
         key: "current_stage",
@@ -419,6 +665,7 @@ export default function JobPipelineBoard(props: JobPipelineBoardProps) {
               ),
             }));
           },
+          ...getHeaderCellProps("current_stage"),
         }),
         render: (_, entry) => (
           <Select
@@ -436,7 +683,7 @@ export default function JobPipelineBoard(props: JobPipelineBoardProps) {
           />
         ),
       },
-      {
+      latest_work_experience: {
         title: "最新工作经历",
         dataIndex: "latest_work_experience",
         key: "latest_work_experience",
@@ -453,14 +700,29 @@ export default function JobPipelineBoard(props: JobPipelineBoardProps) {
               ),
             }));
           },
+          ...getHeaderCellProps("latest_work_experience"),
         }),
-        render: (_, entry) => (
-          <div className={styles.tableSummary}>
-            {getLatestWorkText(entry) || "暂无最近工作经历"}
-          </div>
-        ),
+        render: (_, entry) => {
+          const latestWork = getLatestWorkDisplay(entry);
+          if (!latestWork.fallback) {
+            return <div className={styles.tableSummary}>暂无最近工作经历</div>;
+          }
+
+          return (
+            <div className={styles.tableWorkSummary}>
+              <div className={styles.tableWorkCompany}>
+                {latestWork.company || latestWork.fallback}
+              </div>
+              {latestWork.title || latestWork.period ? (
+                <div className={styles.tableWorkMeta}>
+                  {[latestWork.title, latestWork.period].filter(Boolean).join(" · ")}
+                </div>
+              ) : null}
+            </div>
+          );
+        },
       },
-      {
+      age: {
         title: "年龄",
         dataIndex: "age",
         key: "age",
@@ -477,6 +739,7 @@ export default function JobPipelineBoard(props: JobPipelineBoardProps) {
               ),
             }));
           },
+          ...getHeaderCellProps("age"),
         }),
         render: (_, entry) => (
           <span className={styles.tableCellMuted}>
@@ -484,7 +747,7 @@ export default function JobPipelineBoard(props: JobPipelineBoardProps) {
           </span>
         ),
       },
-      {
+      education_experience: {
         title: "学校 / 教育",
         dataIndex: "education_experience",
         key: "education_experience",
@@ -501,6 +764,7 @@ export default function JobPipelineBoard(props: JobPipelineBoardProps) {
               ),
             }));
           },
+          ...getHeaderCellProps("education_experience"),
         }),
         render: (_, entry) => (
           <div className={styles.tableEducation}>
@@ -511,7 +775,7 @@ export default function JobPipelineBoard(props: JobPipelineBoardProps) {
           </div>
         ),
       },
-      {
+      source_type: {
         title: "来源",
         dataIndex: "source_type",
         key: "source_type",
@@ -528,11 +792,12 @@ export default function JobPipelineBoard(props: JobPipelineBoardProps) {
               ),
             }));
           },
+          ...getHeaderCellProps("source_type"),
         }),
         render: (value: PipelineEntryView["source_type"]) =>
           SOURCE_TYPE_LABELS[value] || value,
       },
-      {
+      recruiter_interest: {
         title: "匹配度",
         dataIndex: "recruiter_interest",
         key: "recruiter_interest",
@@ -549,6 +814,7 @@ export default function JobPipelineBoard(props: JobPipelineBoardProps) {
               ),
             }));
           },
+          ...getHeaderCellProps("recruiter_interest"),
         }),
         render: (_, entry) => (
           <Select
@@ -563,7 +829,7 @@ export default function JobPipelineBoard(props: JobPipelineBoardProps) {
           />
         ),
       },
-      {
+      candidate_interest: {
         title: "候选人意向",
         dataIndex: "candidate_interest",
         key: "candidate_interest",
@@ -580,11 +846,12 @@ export default function JobPipelineBoard(props: JobPipelineBoardProps) {
               ),
             }));
           },
+          ...getHeaderCellProps("candidate_interest"),
         }),
         render: (value: PipelineEntryView["candidate_interest"]) =>
           CANDIDATE_INTEREST_LABELS[value] || value,
       },
-      {
+      summary: {
         title: "推荐摘要",
         dataIndex: "summary",
         key: "summary",
@@ -601,12 +868,13 @@ export default function JobPipelineBoard(props: JobPipelineBoardProps) {
               ),
             }));
           },
+          ...getHeaderCellProps("summary"),
         }),
         render: (_, entry) => (
           <div className={styles.tableSummary}>{getSummary(entry)}</div>
         ),
       },
-      {
+      latest_activity_at: {
         title: "最近更新",
         dataIndex: "latest_activity_at",
         key: "latest_activity_at",
@@ -623,6 +891,7 @@ export default function JobPipelineBoard(props: JobPipelineBoardProps) {
               ),
             }));
           },
+          ...getHeaderCellProps("latest_activity_at"),
         }),
         render: (_, entry) => (
           <span className={styles.tableCellMuted}>
@@ -630,9 +899,21 @@ export default function JobPipelineBoard(props: JobPipelineBoardProps) {
           </span>
         ),
       },
-    ],
-    [columnWidths, stages, updatingAssessmentEntryId, updatingEntryId],
-  );
+    };
+
+    return [
+      columnConfig.candidate,
+      ...columnOrder.map((key) => columnConfig[key]),
+    ];
+  }, [
+    columnOrder,
+    columnWidths,
+    dragOverColumnKey,
+    draggingColumnKey,
+    stages,
+    updatingAssessmentEntryId,
+    updatingEntryId,
+  ]);
 
   const handleStageChange = async (
     entry: PipelineEntryView,

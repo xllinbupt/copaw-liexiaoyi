@@ -301,11 +301,12 @@
 }
 
 .resumeTimelineHeader {
-  display: flex;
+  display: inline-flex;
   align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
+  flex-wrap: wrap;
+  gap: 4px;
   min-width: 0;
+  width: 100%;
 }
 
 .resumeTimelineCompany {
@@ -314,16 +315,16 @@
   font-weight: 600;
   line-height: 1.35;
   min-width: 0;
-  flex: 1;
   word-break: break-word;
 }
 
 .resumeTimelineTitle {
-  margin-top: 3px;
   color: rgba(0, 0, 0, 0.74);
   font-size: 12px;
   font-weight: 600;
   line-height: 1.35;
+  min-width: 0;
+  word-break: break-word;
 }
 
 .resumeTimelineSecondary {
@@ -341,19 +342,35 @@
   white-space: nowrap;
 }
 
+.resumeTimelineDivider {
+  color: rgba(0, 0, 0, 0.28);
+  font-size: 12px;
+  line-height: 1.3;
+  flex: 0 0 auto;
+}
+
 .resumeTimelineFallback {
   color: rgba(0, 0, 0, 0.74);
   font-size: 12px;
   line-height: 1.45;
 }
 
-.resumeCardReasonBar {
+.resumeCardFooter {
   display: flex;
-  align-items: flex-start;
-  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   margin-top: 10px;
   padding-top: 10px;
   border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.resumeCardReasonBar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1 1 auto;
 }
 
 .resumeCardReasonLabel {
@@ -368,12 +385,17 @@
   color: rgba(0, 0, 0, 0.72);
   font-size: 12px;
   line-height: 1.55;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .resumeCardActions {
   display: flex;
   justify-content: flex-end;
-  margin-top: 10px;
+  flex: 0 0 auto;
+  gap: 8px;
 
   :global(.ant-btn) {
     box-shadow: none;
@@ -381,34 +403,112 @@
   }
 }
 
-.resumeModalNotice {
-  margin-bottom: 12px;
-}
-
-.resumePreviewShell {
-  position: relative;
-  min-height: 560px;
+.resumeDetailPanel {
   border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 12px;
-  overflow: hidden;
   background: #fafafa;
 }
 
-.resumePreviewLoading {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.88);
-  z-index: 1;
+.resumeDetailPrimary {
+  padding: 18px 20px;
 }
 
-.resumePreviewFrame {
-  width: 100%;
-  min-height: 560px;
-  border: 0;
+.resumeDetailHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.resumeDetailTitleBlock {
+  min-width: 0;
+}
+
+.resumeDetailName {
+  color: #1f1f1f;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.resumeDetailHeadline {
+  margin-top: 8px;
+  color: rgba(0, 0, 0, 0.72);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.resumeDetailGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.resumeDetailItem {
+  border-radius: 12px;
   background: #fff;
+  padding: 14px 16px;
+}
+
+.resumeDetailLabel {
+  color: rgba(0, 0, 0, 0.45);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.resumeDetailValue {
+  margin-top: 6px;
+  color: rgba(0, 0, 0, 0.88);
+  font-size: 14px;
+  line-height: 1.6;
+  word-break: break-word;
+}
+
+.resumeDetailSection {
+  margin-top: 18px;
+}
+
+.resumeDetailSectionTitle {
+  color: #1f1f1f;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.resumeDetailSectionBody {
+  margin-top: 8px;
+  border-radius: 12px;
+  background: #fff;
+  padding: 14px 16px;
+  color: rgba(0, 0, 0, 0.78);
+  font-size: 14px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.resumeDetailTimeline {
+  margin-top: 10px;
+  border-radius: 12px;
+  background: #fff;
+  padding: 14px 16px;
+}
+
+.resumeDetailTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.resumeDetailLink {
+  display: inline-block;
+  margin-top: 8px;
+  color: #1677ff;
+  font-size: 13px;
+  line-height: 1.6;
+  word-break: break-all;
 }
 
 .resumePreviewEmpty {
@@ -616,7 +716,7 @@
 
 :global(.dark) .resumeMetaItem:not(:last-child)::after,
 :global(.dark) .resumeSalaryItem:not(:last-child)::after,
-:global(.dark) .resumeCardReasonBar,
+:global(.dark) .resumeCardFooter,
 :global(.dark) .resumeTimeline::before {
   border-color: rgba(255, 255, 255, 0.08);
   background: rgba(255, 255, 255, 0.08);
@@ -632,13 +732,31 @@
   color: #7db3ff;
 }
 
-:global(.dark) .resumePreviewShell {
+:global(.dark) .resumeDetailPanel {
   border-color: rgba(255, 255, 255, 0.08);
   background: #111;
 }
 
-:global(.dark) .resumePreviewLoading {
-  background: rgba(17, 17, 17, 0.88);
+:global(.dark) .resumeDetailItem,
+:global(.dark) .resumeDetailSectionBody,
+:global(.dark) .resumeDetailTimeline {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+:global(.dark) .resumeDetailName,
+:global(.dark) .resumeDetailSectionTitle,
+:global(.dark) .resumeDetailValue {
+  color: rgba(255, 255, 255, 0.92);
+}
+
+:global(.dark) .resumeDetailHeadline,
+:global(.dark) .resumeDetailSectionBody,
+:global(.dark) .resumeDetailLink {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+:global(.dark) .resumeDetailLabel {
+  color: rgba(255, 255, 255, 0.45);
 }
 
 @media (max-width: 900px) {
@@ -673,8 +791,17 @@
     align-items: flex-start;
   }
 
-  .resumePreviewShell,
-  .resumePreviewFrame {
-    min-height: 420px;
+  .resumeCardReasonText {
+    white-space: normal;
+  }
+
+  .resumeDetailHeader,
+  .resumeCardFooter {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .resumeDetailGrid {
+    grid-template-columns: 1fr;
   }
 }
