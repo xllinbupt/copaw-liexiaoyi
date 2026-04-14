@@ -1,167 +1,101 @@
-## 01 搜索词拆解（最简版）
+## 01 属性提取
 
-目标：把招聘需求整理成一个简单、稳定、低歧义的 `plan`。
+目标：从 HR/JD 的描述里，提取出可以直接进入 `boolSearchJsonStr` 的检索属性。
 
-只允许 3 个关键词维度：
+## 允许输出的属性
 
-- `jobTitles`
-- `companies`
-- `resumeKeywords`
+| 序号 | 属性名 | 属性描述 | 类型 | 可选值示例 |
+| --- | --- | --- | --- | --- |
+| 1 | `sex` | 性别 | 单选 | 男、女、不限 |
+| 2 | `resLanguage` | 简历语言 | 单选 | 中文、英文 |
+| 3 | `marriage` | 婚姻状况 | 单选 | 已婚、未婚 |
+| 4 | `dqs` | 当前地区 | 多选 | 北京、上海 |
+| 5 | `wantDqs` | 期望地区 | 多选 | 北京、上海 |
+| 6 | `houseHolds` | 户籍地区 | 多选 | 北京、上海 |
+| 7 | `ageLow` | 年龄下限 | 单选 | 25 |
+| 8 | `ageHigh` | 年龄上限 | 单选 | 35 |
+| 9 | `workYearLow` | 工龄下限 | 单选 | 3 |
+| 10 | `workYearHigh` | 工龄上限 | 单选 | 8 |
+| 11 | `yearSalary` | 当前年薪 | 单选 | 500000 |
+| 12 | `wantYearSalLow` | 期望年薪下限 | 单选 | 400000 |
+| 13 | `wantYearSalHigh` | 期望年薪上限 | 单选 | 600000 |
+| 14 | `graduationYear` | 毕业年份 | 多选 | 2019、2020 |
+| 15 | `languageContents` | 语言能力 | 多选 | 英语、日语 |
+| 16 | `schools` | 学校名称 | 多选 | 清华大学、北京大学 |
+| 17 | `specials` | 专业 | 多选 | 软件工程、计算机科学与技术 |
+| 18 | `eduLevel` | 学历 | 多选 | 初中、高中、本科、硕士、博士 |
+| 19 | `schoolDqs` | 学校地区 | 多选 | 北京、上海 |
+| 20 | `eduLevelTzs` | 统招学历 | 多选 | 初中、高中、本科、硕士、博士 |
+| 21 | `abroadExp` | 是否有海外工作经验 | 单选 | 是、否 |
+| 22 | `abroadEdu` | 是否有海外教育经验 | 单选 | 是、否 |
+| 23 | `abroad` | 是否有海外经历 | 单选 | 是、否 |
+| 24 | `manageExp` | 是否有管理经验 | 单选 | 是、否 |
+| 25 | `compsNormalized` | 公司名称 | 多选 | 阿里巴巴、美团 |
+| 26 | `titlesWithPayload` | 职位名称 | 多选 | Java 工程师、AI 产品经理 |
+| 27 | `contextBm25` | 关键词 | 多选/表达式 | 见下文规则 |
+| 28 | `resTagList` | 简历标签 | 多选 | 管理经验、海外工作经历、海外教育经历、学生、应届生、实习生、在校职场人、社会人 |
 
-固定筛选条件单独放到 `fixedFilters`。
+## 布尔规则
 
-当前版本只支持正向包含搜索。
-
-当搜索需求里有多个“必须同时满足”的概念时，可以额外写 `mustGroups`。
-
-`mustGroups` 的规则：
-
-- 一个 group = 一个 must-have 概念
-- group 内多个词 = `OR`
-- group 与 group 之间 = `AND`
-
-## 规则
-
-### 1. `jobTitles`
-
-- 这是最重要的维度
-- 通常必须有
-- 写候选人简历里会出现的职位名
-
-例子：
-
-- `产品经理`
-- `销售总监`
-- `Java开发`
-
-### 2. `companies`
-
-- 只有在用户明确要求某类公司背景时再写
-- 如果用户给的是具体公司，就写具体公司名
-- 如果用户给的是“外企 / 大厂 / 连锁”这类集合概念，可以展开成代表公司
-
-### 3. `resumeKeywords`
-
-- 写简历里会出现的关键词
-- 一轮先写 2 到 5 个
-- 用真实词，不要用抽象能力词
-
-好的例子：
-
-- `Python`
-- `SQL`
-- `招投标`
-- `直播运营`
-- `跨境电商`
-
-不好的例子：
-
-- `沟通能力`
-- `学习能力`
-- `行业理解`
-- `有战略性`
-
-### 4. 固定筛选条件
-
-这些不要混进关键词维度：
-
-- 城市
-- 年限
-- 学历
-- 统招
-- 年龄
-- 性别
-- 语言
-
-## 输出格式
-
-只输出下面这个 JSON：
-
-```json
-{
-  "ok": true,
-  "keywordPlan": {
-    "jobTitles": [],
-    "companies": [],
-    "resumeKeywords": []
-  },
-  "fixedFilters": {
-    "current_city": [],
-    "expected_city": [],
-    "experience_min": null,
-    "experience_max": null,
-    "education": [],
-    "full_time_enroll": null,
-    "age_min": null,
-    "age_max": null,
-    "gender": "不限",
-    "languages": ""
-  },
-  "notes": [],
-  "openQuestions": []
-}
-```
-
-如果需要更精准的搜索，可以额外加上：
-
-```json
-{
-  "mustGroups": [
-    {
-      "field": "jobTitles",
-      "values": []
-    },
-    {
-      "field": "resumeKeywords",
-      "values": []
-    }
-  ]
-}
-```
-
-## 什么时候要写 `mustGroups`
-
-- 用户明确给了两个以上 must-have 条件
-- 你发现普通 `resumeKeywords` 搜出来太散
-- 你需要表达 `(A OR B) AND (C OR D)` 这种结构
+- 单选属性：只输出 `propertyName + value`
+- 多选属性：输出 `propertyName + value + boolSearchValue`
+- `boolSearchValue` 只允许 `AND` / `OR` / `NOT`
+- 即使只提取出 1 个值，多选属性默认也按 `OR` 处理
 
 例子：
 
-```json
-{
-  "mustGroups": [
-    {
-      "field": "jobTitles",
-      "values": ["产品经理", "产品负责人"]
-    },
-    {
-      "field": "resumeKeywords",
-      "values": ["用户增长", "增长策略", "商业化"]
-    },
-    {
-      "field": "resumeKeywords",
-      "values": ["App", "移动端"]
-    }
-  ]
-}
-```
+- “后端开发工程师或者 AI 产品经理” -> `titlesWithPayload` + `OR`
+- “既做过后端开发，也做过 AI 产品经理” -> `titlesWithPayload` + `AND`
+- “不要前端开发背景” -> `titlesWithPayload` + `NOT`
 
-它的意思是：
+## `contextBm25` 提取原则
 
-`(产品经理 OR 产品负责人) AND (用户增长 OR 增长策略 OR 商业化) AND (App OR 移动端)`
+### Step 1：确定关键词组合
 
-## 组合搜索的经验规则
+- 从职位描述里提取 1 组或 2 组关键词
+- 1 组格式：`(关键词A or 关键词B or …)`
+- 2 组格式：`(关键词A or 关键词B or …) and (关键词X or 关键词Y or …)`
+- 每组关键词代表不同维度，不要混成一团
 
-- 先有 `jobTitles`
-- 再补 1 到 2 组最关键的 `mustGroups`
-- 公司背景不是默认必加，只有用户明确要求时再加
-- 结果太多：优先拆组，不要先堆更多词
-- 结果太少：优先减少关键词，不要先删岗位词
-- 一次只改一层，这样才知道是哪一层让结果变好或变差
+### Step 2：选择不同维度
 
-## 改写原则
+常见维度：
 
-- 结果太少：增加同义词，减少关键词数量，放宽职位词
-- 结果太多：删泛词，保留最关键的 2 到 3 个关键词
-- 结果跑偏：删掉容易误导的关键词，换成更具体的简历关键词
-- 结果太散：优先拆成 `mustGroups`，不要把所有词堆在一个数组里
+- 专业技能 / 工具 / 技术栈：如 `CAD`、`GCP`、`BIM`、`SolidWorks`
+- 应用方向 / 项目 / 业务领域：如 `产线自动化`、`Ⅲ期临床`、`城市更新`
+- 产品类型 / 客户类型：如 `半导体`、`肿瘤药`、`商业地产`
+- 工作产出 / 核心职责：如 `良率提升`、`试验设计`、`成本控制`
+
+### Step 3：什么能提，什么不能提
+
+关键词必须是候选人简历里大概率会出现的词，用来证明对方确实做过、懂过、接触过。
+
+不要提取这些：
+
+- 通用办公技能，如 `Excel`、`Word`
+- 岗位基础动作，如产品经理的“需求分析”、开发的“代码编写”
+- 语言要求
+- 单纯职务词，因为职位信息应放在 `titlesWithPayload`
+- 软性能力，如“沟通能力”“抗压能力”“执行力”
+- 泛化公司标签，如“外企”“上市公司”“创业公司”
+
+### Step 4：格式要求
+
+- 每组关键词不超过 40 个
+- 单个关键词不超过 16 个字符（或 8 个汉字）
+- 中文 JD 优先中文，英文 JD 优先英文
+- 如果已经写成 `(A or B) and (C or D)` 这种表达式，直接把整段表达式放入 `value`
+
+示例：
+
+- 后端开发：`(Java or Python or Go) and (高并发 or 分布式 or 微服务)`
+- 前端开发：`(React or Vue or Angular) and (移动端 or 中台系统 or 可视化)`
+- 工艺工程师：`(SolidWorks or ANSYS) and (产线自动化 or 精益生产)`
+- CRA：`(GCP or CRA) and (Ⅲ期临床 or 注册申报)`
+
+## 输出要求
+
+- 只提取招聘要求里明确出现或可以稳定归纳的条件
+- 未提及的属性不要瞎补
+- 如果条件冲突，优先保留用户最后一次明确表达的约束
+- 如果需求非常模糊，先提炼能确定的硬条件，再保留少量说明备注

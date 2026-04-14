@@ -136,6 +136,7 @@ export default function JobDetailPanel({
   const [pipelineSnapshot, setPipelineSnapshot] = useState<JobPipelineView | null>(
     null,
   );
+  const [pipelineLoaded, setPipelineLoaded] = useState(false);
   const [coverChat, setCoverChat] = useState(false);
   const [layoutWidth, setLayoutWidth] = useState(0);
   const panelRef = useRef<HTMLElement | null>(null);
@@ -145,8 +146,16 @@ export default function JobDetailPanel({
 
   const activeJob = view?.type === "job" ? view.job : null;
   const activeCandidate = view?.type === "candidate" ? view.candidate : null;
+  const currentJobTab = view?.type === "job" ? view.tab : undefined;
+  const resolvedDefaultJobTab: JobDetailTabKey =
+    (pipelineSnapshot?.entries?.length ?? 0) > 0 ? "pipeline" : "detail";
+  const isResolvingDefaultJobTab =
+    view?.type === "job" &&
+    !currentJobTab &&
+    Boolean(activeJob?.jobId) &&
+    !pipelineLoaded;
   const activeJobTab =
-    view?.type === "job" ? view.tab ?? "pipeline" : "pipeline";
+    view?.type === "job" ? currentJobTab ?? resolvedDefaultJobTab : "detail";
 
   const fetchExternalLinks = async (jobId: string) => {
     try {
@@ -305,20 +314,24 @@ export default function JobDetailPanel({
     const jobId = activeJob?.jobId;
     if (!open || !jobId) {
       setPipelineSnapshot(null);
+      setPipelineLoaded(false);
       return;
     }
 
     let cancelled = false;
+    setPipelineLoaded(false);
 
     const fetchPipelineSnapshot = async () => {
       try {
         const data = await jobApi.getJobPipeline(jobId);
         if (!cancelled) {
           setPipelineSnapshot(data);
+          setPipelineLoaded(true);
         }
       } catch {
         if (!cancelled) {
           setPipelineSnapshot(null);
+          setPipelineLoaded(true);
         }
       }
     };
@@ -344,6 +357,25 @@ export default function JobDetailPanel({
       );
     };
   }, [activeJob?.jobId, open]);
+
+  useEffect(() => {
+    if (
+      view?.type !== "job" ||
+      currentJobTab ||
+      !activeJob?.jobId ||
+      !pipelineLoaded
+    ) {
+      return;
+    }
+    onJobTabChange(resolvedDefaultJobTab);
+  }, [
+    activeJob?.jobId,
+    onJobTabChange,
+    pipelineLoaded,
+    resolvedDefaultJobTab,
+    currentJobTab,
+    view?.type,
+  ]);
 
   useEffect(() => {
     return () => {
@@ -545,7 +577,7 @@ export default function JobDetailPanel({
             <div className={styles.emptyWrap}>
               <Empty description="当前聊天未关联职位" />
             </div>
-          ) : loading ? (
+          ) : loading || isResolvingDefaultJobTab ? (
             <div className={styles.loadingWrap}>
               <Spin />
             </div>

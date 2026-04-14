@@ -338,7 +338,7 @@ export default function ChatPage() {
 
   const openJobDetailPanel = useCallback((job: ChatJobDetails) => {
     setDetailPanelStack((currentStack) => {
-      const nextView: ChatDetailPanelView = { type: "job", job, tab: "pipeline" };
+      const nextView: ChatDetailPanelView = { type: "job", job };
       const currentView = currentStack[currentStack.length - 1];
       if (
         currentView?.type === "job" &&
@@ -350,7 +350,7 @@ export default function ChatPage() {
           {
             ...currentView,
             job,
-            tab: currentView.tab ?? "pipeline",
+            tab: currentView.tab,
           },
         ];
       }
@@ -543,7 +543,7 @@ export default function ChatPage() {
       const customEvent = event as CustomEvent<OpenJobDetailPanelDetail>;
       const nextJob = customEvent.detail?.job;
       if (!nextJob) return;
-      setDetailPanelStack([{ type: "job", job: nextJob, tab: "pipeline" }]);
+      setDetailPanelStack([{ type: "job", job: nextJob }]);
     };
 
     window.addEventListener(
@@ -930,9 +930,7 @@ export default function ChatPage() {
               currentChat={currentChat}
               onJobClick={() => {
                 if (currentChatJobDetails) {
-                  setDetailPanelStack([
-                    { type: "job", job: currentChatJobDetails, tab: "pipeline" },
-                  ]);
+                  setDetailPanelStack([{ type: "job", job: currentChatJobDetails }]);
                 }
               }}
             />

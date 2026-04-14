@@ -1,4 +1,4 @@
-## 03 调用搜索接口 + 解析返回
+## 03 调用搜索接口并解析返回
 
 ### 接口
 
@@ -6,7 +6,8 @@
 - 固定 base URL：`http://open-techarea-sandbox20620.sandbox.tongdao.cn`
 - 固定搜索 URL：`http://open-techarea-sandbox20620.sandbox.tongdao.cn/liexiaoxia/search_resume_by_token`
 - Headers：`Content-Type: application/json` + `Authorization: Bearer <token>`
-- Body：
+
+请求体固定为：
 
 ```json
 {
@@ -14,42 +15,77 @@
 }
 ```
 
-### `boolSearchJsonStr` 的要求
+## 强规则
 
-- 它必须是一个字符串
-- 字符串内容必须是严格 JSON
-- 建议直接使用 `JSON.stringify(bool_obj)` 生成
-- 不要把未经转义的多行 `{ ... }` 直接拼进字符串
+- 调用前必须先拿到 token；没有 token 就停下并提示用户去 `https://vacs.tongdao.cn/visa/persionaccesstoken/list` 获取
+- 搜索链路只走 API，不要退回浏览器页面
+- `boolSearchJsonStr` 必须是字符串，且字符串内容必须是合法 JSON
 
-### 强规则
+## 返回值
 
-- 搜索只能调用上面的固定 URL
-- 调用前必须先拿到 token；没有 token 时先停下来补 token，不要裸调接口
-- 如果调用失败，先检查请求体和网络，不要自动退回浏览器搜索
+接口返回值是一个字符串。通常需要先反序列化，再判断是不是列表。
 
-### 返回解析
+- 如果返回以 `[` 开头：按简历列表解析
+- 如果不是数组：更可能是错误提示、鉴权问题或服务端异常，不要当成功处理
 
-- 如果返回内容不是以 `[` 开头，说明它更可能是中文提示句或错误信息，不要当 JSON 数组解析
-- 如果返回内容以 `[` 开头，再按简历列表 JSON 数组解析
+## 列表字段说明
 
-### 主键规则
+### 顶层字段
 
-- 列表项里下游链路真正使用的主键是 `resIdEncode`
-- 不要再依赖明文 `resId` 去拉详情、入表或做跨页去重
-- 合并多页结果时，以 `resIdEncode` 去重
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `resIdEncode` | `String` | 加密简历 ID，下游主键。 |
+| `resName` | `String` | 对外展示姓名。 |
+| `age` | `Integer` | 年龄。 |
+| `workYears` | `Integer` | 工作年数。 |
+| `eduLevelName` | `String` | 学历名称。 |
+| `dqName` | `String` | 当前地点名称。 |
+| `expectDqName` | `String` | 第一条期望工作地点名称。 |
+| `expectJobtitleName` | `String` | 第一条期望职位名称。 |
+| `expectSalaryShowName` | `String` | 期望薪资展示文案。 |
+| `recentWorkList` | `List` | 最近至多 3 段工作经历。 |
+| `highestEdu` | `Object` | 第一条教育经历摘要。 |
 
-### 分页策略
+### `recentWorkList` 元素
 
-- 快速预览模式：允许只拉 1 页
-- 默认招聘检索模式：至少先拉 1 到 3 页，再进入精筛
-- 若入围候选人还不够，应继续翻页；单套检索最多约 10 页，之后再考虑改写计划
-- 在 `bool_obj` 中显式设置：
-  - `currentPage`: 按联调环境的起始规则递增
-  - `pageSize`: 建议 20
-- 每次复用相同搜索条件，只改 `currentPage`
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `companyName` | `String` | 公司名称。 |
+| `titleName` | `String` | 职位名称。 |
+| `startTime` | `String` | 入职时间展示。 |
+| `endTime` | `String` | 离职时间展示。 |
 
-### 搜索摘要建议
+### `highestEdu`
 
-- 只展示前 3 到 5 条候选人摘要
-- 对“偏多 / 偏少 / 跑偏”给出 1 到 2 条下一步建议
-- 如果任务还处在样本校准阶段，优先给判断，不急着进入正式推荐
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `schoolName` | `String` | 学校名称。 |
+| `majorName` | `String` | 专业名称。 |
+| `eduLevelName` | `String` | 学历名称。 |
+| `unifiedEnrollmentName` | `String` | 是否统招的展示名。 |
+| `enrollTime` | `String` | 入学时间展示。 |
+| `graduateTime` | `String` | 毕业时间展示。 |
+
+## 时间字段展示规则
+
+适用于：
+
+- `recentWorkList[].startTime`
+- `recentWorkList[].endTime`
+- `highestEdu.enrollTime`
+- `highestEdu.graduateTime`
+
+规则：
+
+- 空值或空串的开始时间 / 入学时间：显示为 `未知`
+- 结束时间 / 毕业时间为 `999999`：显示为 `至今`
+- 结束时间 / 毕业时间为空：保留 `null`
+- 6 位 `yyyyMM`：转成 `yyyy.MM`
+- 其它特殊文案：原样返回
+
+## 使用建议
+
+- 搜索结果合并或去重时，一律使用 `resIdEncode`
+- 样本校准阶段先展示 3 到 5 条摘要，不要一上来就全量推荐
+- 正式推荐、追问细节、写入系统时，再调用详情接口补齐
+- 如果结果为空，说明本次查询没命中；先调条件，不要伪造候选人

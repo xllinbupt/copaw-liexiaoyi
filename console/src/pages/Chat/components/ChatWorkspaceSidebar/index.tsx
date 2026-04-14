@@ -28,6 +28,8 @@ import {
 } from "../../chatWorkspace";
 import styles from "./index.module.less";
 
+const CHAT_UNREAD_STATUS_STORAGE_KEY = "copaw-chat-workspace-unread-status";
+
 interface ChatWorkspaceSidebarProps {
   chats: ChatSpec[];
   jobs: JobSpec[];
@@ -43,9 +45,45 @@ function normalizeText(value: string): string {
   return value.trim().toLowerCase();
 }
 
+function loadUnreadStatusMap(): Record<string, string> {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = window.localStorage.getItem(CHAT_UNREAD_STATUS_STORAGE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return {};
+    }
+    return Object.entries(parsed).reduce<Record<string, string>>(
+      (result, [chatId, version]) => {
+        if (typeof version === "string" && version.trim()) {
+          result[chatId] = version;
+        }
+        return result;
+      },
+      {},
+    );
+  } catch {
+    return {};
+  }
+}
+
+function getChatVersion(chat: ChatSpec): string {
+  return chat.updated_at || chat.created_at || "";
+}
+
+function getChatVisualStatus(
+  chat: ChatSpec,
+  unreadStatusMap: Record<string, string>,
+): "running" | "unread" | "read" {
+  if (chat.status === "running") return "running";
+  return unreadStatusMap[chat.id] === getChatVersion(chat) ? "unread" : "read";
+}
+
 function ChatRow({
   chat,
   active,
+  visualStatus,
   editing,
   draftName,
   onClick,
@@ -56,6 +94,7 @@ function ChatRow({
 }: {
   chat: ChatSpec;
   active: boolean;
+  visualStatus: "running" | "unread" | "read";
   editing: boolean;
   draftName: string;
   onClick: () => void;
@@ -77,6 +116,17 @@ function ChatRow({
         .join(" ")}
       onClick={editing ? undefined : onClick}
     >
+      <div className={styles.chatStatusSlot} aria-hidden="true">
+        <span
+          className={[
+            styles.chatStatusIndicator,
+            visualStatus === "running" ? styles.chatStatusRunning : "",
+            visualStatus === "unread" ? styles.chatStatusUnread : "",
+          ]
+            .filter(Boolean)
+            .join(" ")}
+        />
+      </div>
       <div className={styles.chatMain}>
         {editing ? (
           <Input
@@ -132,6 +182,7 @@ function JobGroupSection({
   group,
   collapsed,
   currentChatId,
+  unreadStatusMap,
   editingChatId,
   draftName,
   onToggle,
@@ -145,6 +196,7 @@ function JobGroupSection({
   group: ChatJobGroup;
   collapsed: boolean;
   currentChatId?: string;
+  unreadStatusMap: Record<string, string>;
   editingChatId: string | null;
   draftName: string;
   onToggle: () => void;
@@ -194,6 +246,7 @@ function JobGroupSection({
               key={chat.id}
               chat={chat}
               active={chat.id === currentChatId}
+              visualStatus={getChatVisualStatus(chat, unreadStatusMap)}
               editing={editingChatId === chat.id}
               draftName={editingChatId === chat.id ? draftName : ""}
               onClick={() => onSelectChat(chat.id)}
@@ -226,11 +279,80 @@ const ChatWorkspaceSidebar: React.FC<ChatWorkspaceSidebarProps> = ({
   );
   const [editingChatId, setEditingChatId] = useState<string | null>(null);
   const [draftName, setDraftName] = useState("");
+  const [unreadStatusMap, setUnreadStatusMap] = useState<Record<string, string>>(
+    () => loadUnreadStatusMap(),
+  );
+  const previousStatusMapRef = React.useRef<Record<string, ChatSpec["status"]>>({});
 
   const grouped = useMemo(
     () => buildChatWorkspaceGroups(chats, jobs),
     [chats, jobs],
   );
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(
+      CHAT_UNREAD_STATUS_STORAGE_KEY,
+      JSON.stringify(unreadStatusMap),
+    );
+  }, [unreadStatusMap]);
+
+  useEffect(() => {
+    setUnreadStatusMap((previous) => {
+      const chatIds = new Set(chats.map((chat) => chat.id));
+      let changed = false;
+      const next = Object.entries(previous).reduce<Record<string, string>>(
+        (result, [chatId, version]) => {
+          if (chatIds.has(chatId)) {
+            result[chatId] = version;
+          } else {
+            changed = true;
+          }
+          return result;
+        },
+        {},
+      );
+      return changed ? next : previous;
+    });
+  }, [chats]);
+
+  useEffect(() => {
+    setUnreadStatusMap((previous) => {
+      let changed = false;
+      const next = { ...previous };
+      const nextStatusMap: Record<string, ChatSpec["status"]> = {};
+
+      chats.forEach((chat) => {
+        const previousStatus = previousStatusMapRef.current[chat.id];
+        const currentStatus = chat.status ?? "idle";
+        nextStatusMap[chat.id] = currentStatus;
+
+        if (previousStatus === "running" && currentStatus !== "running") {
+          const chatVersion = getChatVersion(chat);
+          if (chatVersion && next[chat.id] !== chatVersion) {
+            next[chat.id] = chatVersion;
+            changed = true;
+          }
+        }
+      });
+
+      previousStatusMapRef.current = nextStatusMap;
+      return changed ? next : previous;
+    });
+  }, [chats]);
+
+  useEffect(() => {
+    if (!currentChatId) return;
+    const currentChat = chats.find((chat) => chat.id === currentChatId);
+    if (!currentChat || currentChat.status === "running") return;
+
+    setUnreadStatusMap((previous) => {
+      if (!(currentChatId in previous)) return previous;
+      const next = { ...previous };
+      delete next[currentChatId];
+      return next;
+    });
+  }, [chats, currentChatId]);
 
   useEffect(() => {
     setCollapsedGroups((previous) => {
@@ -364,6 +486,7 @@ const ChatWorkspaceSidebar: React.FC<ChatWorkspaceSidebarProps> = ({
                     key={chat.id}
                     chat={chat}
                     active={chat.id === currentChatId}
+                    visualStatus={getChatVisualStatus(chat, unreadStatusMap)}
                     editing={editingChatId === chat.id}
                     draftName={editingChatId === chat.id ? draftName : ""}
                     onClick={() => onSelectChat(chat.id)}
@@ -389,6 +512,7 @@ const ChatWorkspaceSidebar: React.FC<ChatWorkspaceSidebarProps> = ({
                 group={group}
                 collapsed={Boolean(collapsedGroups[group.key])}
                 currentChatId={currentChatId}
+                unreadStatusMap={unreadStatusMap}
                 editingChatId={editingChatId}
                 draftName={draftName}
                 onToggle={() =>
