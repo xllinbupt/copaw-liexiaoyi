@@ -1,9 +1,9 @@
 ---
 name: resume_search
-description: "一个面向招聘搜索的简历检索 skill。根据招聘要求提取结构化筛选属性，组装 `boolSearchJsonStr` 字符串，调用 `/liexiaoxia/search_resume_by_token` 搜索简历，并在需要时调用 `/liexiaoxia/get_resume_detail_by_token` 拉取详情。"
+description: "一个面向招聘搜索的简历检索 skill。根据招聘要求提取结构化筛选属性，组装 `boolSearchJsonStr` 字符串，并调用 `/liexiaoxia/search_resume_by_token` 搜索简历。"
 metadata:
   {
-    "builtin_skill_version": "2.3",
+    "builtin_skill_version": "2.4",
     "copaw":
       {
         "emoji": "🎯",
@@ -23,14 +23,14 @@ metadata:
 1. 从招聘要求中提取结构化属性
 2. 把属性数组压缩成 `boolSearchJsonStr`
 3. 调 `/liexiaoxia/search_resume_by_token`
-4. 需要补信息时再调 `/liexiaoxia/get_resume_detail_by_token`
 
 ## 最重要的规则
 
 - 不要发明新的筛选维度，只能使用白名单属性
 - 当前协议不再使用旧版 `bool_obj`，而是直接传属性数组字符串
 - 多选属性统一使用 `boolSearchValue`
-- 搜索和详情都固定走 `http://open-techarea-sandbox20620.sandbox.tongdao.cn`
+- 搜索请求固定走 `http://open-techarea-sandbox20620.sandbox.tongdao.cn/liexiaoxia/search_resume_by_token`
+- 请求体固定为 `{ "boolSearchJsonStr": "<第二步生成的字符串>" }`
 - token 只认两种来源：显式 `--token`，或环境变量 `LIEXIAOXIA_TOKEN`
 - 如果没有 `LIEXIAOXIA_TOKEN`，要明确提醒用户去 `https://vacs.tongdao.cn/visa/persionaccesstoken/list` 获取
 - 企业版搜简历一律走 API，不要退回浏览器页面
@@ -88,7 +88,7 @@ metadata:
 
 桥接规则见：`references/02_bridge_plan_to_bool_query.md`
 
-### Step 3：调用搜索接口
+### Step 3：调用搜索接口并解析返回
 
 必须优先运行脚本，不要现场手写 `urllib` / `requests` 调用。
 
@@ -117,18 +117,9 @@ fi
 
 搜索接口与返回解析见：`references/03_search_api_call_and_parse.md`
 
-### Step 4：需要时拉详情
-
-当你要正式推荐、回答候选人细节、补齐卡片、或写入下游系统时，再调详情：
-
-- 接口：`POST /liexiaoxia/get_resume_detail_by_token`
-- 入参：`{ "resIdEncode": "..." }`
-
-详情规则见：`references/04_get_resume_detail.md`
-
 ## 默认搜索策略
 
-- 快速预览：先看搜索摘要，不急着拉详情
+- 快速预览：先看搜索摘要，先判断召回方向对不对
 - 默认招聘检索：先确认硬条件，再搜索
 - 结果太少：先放宽 `contextBm25`，再放宽职位或公司条件
 - 结果太多：先收紧 `contextBm25` 或职位条件，不要盲目叠加软条件
@@ -162,4 +153,5 @@ fi
 - 把未提及的条件强行补进筛选
 - 把职位名称、软性能力塞进 `contextBm25`
 - 没有 token 还继续调用接口
+- 把接口返回的字符串直接当成已解析列表使用
 - 搜索失败后退回浏览器页面

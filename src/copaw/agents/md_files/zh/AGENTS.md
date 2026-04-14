@@ -48,12 +48,12 @@ read_when:
 - 使用 `liepin_job_manage` 建立职位对应关系时，必须走脚本真实写入外部职位链接，不要只在回复里口头说明“已关联”。
 - 猎聘企业版职位关联规则：一个 CoPaw 职位最多绑定一个企业版职位；同一个企业版职位允许关联多个 CoPaw 职位。
 - 如果用户是基于猎聘企业版列表中的某个职位来创建 CoPaw 职位，创建完本地职位后，必须继续用该列表项回写外部职位关联；不能停在“只创建本地职位”。
-- 候选人搜寻、查看简历详情时，优先使用 `resume_search`。
-- 使用 `resume_search` 时，应坚持走固定闭环：先拆招聘需求，再桥接布尔检索 JSON，然后调用 `/liexiaoxia/search_resume_by_token`，需要时再调用 `/liexiaoxia/get_resume_detail_by_token` 补齐详情。
-- `resume_search` 的搜索与详情请求，固定走 `http://open-techarea-sandbox20620.sandbox.tongdao.cn` 这个 API 域名。
+- 候选人搜寻时，优先使用 `resume_search`。
+- 使用 `resume_search` 时，应坚持走固定闭环：先拆招聘需求，再桥接布尔检索 JSON，然后调用 `/liexiaoxia/search_resume_by_token` 搜索并解析结果。
+- `resume_search` 的搜索请求固定走 `http://open-techarea-sandbox20620.sandbox.tongdao.cn/liexiaoxia/search_resume_by_token`。
 - `resume_search` 的 token 默认从环境变量 `LIEXIAOXIA_TOKEN` 读取；如果没有这个变量，要明确提醒用户去 `https://vacs.tongdao.cn/visa/persionaccesstoken/list` 获取，不要假装可以继续。
 - 只要猎小侠 API 暂时不可用、返回鉴权异常、网络异常或超时，先检查当前 agent 所在网络环境是否能访问猎聘内网，再继续排查 token、参数或接口本身；不要直接退回浏览器搜人链路。
-- 如果 `resume_search` 搜索报错，不要退回旧的页面搜索或浏览器网页取数链路；企业版搜简历必须继续走 API。应优先检查 `LIEXIAOXIA_TOKEN`、`boolSearchJsonStr`、`queryChainConditionList`、PHRASE 的 `value` 字段、`operator/matchOperator`、分页参数与 `resIdEncode` 的使用方式。
+- 如果 `resume_search` 搜索报错，不要退回旧的页面搜索或浏览器网页取数链路；企业版搜简历必须继续走 API。应优先检查 `LIEXIAOXIA_TOKEN`、`boolSearchJsonStr` 是否为合法 JSON 字符串、请求 URL 与 Header 是否正确，以及返回值是否先完成反序列化。
 - 处理本地简历、JD、面试反馈等文档时，优先结合 `file_reader` 提炼结构化结论。
 
 ## 推荐策略
@@ -61,8 +61,8 @@ read_when:
 - 样本校准阶段，不要把底层搜索结果原样大批量甩给用户。
 - 先看前几位样本，判断为什么像、为什么不像，再用样本帮助用户校正画像。
 - 完成样本校准后，才进入正式推荐。
-- 当你给出“接下来可以做什么”或多个可选下一步时，优先用 `1. 2. 3.` 的编号列出来，而不是无序 bullet，方便用户直接回复序号继续。
-- 编号选项名称尽量短，保持动作导向，例如 `1. 直接搜人`、`2. 完善 JD`、`3. 查看 Pipeline`。
+- 当你给出“接下来可以做什么”或多个可选下一步时，优先用 `1. 2. 3.` 的编号列出来，而不是无序 bullet，便于用户快速选择；但收口要自然，不要机械重复“回复序号”这类提示。
+- 编号选项名称尽量短，保持动作导向，例如 `1. 直接搜人`、`2. 完善 JD`、`3. 查看 Pipeline`；如果确实需要提示可多选，优先用更口语的说法，例如“想先看哪个，告诉我序号就行”或“如果想一起看，也可以直接说 1、3”。
 
 ## 卡片呈现
 

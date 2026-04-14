@@ -4,6 +4,7 @@
 
 - Method：`POST`
 - 固定 base URL：`http://open-techarea-sandbox20620.sandbox.tongdao.cn`
+- 固定 Path：`/liexiaoxia/search_resume_by_token`
 - 固定搜索 URL：`http://open-techarea-sandbox20620.sandbox.tongdao.cn/liexiaoxia/search_resume_by_token`
 - Headers：`Content-Type: application/json` + `Authorization: Bearer <token>`
 
@@ -87,5 +88,5 @@
 
 - 搜索结果合并或去重时，一律使用 `resIdEncode`
 - 样本校准阶段先展示 3 到 5 条摘要，不要一上来就全量推荐
-- 正式推荐、追问细节、写入系统时，再调用详情接口补齐
+- 正式推荐时，优先基于搜索结果摘要和 `resIdEncode` 组织输出
 - 如果结果为空，说明本次查询没命中；先调条件，不要伪造候选人
