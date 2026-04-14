@@ -49,6 +49,7 @@ import { jobApi } from "../api/modules/job";
 import type { ChatSpec, JobSpec } from "../api/types";
 import ChatWorkspaceSidebar from "../pages/Chat/components/ChatWorkspaceSidebar";
 import {
+  CHAT_WORKSPACE_UPDATED_EVENT,
   buildChatPayload,
   notifyChatWorkspaceUpdated,
   type ChatJobContext,
@@ -98,6 +99,8 @@ export default function Sidebar({ selectedKey }: SidebarProps) {
   const [isResizing, setIsResizing] = useState(false);
   const [chatSpecs, setChatSpecs] = useState<ChatSpec[]>([]);
   const [jobs, setJobs] = useState<JobSpec[]>([]);
+  const [hasLoadedWorkspaceSidebar, setHasLoadedWorkspaceSidebar] =
+    useState(false);
   const [chatSidebarLoading, setChatSidebarLoading] = useState(false);
   const currentChatId =
     location.pathname.match(/^\/chat\/(.+)$/)?.[1] ?? undefined;
@@ -113,37 +116,44 @@ export default function Sidebar({ selectedKey }: SidebarProps) {
       .catch(() => {});
   }, []);
 
-  const loadWorkspaceSidebarData = useCallback(async (options?: { silent?: boolean }) => {
-    if (!options?.silent) {
-      setChatSidebarLoading(true);
-    }
-    try {
-      const [chats, nextJobs] = await Promise.all([
-        chatApi.listChats(),
-        jobApi.listJobs(),
-      ]);
-      setChatSpecs(chats);
-      setJobs(nextJobs);
-      return chats;
-    } catch (error) {
-      if (!options?.silent) {
-        message.error(
-          error instanceof Error ? error.message : "加载职位和聊天数据失败",
-        );
+  const loadWorkspaceSidebarData = useCallback(
+    async (options?: { silent?: boolean }) => {
+      const showBlockingLoading =
+        !options?.silent && !hasLoadedWorkspaceSidebar;
+      if (showBlockingLoading) {
+        setChatSidebarLoading(true);
       }
-      return [];
-    } finally {
-      if (!options?.silent) {
-        setChatSidebarLoading(false);
+      try {
+        const [chats, nextJobs] = await Promise.all([
+          chatApi.listChats(),
+          jobApi.listJobs(),
+        ]);
+        setChatSpecs(chats);
+        setJobs(nextJobs);
+        setHasLoadedWorkspaceSidebar(true);
+        return chats;
+      } catch (error) {
+        if (!options?.silent) {
+          message.error(
+            error instanceof Error ? error.message : "加载职位和聊天数据失败",
+          );
+        }
+        return [];
+      } finally {
+        if (showBlockingLoading) {
+          setChatSidebarLoading(false);
+        }
       }
-    }
-  }, []);
+    },
+    [hasLoadedWorkspaceSidebar],
+  );
 
   useEffect(() => {
     if (collapsed || selectedKey !== "chat") return;
-    void loadWorkspaceSidebarData();
+    void loadWorkspaceSidebarData({ silent: hasLoadedWorkspaceSidebar });
   }, [
     collapsed,
+    hasLoadedWorkspaceSidebar,
     loadWorkspaceSidebarData,
     location.pathname,
     selectedAgent,
@@ -163,6 +173,31 @@ export default function Sidebar({ selectedKey }: SidebarProps) {
   }, [collapsed, loadWorkspaceSidebarData, selectedAgent, selectedKey]);
 
   useEffect(() => {
+    if (collapsed || selectedKey !== "chat") return;
+
+    const handleWorkspaceUpdated = () => {
+      void loadWorkspaceSidebarData({ silent: hasLoadedWorkspaceSidebar });
+    };
+
+    window.addEventListener(
+      CHAT_WORKSPACE_UPDATED_EVENT,
+      handleWorkspaceUpdated,
+    );
+
+    return () => {
+      window.removeEventListener(
+        CHAT_WORKSPACE_UPDATED_EVENT,
+        handleWorkspaceUpdated,
+      );
+    };
+  }, [
+    collapsed,
+    hasLoadedWorkspaceSidebar,
+    loadWorkspaceSidebarData,
+    selectedKey,
+  ]);
+
+  useEffect(() => {
     if (typeof window === "undefined") return;
     window.localStorage.setItem(
       SIDEBAR_WIDTH_STORAGE_KEY,
@@ -174,7 +209,8 @@ export default function Sidebar({ selectedKey }: SidebarProps) {
     if (!isResizing) return;
 
     const handleMouseMove = (event: MouseEvent) => {
-      const nextWidth = resizeStartWidthRef.current + (event.clientX - resizeStartXRef.current);
+      const nextWidth =
+        resizeStartWidthRef.current + (event.clientX - resizeStartXRef.current);
       setSidebarWidth(
         Math.min(MAX_SIDEBAR_WIDTH, Math.max(MIN_SIDEBAR_WIDTH, nextWidth)),
       );
@@ -277,7 +313,9 @@ export default function Sidebar({ selectedKey }: SidebarProps) {
         await loadWorkspaceSidebarData();
         notifyChatWorkspaceUpdated({ refreshRuntime: false });
       } catch (error) {
-        message.error(error instanceof Error ? error.message : "重命名聊天失败");
+        message.error(
+          error instanceof Error ? error.message : "重命名聊天失败",
+        );
         throw error;
       }
     },

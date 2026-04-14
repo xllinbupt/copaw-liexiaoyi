@@ -1054,9 +1054,10 @@
     "unassignedSectionHint": "Chats created here stay unassigned until a job is linked later.",
     "disclaimer": "Your dedicated AI headhunting assistant for HR teams",
     "greeting": "Hello, I'm LieXiaoXia.",
-    "description": "I can help with sourcing, resume review, screening, candidate comparison, and recruiting execution.",
-    "prompt1": "Help me turn this JD into a sourcing strategy",
-    "prompt2": "What recruiting skills do you already have?",
+    "description": "I can help with job import, job intake, sourcing, resume review, and recruiting execution.",
+    "prompt1": "Import a Liepin Enterprise job into the system",
+    "prompt2": "Start sourcing for a specific role",
+    "prompt3": "Help me refine this JD and candidate profile first",
     "inputPlaceholder": "Type / to see commands; use /approve or /deny during approval...",
     "commands": {
       "clear": {

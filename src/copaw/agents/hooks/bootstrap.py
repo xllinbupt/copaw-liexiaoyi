@@ -2,7 +2,8 @@
 """Bootstrap hook for first-time user interaction guidance.
 
 This hook checks for BOOTSTRAP.md on the first user interaction and
-prepends guidance to help set up the agent's identity and preferences.
+appends guidance to the system prompt to help set up the agent's
+identity and preferences.
 """
 import logging
 from pathlib import Path
@@ -11,7 +12,6 @@ from typing import Any
 from ..prompt import build_bootstrap_guidance
 from ..utils import (
     is_first_user_interaction,
-    prepend_to_message_content,
 )
 
 logger = logging.getLogger(__name__)
@@ -21,7 +21,7 @@ class BootstrapHook:
     """Hook for bootstrap guidance on first user interaction.
 
     This hook looks for a BOOTSTRAP.md file in the working directory
-    and if found, prepends guidance to the first user message to help
+    and if found, appends guidance to the system prompt to help
     establish the agent's identity and user preferences.
     """
 
@@ -38,6 +38,33 @@ class BootstrapHook:
         """
         self.working_dir = working_dir
         self.language = language
+
+    @staticmethod
+    def _append_guidance_to_system_prompt(agent, guidance: str) -> None:
+        """Append bootstrap guidance to the in-memory system prompt.
+
+        This keeps the guidance invisible to the user-facing chat history
+        while still making it available to the model for the first turn.
+        """
+        current_prompt = getattr(agent, "_sys_prompt", "") or ""
+        if guidance in current_prompt:
+            return
+
+        next_prompt = (
+            f"{current_prompt.rstrip()}\n\n{guidance.rstrip()}"
+            if current_prompt
+            else guidance.rstrip()
+        )
+        agent._sys_prompt = next_prompt
+
+        memory = getattr(agent, "memory", None)
+        if memory is None:
+            return
+
+        for msg, _marks in getattr(memory, "content", []):
+            if msg.role == "system":
+                msg.content = next_prompt
+                break
 
     async def __call__(
         self,
@@ -75,19 +102,14 @@ class BootstrapHook:
             )
 
             logger.debug(
-                "Found BOOTSTRAP.md [%s], prepending guidance",
+                "Found BOOTSTRAP.md [%s], appending guidance to system prompt",
                 self.language,
             )
-
-            system_prompt_count = sum(
-                1 for msg in messages if msg.role == "system"
+            self._append_guidance_to_system_prompt(
+                agent,
+                bootstrap_guidance,
             )
-            for msg in messages[system_prompt_count:]:
-                if msg.role == "user":
-                    prepend_to_message_content(msg, bootstrap_guidance)
-                    break
-
-            logger.debug("Bootstrap guidance prepended to first user message")
+            logger.debug("Bootstrap guidance appended to system prompt")
 
             # Create completion flag to prevent repeated triggering
             bootstrap_completed_flag.touch()

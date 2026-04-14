@@ -17,6 +17,8 @@
   severity: HIGH
   patterns:
     - "\\brm\\b"
+  exclude_patterns:
+    - "^\\s*rm\\s+(?:-[A-Za-zfFRrv]+\\s+)*(?:--\\s+)?(?:\"[^\"]*BOOTSTRAP\\.md\"|'[^']*BOOTSTRAP\\.md'|\\S*BOOTSTRAP\\.md)\\s*$"
   description: "Shell command contains 'rm' which may cause data loss"
   remediation: "Confirm with the user before removing files or directories"
 

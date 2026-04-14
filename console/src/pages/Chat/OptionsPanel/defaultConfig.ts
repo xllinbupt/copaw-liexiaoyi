@@ -21,10 +21,13 @@ const defaultConfig = {
     avatar: `${import.meta.env.BASE_URL}copaw-symbol.svg`,
     prompts: [
       {
-        value: "帮我按 JD 制定一版搜人策略",
+        value: "帮我导入一个猎聘企业版职位",
       },
       {
-        value: "帮我看看你现在有哪些招聘技能",
+        value: "帮我针对某个职位开始寻访",
+      },
+      {
+        value: "帮我先完善这个职位的 JD 和画像",
       },
     ],
   },
@@ -45,7 +48,11 @@ export function getDefaultConfig(t: TFunction) {
       ...defaultConfig.welcome,
       greeting: t("chat.greeting"),
       description: t("chat.description"),
-      prompts: [{ value: t("chat.prompt1") }, { value: t("chat.prompt2") }],
+      prompts: [
+        { value: t("chat.prompt1") },
+        { value: t("chat.prompt2") },
+        { value: t("chat.prompt3") },
+      ],
     },
   };
 }

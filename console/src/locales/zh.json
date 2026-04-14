@@ -1024,9 +1024,10 @@
     "unassignedSectionHint": "从这里创建的 Chat 暂时不挂职位，后续可在流程里补关联。",
     "disclaimer": "给到 HR 的专属猎头 Agent 助手",
     "greeting": "你好，我是猎小侠。",
-    "description": "我会帮你处理搜人、读简历、初筛、候选人对比和招聘推进。",
-    "prompt1": "帮我按这个岗位 JD 设计搜人条件",
-    "prompt2": "看看你现在有哪些招聘 Skills",
+    "description": "我会帮你处理职位导入、职位访谈、寻访搜人、读简历和招聘推进。",
+    "prompt1": "帮我导入一个猎聘企业版职位",
+    "prompt2": "帮我针对某个职位开始寻访",
+    "prompt3": "帮我先完善这个职位的 JD 和画像",
     "inputPlaceholder": "输入 / 查看快捷指令；审批时可使用 /approve 或 /deny ...",
     "commands": {
       "clear": {

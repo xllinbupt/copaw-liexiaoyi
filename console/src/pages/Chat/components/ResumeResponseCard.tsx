@@ -22,11 +22,9 @@ import {
   hidePendingResumeCardBlock,
   isJobCardPayload,
   normalizeJobCardPayload,
-  parseJobCardsFromText,
   type JobCardPayload,
   isResumeCardPayload,
   normalizeResumeCardPayload,
-  parseResumeCardsFromText,
   type ResumeCardPayload,
 } from "../utils";
 import JobCard from "./JobCard";
@@ -37,10 +35,7 @@ import {
   getCurrentChatForPipeline,
   getJobDetailsOrThrow,
 } from "./resumePipeline";
-import {
-  notifyJobPipelineUpdated,
-  openJobDetailPanel,
-} from "../chatWorkspace";
+import { notifyJobPipelineUpdated, openJobDetailPanel } from "../chatWorkspace";
 import styles from "./resumeCards.module.less";
 
 type ResumeResponseCardProps = {
@@ -48,17 +43,227 @@ type ResumeResponseCardProps = {
   isLast?: boolean;
 };
 
-type SplitMessageResult = {
-  visibleMessage: IAgentScopeRuntimeMessage | null;
-  jobCards: JobCardPayload[];
-  cards: ResumeCardPayload[];
-  pendingJobCards: number;
-  pendingResumeCards: number;
-};
+type OrderedMessageBlock =
+  | {
+      type: "message";
+      message: IAgentScopeRuntimeMessage;
+    }
+  | {
+      type: "jobCards";
+      cards: JobCardPayload[];
+    }
+  | {
+      type: "resumeCards";
+      cards: ResumeCardPayload[];
+    }
+  | {
+      type: "pending";
+      kind: "job" | "resume";
+      count: number;
+    };
 
-function CardLoadingPlaceholder(props: {
-  kind: "job" | "resume";
-}) {
+type TextSegment =
+  | {
+      type: "text";
+      text: string;
+    }
+  | {
+      type: "jobCards";
+      cards: JobCardPayload[];
+    }
+  | {
+      type: "resumeCards";
+      cards: ResumeCardPayload[];
+    }
+  | {
+      type: "pending";
+      kind: "job" | "resume";
+    };
+
+function normalizeVisibleText(text: string): string {
+  return text.replace(/\n{3,}/g, "\n\n").trim();
+}
+
+function parseCardSegmentsFromValue(
+  value: unknown,
+): Array<Extract<TextSegment, { type: "jobCards" | "resumeCards" }>> {
+  const segments: Array<
+    Extract<TextSegment, { type: "jobCards" | "resumeCards" }>
+  > = [];
+
+  const appendCardValue = (cardValue: unknown) => {
+    if (isJobCardPayload(cardValue)) {
+      const normalized = normalizeJobCardPayload(cardValue);
+      const lastSegment = segments[segments.length - 1];
+      if (lastSegment?.type === "jobCards") {
+        lastSegment.cards.push(normalized);
+      } else {
+        segments.push({ type: "jobCards", cards: [normalized] });
+      }
+      return;
+    }
+
+    if (isResumeCardPayload(cardValue)) {
+      const normalized = normalizeResumeCardPayload(cardValue);
+      const lastSegment = segments[segments.length - 1];
+      if (lastSegment?.type === "resumeCards") {
+        lastSegment.cards.push(normalized);
+      } else {
+        segments.push({ type: "resumeCards", cards: [normalized] });
+      }
+    }
+  };
+
+  if (Array.isArray(value)) {
+    value.forEach(appendCardValue);
+    return segments;
+  }
+
+  appendCardValue(value);
+  return segments;
+}
+
+function detectTrailingPendingSegment(text: string): {
+  text: string;
+  pendingKind: "job" | "resume" | null;
+} {
+  const jobPending = hidePendingJobCardBlock(text);
+  const resumePending = hidePendingResumeCardBlock(text);
+  const pendingCandidates = [
+    jobPending.pending
+      ? {
+          kind: "job" as const,
+          remainingText: jobPending.remainingText,
+        }
+      : null,
+    resumePending.pending
+      ? {
+          kind: "resume" as const,
+          remainingText: resumePending.remainingText,
+        }
+      : null,
+  ].filter(Boolean) as Array<{
+    kind: "job" | "resume";
+    remainingText: string;
+  }>;
+
+  if (pendingCandidates.length === 0) {
+    return {
+      text: normalizeVisibleText(text),
+      pendingKind: null,
+    };
+  }
+
+  pendingCandidates.sort(
+    (left, right) => left.remainingText.length - right.remainingText.length,
+  );
+  const selected = pendingCandidates[0];
+  return {
+    text: normalizeVisibleText(selected.remainingText),
+    pendingKind: selected.kind,
+  };
+}
+
+function parseTextSegments(text: string | undefined): TextSegment[] {
+  const sourceText = text || "";
+  if (!sourceText) return [];
+
+  const segments: TextSegment[] = [];
+  const fencePattern = /```(?:json)?\s*([\s\S]*?)```/gi;
+  let cursor = 0;
+  let matchedCardFence = false;
+  let match: RegExpExecArray | null;
+
+  const appendVisibleText = (value: string) => {
+    const normalized = normalizeVisibleText(value);
+    if (!normalized) return;
+    const lastSegment = segments[segments.length - 1];
+    if (lastSegment?.type === "text") {
+      lastSegment.text = normalizeVisibleText(
+        `${lastSegment.text}\n\n${normalized}`,
+      );
+      return;
+    }
+    segments.push({ type: "text", text: normalized });
+  };
+
+  const appendCardSegments = (
+    nextSegments: Array<
+      Extract<TextSegment, { type: "jobCards" | "resumeCards" }>
+    >,
+  ) => {
+    nextSegments.forEach((segment) => {
+      const lastSegment = segments[segments.length - 1];
+      if (segment.type === "jobCards") {
+        if (lastSegment?.type === "jobCards") {
+          lastSegment.cards.push(...segment.cards);
+        } else {
+          segments.push(segment);
+        }
+        return;
+      }
+
+      if (lastSegment?.type === "resumeCards") {
+        lastSegment.cards.push(...segment.cards);
+      } else {
+        segments.push(segment);
+      }
+    });
+  };
+
+  while ((match = fencePattern.exec(sourceText)) !== null) {
+    const fullMatch = match[0];
+    const jsonText = String(match[1] || "").trim();
+    let parsedSegments: Array<
+      Extract<TextSegment, { type: "jobCards" | "resumeCards" }>
+    > = [];
+
+    try {
+      parsedSegments = parseCardSegmentsFromValue(JSON.parse(jsonText));
+    } catch {
+      parsedSegments = [];
+    }
+
+    if (parsedSegments.length === 0) {
+      appendVisibleText(
+        sourceText.slice(cursor, match.index + fullMatch.length),
+      );
+      cursor = match.index + fullMatch.length;
+      continue;
+    }
+
+    matchedCardFence = true;
+    appendVisibleText(sourceText.slice(cursor, match.index));
+    appendCardSegments(parsedSegments);
+    cursor = match.index + fullMatch.length;
+  }
+
+  const trailingText = sourceText.slice(cursor);
+
+  if (!matchedCardFence) {
+    try {
+      const parsedSegments = parseCardSegmentsFromValue(
+        JSON.parse(sourceText.trim()),
+      );
+      if (parsedSegments.length > 0) {
+        appendCardSegments(parsedSegments);
+        return segments;
+      }
+    } catch {
+      // ignore invalid raw JSON
+    }
+  }
+
+  const pendingTail = detectTrailingPendingSegment(trailingText);
+  appendVisibleText(pendingTail.text);
+  if (pendingTail.pendingKind) {
+    segments.push({ type: "pending", kind: pendingTail.pendingKind });
+  }
+
+  return segments;
+}
+
+function CardLoadingPlaceholder(props: { kind: "job" | "resume" }) {
   return (
     <div className={styles.cardLoading} aria-hidden>
       <div className={styles.cardLoadingHeader}>
@@ -75,107 +280,144 @@ function CardLoadingPlaceholder(props: {
   );
 }
 
-function splitResumeCards(
+function splitMessageBlocks(
   message: IAgentScopeRuntimeMessage,
-): SplitMessageResult {
+): OrderedMessageBlock[] {
   if (!Array.isArray(message.content) || message.content.length === 0) {
-    return {
-      visibleMessage: message,
-      jobCards: [],
-      cards: [],
-      pendingJobCards: 0,
-      pendingResumeCards: 0,
-    };
+    return [{ type: "message", message }];
   }
 
-  const jobCards: JobCardPayload[] = [];
-  const cards: ResumeCardPayload[] = [];
-  const content: IContent[] = [];
-  let pendingJobCards = 0;
-  let pendingResumeCards = 0;
+  const blocks: OrderedMessageBlock[] = [];
+  let visibleContent: IContent[] = [];
 
-  message.content.forEach((item) => {
-    if (item?.type === AgentScopeRuntimeContentType.DATA) {
-      const data = (item as any).data;
-      if (isJobCardPayload(data)) {
-        jobCards.push(normalizeJobCardPayload(data));
-        return;
-      }
-      if (isResumeCardPayload(data)) {
-        cards.push(normalizeResumeCardPayload(data));
-        return;
-      }
-    }
+  const flushVisibleContent = () => {
+    if (visibleContent.length === 0) return;
+    blocks.push({
+      type: "message",
+      message: {
+        ...message,
+        content: visibleContent,
+      },
+    });
+    visibleContent = [];
+  };
 
-    if ((item as { type?: string })?.type === "job_card" && isJobCardPayload(item)) {
-      jobCards.push(normalizeJobCardPayload(item as JobCardPayload));
+  const appendBlock = (block: OrderedMessageBlock) => {
+    const lastBlock = blocks[blocks.length - 1];
+
+    if (block.type === "jobCards" && lastBlock?.type === "jobCards") {
+      lastBlock.cards.push(...block.cards);
       return;
     }
 
-    if ((item as { type?: string })?.type === "resume_card" && isResumeCardPayload(item)) {
-      cards.push(normalizeResumeCardPayload(item as ResumeCardPayload));
+    if (block.type === "resumeCards" && lastBlock?.type === "resumeCards") {
+      lastBlock.cards.push(...block.cards);
+      return;
+    }
+
+    if (
+      block.type === "pending" &&
+      lastBlock?.type === "pending" &&
+      lastBlock.kind === block.kind
+    ) {
+      lastBlock.count += block.count;
+      return;
+    }
+
+    blocks.push(block);
+  };
+
+  message.content.forEach((item) => {
+    if (item?.type === AgentScopeRuntimeContentType.DATA) {
+      const data = (item as IContent & { data?: unknown }).data;
+      if (isJobCardPayload(data)) {
+        flushVisibleContent();
+        appendBlock({
+          type: "jobCards",
+          cards: [normalizeJobCardPayload(data)],
+        });
+        return;
+      }
+      if (isResumeCardPayload(data)) {
+        flushVisibleContent();
+        appendBlock({
+          type: "resumeCards",
+          cards: [normalizeResumeCardPayload(data)],
+        });
+        return;
+      }
+    }
+
+    if (
+      (item as { type?: string }).type === "job_card" &&
+      isJobCardPayload(item)
+    ) {
+      flushVisibleContent();
+      appendBlock({
+        type: "jobCards",
+        cards: [normalizeJobCardPayload(item as JobCardPayload)],
+      });
+      return;
+    }
+
+    if (
+      (item as { type?: string }).type === "resume_card" &&
+      isResumeCardPayload(item)
+    ) {
+      flushVisibleContent();
+      appendBlock({
+        type: "resumeCards",
+        cards: [normalizeResumeCardPayload(item as ResumeCardPayload)],
+      });
       return;
     }
 
     if ((item as { type?: string; text?: string }).type === "text") {
-      const textItem = item as { type: string; text?: string };
-      const parsedJobs = parseJobCardsFromText(textItem.text);
-      if (parsedJobs.cards.length > 0) {
-        jobCards.push(...parsedJobs.cards);
-      }
-
-      const pendingJobs = hidePendingJobCardBlock(parsedJobs.remainingText);
-      if (pendingJobs.pending) {
-        pendingJobCards += 1;
-      }
-
-      const parsedResumes = parseResumeCardsFromText(pendingJobs.remainingText);
-      if (parsedResumes.cards.length > 0) {
-        cards.push(...parsedResumes.cards);
-      }
-
-      const pendingResumes = hidePendingResumeCardBlock(
-        parsedResumes.remainingText,
+      const textSegments = parseTextSegments(
+        (item as { type: string; text?: string }).text,
       );
-      if (pendingResumes.pending) {
-        pendingResumeCards += 1;
-      }
 
-      if (
-        parsedJobs.cards.length > 0 ||
-        parsedResumes.cards.length > 0 ||
-        pendingJobs.pending ||
-        pendingResumes.pending
-      ) {
-        if (!pendingResumes.remainingText) {
-          return;
-        }
-        content.push({
-          ...(item as IContent),
-          text: pendingResumes.remainingText,
-        } as IContent);
+      if (textSegments.length === 0) {
         return;
       }
+
+      textSegments.forEach((segment) => {
+        if (segment.type === "text") {
+          visibleContent.push({
+            ...(item as IContent),
+            text: segment.text,
+          } as IContent);
+          return;
+        }
+
+        flushVisibleContent();
+        if (segment.type === "jobCards") {
+          appendBlock(segment);
+          return;
+        }
+        if (segment.type === "resumeCards") {
+          appendBlock(segment);
+          return;
+        }
+        appendBlock({
+          type: "pending",
+          kind: segment.kind,
+          count: 1,
+        });
+      });
+      return;
     }
 
-    content.push(item);
+    visibleContent.push(item);
   });
 
-  return {
-    visibleMessage: content.length > 0 ? { ...message, content } : null,
-    jobCards,
-    cards,
-    pendingJobCards,
-    pendingResumeCards,
-  };
+  flushVisibleContent();
+  return blocks;
 }
 
 function getResumeCardKey(card: ResumeCardPayload, index: number): string {
   return (
-    card.candidate_id ||
-    card.resume_detail_url ||
-    card.detail_url ||
-    `${index}`
+    card.candidate_id || card.resume_detail_url || card.detail_url || `${index}`
   );
 }
 
@@ -248,9 +490,7 @@ function ResumeCardGroup(props: {
         error instanceof globalThis.Error
           ? error.message
           : "批量加入 Pipeline 失败";
-      message.error(
-        errorMessage,
-      );
+      message.error(errorMessage);
     } finally {
       setBatchAdding(false);
     }
@@ -316,10 +556,14 @@ function ResumeCardGroup(props: {
 export default function ResumeResponseCard(props: ResumeResponseCardProps) {
   const avatar = useChatAnywhereOptions((value) => value.welcome?.avatar);
   const nick = useChatAnywhereOptions((value) => value.welcome?.nick);
-  const isGenerating = AgentScopeRuntimeResponseBuilder.maybeGenerating(props.data);
+  const isGenerating = AgentScopeRuntimeResponseBuilder.maybeGenerating(
+    props.data,
+  );
 
   const messages = useMemo(() => {
-    return AgentScopeRuntimeResponseBuilder.mergeToolMessages(props.data.output);
+    return AgentScopeRuntimeResponseBuilder.mergeToolMessages(
+      props.data.output,
+    );
   }, [props.data.output]);
 
   if (!messages?.length && isGenerating) {
@@ -338,50 +582,68 @@ export default function ResumeResponseCard(props: ResumeResponseCardProps) {
       {messages.map((item) => {
         switch (item.type) {
           case AgentScopeRuntimeMessageType.MESSAGE: {
-            const {
-              visibleMessage,
-              jobCards,
-              cards,
-              pendingJobCards,
-              pendingResumeCards,
-            } = splitResumeCards(item);
+            const blocks = splitMessageBlocks(item);
             return (
               <div key={item.id}>
-                {visibleMessage ? <Message data={visibleMessage} /> : null}
-                {jobCards.length > 0 ? (
-                  <div className={styles.resumeCardList}>
-                    {jobCards.map((card, index) => (
-                      <JobCard
-                        key={card.job_id || card.id || `${item.id}-job-${index}`}
-                        card={card}
-                        index={index}
+                {blocks.map((block, blockIndex) => {
+                  if (block.type === "message") {
+                    return (
+                      <Message
+                        key={`${item.id}-message-${blockIndex}`}
+                        data={block.message}
                       />
-                    ))}
-                  </div>
-                ) : null}
-                {isGenerating && pendingJobCards > 0 ? (
-                  <div className={styles.resumeCardList}>
-                    {Array.from({ length: pendingJobCards }).map((_, index) => (
-                      <CardLoadingPlaceholder
-                        key={`${item.id}-job-loading-${index}`}
-                        kind="job"
+                    );
+                  }
+
+                  if (block.type === "jobCards") {
+                    return (
+                      <div
+                        key={`${item.id}-job-cards-${blockIndex}`}
+                        className={styles.resumeCardList}
+                      >
+                        {block.cards.map((card, index) => (
+                          <JobCard
+                            key={
+                              card.job_id ||
+                              card.id ||
+                              `${item.id}-job-${blockIndex}-${index}`
+                            }
+                            card={card}
+                            index={index}
+                          />
+                        ))}
+                      </div>
+                    );
+                  }
+
+                  if (block.type === "resumeCards") {
+                    return (
+                      <ResumeCardGroup
+                        key={`${item.id}-resume-cards-${blockIndex}`}
+                        itemId={`${item.id}-${blockIndex}`}
+                        cards={block.cards}
                       />
-                    ))}
-                  </div>
-                ) : null}
-                {cards.length > 0 ? (
-                  <ResumeCardGroup itemId={item.id} cards={cards} />
-                ) : null}
-                {isGenerating && pendingResumeCards > 0 ? (
-                  <div className={styles.resumeCardList}>
-                    {Array.from({ length: pendingResumeCards }).map((_, index) => (
-                      <CardLoadingPlaceholder
-                        key={`${item.id}-resume-loading-${index}`}
-                        kind="resume"
-                      />
-                    ))}
-                  </div>
-                ) : null}
+                    );
+                  }
+
+                  if (!isGenerating) {
+                    return null;
+                  }
+
+                  return (
+                    <div
+                      key={`${item.id}-${block.kind}-pending-${blockIndex}`}
+                      className={styles.resumeCardList}
+                    >
+                      {Array.from({ length: block.count }).map((_, index) => (
+                        <CardLoadingPlaceholder
+                          key={`${item.id}-${block.kind}-loading-${blockIndex}-${index}`}
+                          kind={block.kind}
+                        />
+                      ))}
+                    </div>
+                  );
+                })}
               </div>
             );
           }
