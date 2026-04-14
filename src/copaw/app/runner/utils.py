@@ -132,16 +132,14 @@ def _resolve_content_url(url: str) -> str:
     return _abspath_from_url(url)
 
 
-DUOLIE_RESUME_DETAIL_BASE = (
-    "https://www.duolie.com/resumedetail?resIdEncode="
-)
-
-
 def _is_likely_resume_token(value: str) -> bool:
     return bool(re.fullmatch(r"[A-Za-z0-9]{16,}", value.strip()))
 
 
-def _normalize_resume_detail_url(value: str) -> str:
+def _normalize_resume_detail_url_by_source(
+    value: str,
+    source_platform: str,
+) -> str:
     if not isinstance(value, str):
         return value
 
@@ -155,12 +153,8 @@ def _normalize_resume_detail_url(value: str) -> str:
     if trimmed.startswith("file:") or trimmed.startswith("/"):
         return _resolve_content_url(trimmed)
 
-    if "resIdEncode=" in trimmed:
-        token = trimmed.split("resIdEncode=")[-1]
-        return f"{DUOLIE_RESUME_DETAIL_BASE}{token}"
-
-    if _is_likely_resume_token(trimmed):
-        return f"{DUOLIE_RESUME_DETAIL_BASE}{trimmed}"
+    if "resIdEncode=" in trimmed or _is_likely_resume_token(trimmed):
+        return ""
 
     return _resolve_content_url(trimmed)
 
@@ -168,22 +162,29 @@ def _normalize_resume_detail_url(value: str) -> str:
 def _normalize_resume_card_payload(block: dict) -> dict:
     payload = dict(block)
     payload["type"] = "resume_card"
+    source_platform = str(
+        payload.get("source_platform") or payload.get("source") or "",
+    ).strip().lower()
 
     detail_token = (
-        payload.get("resIdEncode")
-        or payload.get("resumeIdEncode")
-        or (
-            payload.get("resume_detail_url")
-            if isinstance(payload.get("resume_detail_url"), str)
-            and _is_likely_resume_token(payload.get("resume_detail_url"))
-            else None
+        (
+            payload.get("resIdEncode")
+            or payload.get("resumeIdEncode")
+            or (
+                payload.get("resume_detail_url")
+                if isinstance(payload.get("resume_detail_url"), str)
+                and _is_likely_resume_token(payload.get("resume_detail_url"))
+                else None
+            )
+            or (
+                payload.get("detail_url")
+                if isinstance(payload.get("detail_url"), str)
+                and _is_likely_resume_token(payload.get("detail_url"))
+                else None
+            )
         )
-        or (
-            payload.get("detail_url")
-            if isinstance(payload.get("detail_url"), str)
-            and _is_likely_resume_token(payload.get("detail_url"))
-            else None
-        )
+        if False
+        else None
     )
 
     for key in (
@@ -194,14 +195,30 @@ def _normalize_resume_card_payload(block: dict) -> dict:
         value = payload.get(key)
         if isinstance(value, str):
             if key in ("resume_detail_url", "detail_url"):
-                payload[key] = _normalize_resume_detail_url(value)
+                payload[key] = _normalize_resume_detail_url_by_source(
+                    value,
+                    source_platform,
+                )
             else:
                 payload[key] = _resolve_content_url(value)
 
+    if not payload.get("resume_detail_url"):
+        url_pc = payload.get("urlPc")
+        if isinstance(url_pc, str) and url_pc.strip():
+            payload["resume_detail_url"] = _normalize_resume_detail_url_by_source(
+                url_pc,
+                source_platform,
+            )
+    if not payload.get("detail_url"):
+        detail_url = payload.get("resume_detail_url") or payload.get("urlPc")
+        if isinstance(detail_url, str) and detail_url.strip():
+            payload["detail_url"] = _normalize_resume_detail_url_by_source(
+                detail_url,
+                source_platform,
+            )
+
     if detail_token and not payload.get("resume_detail_url"):
-        payload["resume_detail_url"] = _normalize_resume_detail_url(
-            detail_token,
-        )
+        payload["resume_detail_url"] = ""
     if payload.get("resume_detail_url") and not payload.get("detail_url"):
         payload["detail_url"] = payload["resume_detail_url"]
 

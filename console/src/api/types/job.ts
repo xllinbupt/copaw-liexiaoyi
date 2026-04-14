@@ -17,6 +17,36 @@ export interface JobDeleteResponse {
   deleted_session_count: number;
 }
 
+export interface ExternalJobLinkView {
+  id: string;
+  job_id: string;
+  platform_account_id: string;
+  platform: string;
+  external_job_id: string;
+  external_job_code?: string;
+  external_job_title?: string;
+  external_job_url?: string;
+  external_status?: string;
+  relation_type: "imported" | "published" | "linked";
+  status: "active" | "unlinked" | "invalid";
+  source_of_truth:
+    | "independent"
+    | "external_preferred"
+    | "local_preferred";
+  sync_status: "idle" | "success" | "failed";
+  remote_snapshot?: Record<string, unknown>;
+  publish_payload_snapshot?: Record<string, unknown>;
+  last_pulled_at?: string | null;
+  last_pushed_at?: string | null;
+  remote_updated_at?: string | null;
+  last_error?: string;
+  metadata?: Record<string, unknown>;
+  created_at: string | null;
+  updated_at: string | null;
+  account_name?: string;
+  account_status?: string;
+}
+
 export type PipelineSystemStage =
   | "lead"
   | "active"
@@ -163,6 +193,13 @@ export interface PipelineEntryMutationResult {
   entry: PipelineEntryView;
 }
 
+export interface BatchPipelineEntryMutationResult {
+  total: number;
+  created_count: number;
+  existing_count: number;
+  results: PipelineEntryMutationResult[];
+}
+
 export interface AddPipelineCandidateRequest {
   candidate: CandidateProfileInput;
   stage?: PipelineSystemStage;
@@ -175,6 +212,10 @@ export interface AddPipelineCandidateRequest {
   source_chat_id?: string;
   source_session_id?: string;
   source_resume_id?: string;
+}
+
+export interface BatchAddPipelineCandidatesRequest {
+  requests: AddPipelineCandidateRequest[];
 }
 
 export interface UpdatePipelineEntryStageRequest {

@@ -93,6 +93,42 @@
   white-space: nowrap;
 }
 
+.headerExternalLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.headerExternalLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  padding: 4px 10px;
+  border: 1px solid rgba(22, 119, 255, 0.16);
+  border-radius: 999px;
+  background: rgba(22, 119, 255, 0.08);
+  color: rgba(9, 88, 217, 0.92);
+  font-size: 12px;
+  line-height: 18px;
+  cursor: pointer;
+}
+
+.headerExternalLink span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.headerExternalLinkMuted {
+  cursor: default;
+  border-color: rgba(15, 23, 42, 0.08);
+  background: rgba(15, 23, 42, 0.04);
+  color: rgba(0, 0, 0, 0.58);
+}
+
 .backButton {
   flex: 0 0 auto;
   padding-inline: 8px;
@@ -122,6 +158,50 @@
   margin-left: 40px;
 }
 
+.pipelineTabLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.pipelineTabStats {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pipelineTabStat {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 11px;
+  line-height: 16px;
+}
+
+.pipelineTabStatLabel {
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.pipelineTabStatValue {
+  color: rgba(0, 0, 0, 0.88);
+  font-weight: 600;
+}
+
+.pipelineTabStatLead {
+  background: rgba(250, 173, 20, 0.14);
+}
+
+.pipelineTabStatActive {
+  background: rgba(255, 127, 22, 0.12);
+}
+
+.pipelineTabStatInterview {
+  background: rgba(22, 119, 255, 0.12);
+}
+
 .tabContent {
   padding: 16px 20px 28px 20px;
 }
@@ -136,6 +216,15 @@
   line-height: 20px;
   font-weight: 600;
   color: rgba(0, 0, 0, 0.78);
+}
+
+.detailHint {
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.04);
+  font-size: 13px;
+  line-height: 22px;
+  color: rgba(0, 0, 0, 0.5);
 }
 
 .detailText {
@@ -179,6 +268,86 @@
   text-align: right;
 }
 
+.externalLinksWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.externalLinkCard {
+  padding: 12px 14px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, rgba(249, 250, 251, 0.9) 0%, rgba(255, 255, 255, 0.96) 100%);
+}
+
+.externalLinkCardClickable {
+  cursor: pointer;
+  transition:
+    border-color 0.16s ease,
+    box-shadow 0.16s ease,
+    transform 0.16s ease;
+}
+
+.externalLinkCardClickable:hover,
+.externalLinkCardClickable:focus-visible {
+  border-color: rgba(22, 119, 255, 0.18);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+  transform: translateY(-1px);
+  outline: none;
+}
+
+.externalLinkHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.externalLinkTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.externalLinkButton {
+  flex: 0 0 auto;
+  padding-inline: 0;
+}
+
+.externalLinkActions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.externalLinkDangerButton {
+  padding-inline: 0;
+}
+
+.externalLinkMeta {
+  margin-top: 8px;
+}
+
+.externalLinkName {
+  font-size: 13px;
+  line-height: 20px;
+  color: rgba(0, 0, 0, 0.82);
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.externalLinkSubmeta {
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 18px;
+  color: rgba(0, 0, 0, 0.5);
+  word-break: break-word;
+}
+
 .loadingWrap,
 .emptyWrap,
 .placeholderWrap {
@@ -207,14 +376,55 @@
 
   .headerTitle,
   .detailSectionTitle,
+  .externalLinkName,
   .detailText,
   .metaValue {
     color: rgba(255, 255, 255, 0.88);
   }
 
+  .detailHint,
   .detailText,
   .metaList {
     background: rgba(255, 255, 255, 0.05);
+  }
+
+  .detailHint,
+  .externalLinkSubmeta {
+    color: rgba(255, 255, 255, 0.52);
+  }
+
+  .externalLinkCard {
+    border-color: rgba(255, 255, 255, 0.08);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.02) 100%);
+  }
+
+  .headerExternalLink {
+    border-color: rgba(96, 165, 250, 0.18);
+    background: rgba(59, 130, 246, 0.18);
+    color: rgba(191, 219, 254, 0.98);
+  }
+
+  .headerExternalLinkMuted {
+    border-color: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.62);
+  }
+
+  .pipelineTabStatLabel {
+    color: rgba(255, 255, 255, 0.56);
+  }
+
+  .pipelineTabStatValue {
+    color: rgba(255, 255, 255, 0.92);
+  }
+
+  .pipelineTabStatIntent {
+    background: rgba(255, 127, 22, 0.22);
+  }
+
+  .pipelineTabStatInterview {
+    background: rgba(22, 119, 255, 0.22);
   }
 
   .revealChatButton {

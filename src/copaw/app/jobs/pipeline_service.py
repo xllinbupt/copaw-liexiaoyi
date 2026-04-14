@@ -2,7 +2,9 @@
 """Pipeline services for recruitment jobs."""
 from __future__ import annotations
 
+import asyncio
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 
 from .paths import (
@@ -14,6 +16,7 @@ from .paths import (
 )
 from .pipeline_models import (
     AddPipelineCandidateRequest,
+    BatchPipelineEntryMutationResult,
     CandidatePipelineActivityView,
     CandidatePipelineDetailView,
     CandidateProfile,
@@ -36,6 +39,16 @@ from .repo.pipeline_json_repo import (
     JsonPipelineStageRepository,
 )
 from .service import JobNotFoundError
+
+try:  # pragma: no cover - Windows fallback is exercised on Windows only.
+    import fcntl
+except ImportError:  # pragma: no cover
+    fcntl = None
+
+try:  # pragma: no cover - Windows fallback is exercised on Windows only.
+    import msvcrt
+except ImportError:  # pragma: no cover
+    msvcrt = None
 
 DEFAULT_PIPELINE_STAGES: list[dict[str, Any]] = [
     {
@@ -74,6 +87,58 @@ DEFAULT_PIPELINE_STAGES: list[dict[str, Any]] = [
         "sort_order": 4,
     },
 ]
+
+_PIPELINE_OPERATION_LOCKS: dict[str, asyncio.Lock] = {}
+
+
+class _PipelineOperationLock:
+    """Serialize multi-file pipeline mutations across tasks and processes."""
+
+    def __init__(self, lock_path: Path):
+        self._lock_path = lock_path
+        self._async_lock = _PIPELINE_OPERATION_LOCKS.setdefault(
+            str(lock_path),
+            asyncio.Lock(),
+        )
+        self._lock_file = None
+
+    async def __aenter__(self) -> None:
+        await self._async_lock.acquire()
+        self._lock_path.parent.mkdir(parents=True, exist_ok=True)
+        self._lock_file = self._lock_path.open("a+", encoding="utf-8")
+        try:
+            if fcntl is not None:
+                fcntl.flock(self._lock_file.fileno(), fcntl.LOCK_EX)
+            elif msvcrt is not None:  # pragma: no cover
+                self._lock_file.seek(0)
+                msvcrt.locking(self._lock_file.fileno(), msvcrt.LK_LOCK, 1)
+        except Exception:
+            self._lock_file.close()
+            self._lock_file = None
+            self._async_lock.release()
+            raise
+        return None
+
+    async def __aexit__(self, exc_type, exc, tb) -> bool:
+        try:
+            if self._lock_file is not None:
+                if fcntl is not None:
+                    fcntl.flock(self._lock_file.fileno(), fcntl.LOCK_UN)
+                elif msvcrt is not None:  # pragma: no cover
+                    self._lock_file.seek(0)
+                    msvcrt.locking(self._lock_file.fileno(), msvcrt.LK_UNLCK, 1)
+                self._lock_file.close()
+        finally:
+            self._lock_file = None
+            self._async_lock.release()
+        return False
+
+
+def _pipeline_operation_lock() -> _PipelineOperationLock:
+    lock_path = get_pipeline_entries_path().with_name(
+        ".recruitment_pipeline.operation.lock",
+    )
+    return _PipelineOperationLock(lock_path)
 
 
 def _trimmed(value: Any) -> str:
@@ -285,59 +350,21 @@ def _build_activity_view(
     )
 
 
-async def list_job_pipeline(job_id: str) -> JobPipelineView:
-    await _ensure_job_exists(job_id)
-    stages = await _ensure_default_stages()
-    stages_by_id = {stage.id: stage for stage in stages}
-    jobs_by_id = await _get_jobs_by_id()
-
-    entries_repo = JsonPipelineEntryRepository(get_pipeline_entries_path())
-    candidates_repo = JsonCandidateRepository(get_pipeline_candidates_path())
-
-    entries = await entries_repo.list_entries_by_job(job_id)
-    entries = sorted(
-        entries,
-        key=lambda entry: entry.latest_activity_at,
-        reverse=True,
-    )
-
-    candidates = await candidates_repo.list_candidates()
-    candidates_by_id = {candidate.id: candidate for candidate in candidates}
-
-    entry_views = [
-        _build_entry_view(
-            entry,
-            candidates_by_id=candidates_by_id,
-            stages_by_id=stages_by_id,
-            job_name=jobs_by_id.get(entry.job_id).name
-            if jobs_by_id.get(entry.job_id) is not None
-            else "",
-        )
-        for entry in entries
-        if entry.candidate_id in candidates_by_id
-        and entry.current_stage_id in stages_by_id
-    ]
-
-    return JobPipelineView(
-        job_id=job_id,
-        stages=stages,
-        entries=entry_views,
-    )
-
-
-async def add_candidate_to_job_pipeline(
+async def _add_candidate_to_job_pipeline_unlocked(
     job_id: str,
     request: AddPipelineCandidateRequest,
+    *,
+    stages: list[PipelineStageDefinition],
+    stages_by_id: dict[str, PipelineStageDefinition],
+    jobs_by_id: dict[str, Any],
 ) -> PipelineEntryMutationResult:
-    await _ensure_job_exists(job_id)
-    stages = await _ensure_default_stages()
-    stages_by_id = {stage.id: stage for stage in stages}
-    jobs_by_id = await _get_jobs_by_id()
     target_stage = _find_stage(stages, system_stage=request.stage)
 
     candidate = await _upsert_candidate(request.candidate)
     entries_repo = JsonPipelineEntryRepository(get_pipeline_entries_path())
-    activities_repo = JsonPipelineActivityRepository(get_pipeline_activities_path())
+    activities_repo = JsonPipelineActivityRepository(
+        get_pipeline_activities_path(),
+    )
 
     existing_entry = await entries_repo.find_entry(
         job_id=job_id,
@@ -409,67 +436,165 @@ async def add_candidate_to_job_pipeline(
     )
 
 
+async def list_job_pipeline(job_id: str) -> JobPipelineView:
+    await _ensure_job_exists(job_id)
+    stages = await _ensure_default_stages()
+    stages_by_id = {stage.id: stage for stage in stages}
+    jobs_by_id = await _get_jobs_by_id()
+
+    entries_repo = JsonPipelineEntryRepository(get_pipeline_entries_path())
+    candidates_repo = JsonCandidateRepository(get_pipeline_candidates_path())
+
+    entries = await entries_repo.list_entries_by_job(job_id)
+    entries = sorted(
+        entries,
+        key=lambda entry: entry.latest_activity_at,
+        reverse=True,
+    )
+
+    candidates = await candidates_repo.list_candidates()
+    candidates_by_id = {candidate.id: candidate for candidate in candidates}
+
+    entry_views = [
+        _build_entry_view(
+            entry,
+            candidates_by_id=candidates_by_id,
+            stages_by_id=stages_by_id,
+            job_name=jobs_by_id.get(entry.job_id).name
+            if jobs_by_id.get(entry.job_id) is not None
+            else "",
+        )
+        for entry in entries
+        if entry.candidate_id in candidates_by_id
+        and entry.current_stage_id in stages_by_id
+    ]
+
+    return JobPipelineView(
+        job_id=job_id,
+        stages=stages,
+        entries=entry_views,
+    )
+
+
+async def add_candidate_to_job_pipeline(
+    job_id: str,
+    request: AddPipelineCandidateRequest,
+) -> PipelineEntryMutationResult:
+    async with _pipeline_operation_lock():
+        await _ensure_job_exists(job_id)
+        stages = await _ensure_default_stages()
+        stages_by_id = {stage.id: stage for stage in stages}
+        jobs_by_id = await _get_jobs_by_id()
+        return await _add_candidate_to_job_pipeline_unlocked(
+            job_id,
+            request,
+            stages=stages,
+            stages_by_id=stages_by_id,
+            jobs_by_id=jobs_by_id,
+        )
+
+
+async def add_candidates_to_job_pipeline(
+    job_id: str,
+    requests: list[AddPipelineCandidateRequest],
+) -> BatchPipelineEntryMutationResult:
+    async with _pipeline_operation_lock():
+        if not requests:
+            raise ValueError("至少需要一位候选人")
+
+        await _ensure_job_exists(job_id)
+        stages = await _ensure_default_stages()
+        stages_by_id = {stage.id: stage for stage in stages}
+        jobs_by_id = await _get_jobs_by_id()
+
+        results: list[PipelineEntryMutationResult] = []
+        created_count = 0
+        for request in requests:
+            result = await _add_candidate_to_job_pipeline_unlocked(
+                job_id,
+                request,
+                stages=stages,
+                stages_by_id=stages_by_id,
+                jobs_by_id=jobs_by_id,
+            )
+            results.append(result)
+            if result.created:
+                created_count += 1
+
+        return BatchPipelineEntryMutationResult(
+            total=len(results),
+            created_count=created_count,
+            existing_count=len(results) - created_count,
+            results=results,
+        )
+
+
 async def update_pipeline_entry_stage(
     job_id: str,
     entry_id: str,
     request: UpdatePipelineEntryStageRequest,
 ) -> PipelineEntryMutationResult:
-    await _ensure_job_exists(job_id)
-    stages = await _ensure_default_stages()
-    stages_by_id = {stage.id: stage for stage in stages}
-    target_stage = _find_stage(stages, stage_id=_trimmed(request.stage_id))
+    async with _pipeline_operation_lock():
+        await _ensure_job_exists(job_id)
+        stages = await _ensure_default_stages()
+        stages_by_id = {stage.id: stage for stage in stages}
+        target_stage = _find_stage(stages, stage_id=_trimmed(request.stage_id))
 
-    entries_repo = JsonPipelineEntryRepository(get_pipeline_entries_path())
-    candidates_repo = JsonCandidateRepository(get_pipeline_candidates_path())
-    activities_repo = JsonPipelineActivityRepository(get_pipeline_activities_path())
-    jobs_by_id = await _get_jobs_by_id()
-
-    entry = await entries_repo.get_entry(entry_id)
-    if entry is None or entry.job_id != job_id:
-        raise ValueError(f"未找到 pipeline 记录：{entry_id}")
-
-    now = datetime.now(timezone.utc)
-    previous_stage_id = entry.current_stage_id
-    entry.current_stage_id = target_stage.id
-    entry.system_stage = target_stage.system_stage
-    entry.status = "closed" if target_stage.system_stage == "closed" else "active"
-    entry.latest_activity_at = now
-    entry.updated_at = now
-    await entries_repo.upsert_entry(entry)
-
-    await activities_repo.append_activity(
-        PipelineActivity(
-            pipeline_entry_id=entry.id,
-            candidate_id=entry.candidate_id,
-            job_id=job_id,
-            action_type="stage_changed",
-            from_stage_id=previous_stage_id,
-            to_stage_id=target_stage.id,
-            actor_type=request.actor_type,
-            note=_trimmed(request.note),
-            payload={
-                "job_id": job_id,
-                "system_stage": target_stage.system_stage,
-            },
-            created_at=now,
+        entries_repo = JsonPipelineEntryRepository(get_pipeline_entries_path())
+        candidates_repo = JsonCandidateRepository(get_pipeline_candidates_path())
+        activities_repo = JsonPipelineActivityRepository(
+            get_pipeline_activities_path(),
         )
-    )
+        jobs_by_id = await _get_jobs_by_id()
 
-    candidate = await candidates_repo.get_candidate(entry.candidate_id)
-    if candidate is None:
-        raise ValueError(f"候选人不存在：{entry.candidate_id}")
+        entry = await entries_repo.get_entry(entry_id)
+        if entry is None or entry.job_id != job_id:
+            raise ValueError(f"未找到 pipeline 记录：{entry_id}")
 
-    return PipelineEntryMutationResult(
-        created=False,
-        entry=_build_entry_view(
-            entry,
-            candidates_by_id={candidate.id: candidate},
-            stages_by_id=stages_by_id,
-            job_name=jobs_by_id.get(job_id).name
-            if jobs_by_id.get(job_id) is not None
-            else "",
-        ),
-    )
+        now = datetime.now(timezone.utc)
+        previous_stage_id = entry.current_stage_id
+        entry.current_stage_id = target_stage.id
+        entry.system_stage = target_stage.system_stage
+        entry.status = (
+            "closed" if target_stage.system_stage == "closed" else "active"
+        )
+        entry.latest_activity_at = now
+        entry.updated_at = now
+        await entries_repo.upsert_entry(entry)
+
+        await activities_repo.append_activity(
+            PipelineActivity(
+                pipeline_entry_id=entry.id,
+                candidate_id=entry.candidate_id,
+                job_id=job_id,
+                action_type="stage_changed",
+                from_stage_id=previous_stage_id,
+                to_stage_id=target_stage.id,
+                actor_type=request.actor_type,
+                note=_trimmed(request.note),
+                payload={
+                    "job_id": job_id,
+                    "system_stage": target_stage.system_stage,
+                },
+                created_at=now,
+            )
+        )
+
+        candidate = await candidates_repo.get_candidate(entry.candidate_id)
+        if candidate is None:
+            raise ValueError(f"候选人不存在：{entry.candidate_id}")
+
+        return PipelineEntryMutationResult(
+            created=False,
+            entry=_build_entry_view(
+                entry,
+                candidates_by_id={candidate.id: candidate},
+                stages_by_id=stages_by_id,
+                job_name=jobs_by_id.get(job_id).name
+                if jobs_by_id.get(job_id) is not None
+                else "",
+            ),
+        )
 
 
 async def update_pipeline_entry_assessment(
@@ -477,85 +602,88 @@ async def update_pipeline_entry_assessment(
     entry_id: str,
     request: UpdatePipelineEntryAssessmentRequest,
 ) -> PipelineEntryMutationResult:
-    await _ensure_job_exists(job_id)
-    stages = await _ensure_default_stages()
-    stages_by_id = {stage.id: stage for stage in stages}
+    async with _pipeline_operation_lock():
+        await _ensure_job_exists(job_id)
+        stages = await _ensure_default_stages()
+        stages_by_id = {stage.id: stage for stage in stages}
 
-    entries_repo = JsonPipelineEntryRepository(get_pipeline_entries_path())
-    candidates_repo = JsonCandidateRepository(get_pipeline_candidates_path())
-    activities_repo = JsonPipelineActivityRepository(get_pipeline_activities_path())
-    jobs_by_id = await _get_jobs_by_id()
-
-    entry = await entries_repo.get_entry(entry_id)
-    if entry is None or entry.job_id != job_id:
-        raise ValueError(f"未找到 pipeline 记录：{entry_id}")
-
-    now = datetime.now(timezone.utc)
-    previous_interest = entry.recruiter_interest
-    previous_stage_id = entry.current_stage_id
-    entry.recruiter_interest = request.recruiter_interest
-    if request.recruiter_interest == "no":
-        closed_stage = stages_by_id.get("closed")
-        if closed_stage is not None:
-            entry.current_stage_id = closed_stage.id
-            entry.system_stage = closed_stage.system_stage
-            entry.status = "closed"
-    entry.latest_activity_at = now
-    entry.updated_at = now
-    await entries_repo.upsert_entry(entry)
-
-    await activities_repo.append_activity(
-        PipelineActivity(
-            pipeline_entry_id=entry.id,
-            candidate_id=entry.candidate_id,
-            job_id=job_id,
-            action_type="updated",
-            actor_type=request.actor_type,
-            note=_trimmed(request.note),
-            payload={
-                "job_id": job_id,
-                "field": "recruiter_interest",
-                "from": previous_interest,
-                "to": request.recruiter_interest,
-            },
-            created_at=now,
+        entries_repo = JsonPipelineEntryRepository(get_pipeline_entries_path())
+        candidates_repo = JsonCandidateRepository(get_pipeline_candidates_path())
+        activities_repo = JsonPipelineActivityRepository(
+            get_pipeline_activities_path(),
         )
-    )
+        jobs_by_id = await _get_jobs_by_id()
 
-    if entry.current_stage_id != previous_stage_id:
+        entry = await entries_repo.get_entry(entry_id)
+        if entry is None or entry.job_id != job_id:
+            raise ValueError(f"未找到 pipeline 记录：{entry_id}")
+
+        now = datetime.now(timezone.utc)
+        previous_interest = entry.recruiter_interest
+        previous_stage_id = entry.current_stage_id
+        entry.recruiter_interest = request.recruiter_interest
+        if request.recruiter_interest == "no":
+            closed_stage = stages_by_id.get("closed")
+            if closed_stage is not None:
+                entry.current_stage_id = closed_stage.id
+                entry.system_stage = closed_stage.system_stage
+                entry.status = "closed"
+        entry.latest_activity_at = now
+        entry.updated_at = now
+        await entries_repo.upsert_entry(entry)
+
         await activities_repo.append_activity(
             PipelineActivity(
                 pipeline_entry_id=entry.id,
                 candidate_id=entry.candidate_id,
                 job_id=job_id,
-                action_type="stage_changed",
+                action_type="updated",
                 actor_type=request.actor_type,
-                note="因匹配度更新为淘汰，自动归档",
+                note=_trimmed(request.note),
                 payload={
                     "job_id": job_id,
-                    "from_stage_id": previous_stage_id,
-                    "to_stage_id": entry.current_stage_id,
-                    "reason": "recruiter_interest_no",
+                    "field": "recruiter_interest",
+                    "from": previous_interest,
+                    "to": request.recruiter_interest,
                 },
                 created_at=now,
             )
         )
 
-    candidate = await candidates_repo.get_candidate(entry.candidate_id)
-    if candidate is None:
-        raise ValueError(f"候选人不存在：{entry.candidate_id}")
+        if entry.current_stage_id != previous_stage_id:
+            await activities_repo.append_activity(
+                PipelineActivity(
+                    pipeline_entry_id=entry.id,
+                    candidate_id=entry.candidate_id,
+                    job_id=job_id,
+                    action_type="stage_changed",
+                    actor_type=request.actor_type,
+                    note="因匹配度更新为淘汰，自动归档",
+                    payload={
+                        "job_id": job_id,
+                        "from_stage_id": previous_stage_id,
+                        "to_stage_id": entry.current_stage_id,
+                        "reason": "recruiter_interest_no",
+                    },
+                    created_at=now,
+                )
+            )
 
-    return PipelineEntryMutationResult(
-        created=False,
-        entry=_build_entry_view(
-            entry,
-            candidates_by_id={candidate.id: candidate},
-            stages_by_id=stages_by_id,
-            job_name=jobs_by_id.get(job_id).name
-            if jobs_by_id.get(job_id) is not None
-            else "",
-        ),
-    )
+        candidate = await candidates_repo.get_candidate(entry.candidate_id)
+        if candidate is None:
+            raise ValueError(f"候选人不存在：{entry.candidate_id}")
+
+        return PipelineEntryMutationResult(
+            created=False,
+            entry=_build_entry_view(
+                entry,
+                candidates_by_id={candidate.id: candidate},
+                stages_by_id=stages_by_id,
+                job_name=jobs_by_id.get(job_id).name
+                if jobs_by_id.get(job_id) is not None
+                else "",
+            ),
+        )
 
 
 async def get_candidate_pipeline_detail(
@@ -622,11 +750,14 @@ async def get_candidate_pipeline_detail(
 
 async def delete_job_pipeline_records(job_id: str) -> tuple[int, int]:
     """Delete all pipeline entries and activities associated with a job."""
-    entries_repo = JsonPipelineEntryRepository(get_pipeline_entries_path())
-    activities_repo = JsonPipelineActivityRepository(get_pipeline_activities_path())
+    async with _pipeline_operation_lock():
+        entries_repo = JsonPipelineEntryRepository(get_pipeline_entries_path())
+        activities_repo = JsonPipelineActivityRepository(
+            get_pipeline_activities_path(),
+        )
 
-    deleted_entry_ids = await entries_repo.delete_entries_by_job(job_id)
-    deleted_activity_count = await activities_repo.delete_activities_by_entry_ids(
-        deleted_entry_ids,
-    )
-    return len(deleted_entry_ids), deleted_activity_count
+        deleted_entry_ids = await entries_repo.delete_entries_by_job(job_id)
+        deleted_activity_count = await activities_repo.delete_activities_by_entry_ids(
+            deleted_entry_ids,
+        )
+        return len(deleted_entry_ids), deleted_activity_count

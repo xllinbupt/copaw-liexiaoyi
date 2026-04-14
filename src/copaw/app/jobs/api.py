@@ -2,11 +2,19 @@
 """Global recruitment jobs API."""
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Response
 
 from .models import DeleteJobResult, JobSpec
+from .external_models import ExternalJobLinkView
+from .external_service import (
+    ExternalJobLinkNotFoundError,
+    list_job_external_links,
+    unlink_job_external_link,
+)
 from .pipeline_models import (
     AddPipelineCandidateRequest,
+    BatchAddPipelineCandidatesRequest,
+    BatchPipelineEntryMutationResult,
     CandidatePipelineDetailView,
     JobPipelineView,
     PipelineEntryMutationResult,
@@ -15,6 +23,7 @@ from .pipeline_models import (
 )
 from .pipeline_service import (
     add_candidate_to_job_pipeline,
+    add_candidates_to_job_pipeline,
     get_candidate_pipeline_detail,
     list_job_pipeline,
     update_pipeline_entry_assessment,
@@ -39,6 +48,41 @@ async def get_job_endpoint(job_id: str) -> JobSpec:
     if job is None:
         raise HTTPException(status_code=404, detail=f"Job not found: {job_id}")
     return job
+
+
+@router.get(
+    "/{job_id}/external-links",
+    response_model=list[ExternalJobLinkView],
+)
+async def list_job_external_links_endpoint(
+    job_id: str,
+) -> list[ExternalJobLinkView]:
+    """List external recruitment-platform job links for a CoPaw job."""
+    job = await get_job(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail=f"Job not found: {job_id}")
+    return await list_job_external_links(job_id)
+
+
+@router.delete(
+    "/{job_id}/external-links/{link_id}",
+    status_code=204,
+    response_class=Response,
+)
+async def unlink_job_external_link_endpoint(
+    job_id: str,
+    link_id: str,
+) -> Response:
+    """Unlink a specific external recruitment-platform job mapping."""
+    try:
+        await unlink_job_external_link(job_id=job_id, link_id=link_id)
+    except JobNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ExternalJobLinkNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return Response(status_code=204)
 
 
 @router.delete("/{job_id}", response_model=DeleteJobResult)
@@ -84,6 +128,23 @@ async def add_pipeline_candidate_endpoint(
     """Add a candidate to a job pipeline."""
     try:
         return await add_candidate_to_job_pipeline(job_id, request)
+    except JobNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post(
+    "/{job_id}/pipeline/entries/batch",
+    response_model=BatchPipelineEntryMutationResult,
+)
+async def add_pipeline_candidates_batch_endpoint(
+    job_id: str,
+    request: BatchAddPipelineCandidatesRequest,
+) -> BatchPipelineEntryMutationResult:
+    """Add multiple candidates to a job pipeline."""
+    try:
+        return await add_candidates_to_job_pipeline(job_id, request.requests)
     except JobNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except ValueError as exc:

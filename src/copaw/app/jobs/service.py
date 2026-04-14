@@ -277,6 +277,7 @@ def _iter_active_workspace_dirs() -> list[Path]:
 
 async def delete_job(job_id: str) -> DeleteJobResult:
     """Delete a job plus all bound chat specs and session files."""
+    from .external_service import delete_job_external_links
     from .pipeline_service import delete_job_pipeline_records
 
     jobs_repo = JsonJobRepository(get_recruitment_jobs_path())
@@ -308,6 +309,7 @@ async def delete_job(job_id: str) -> DeleteJobResult:
             )
 
     await delete_job_pipeline_records(job_id)
+    await delete_job_external_links(job_id)
 
     deleted = await jobs_repo.delete_job(job_id)
     if not deleted:

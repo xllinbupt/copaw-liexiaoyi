@@ -1,6 +1,6 @@
 import { Bubble } from "@agentscope-ai/chat";
-import { useMemo } from "react";
-import { Avatar, Flex } from "antd";
+import { useEffect, useMemo, useState } from "react";
+import { Avatar, Button, Checkbox, Flex, message } from "antd";
 import AgentScopeRuntimeResponseBuilder from "@agentscope-ai/chat/lib/AgentScopeRuntimeWebUI/core/AgentScopeRuntime/Response/Builder";
 import Actions from "@agentscope-ai/chat/lib/AgentScopeRuntimeWebUI/core/AgentScopeRuntime/Response/Actions";
 import Error from "@agentscope-ai/chat/lib/AgentScopeRuntimeWebUI/core/AgentScopeRuntime/Response/Error";
@@ -15,6 +15,8 @@ import {
   type IAgentScopeRuntimeResponse,
 } from "@agentscope-ai/chat/lib/AgentScopeRuntimeWebUI/core/AgentScopeRuntime/types";
 import { useChatAnywhereOptions } from "@agentscope-ai/chat/lib/AgentScopeRuntimeWebUI/core/Context/ChatAnywhereOptionsContext";
+import { useLocation } from "react-router-dom";
+import { jobApi } from "../../../api/modules/job";
 import {
   hidePendingJobCardBlock,
   hidePendingResumeCardBlock,
@@ -29,6 +31,16 @@ import {
 } from "../utils";
 import JobCard from "./JobCard";
 import ResumeCandidateCard from "./ResumeCandidateCard";
+import {
+  buildAddPipelineCandidatePayload,
+  formatBatchPipelineResult,
+  getCurrentChatForPipeline,
+  getJobDetailsOrThrow,
+} from "./resumePipeline";
+import {
+  notifyJobPipelineUpdated,
+  openJobDetailPanel,
+} from "../chatWorkspace";
 import styles from "./resumeCards.module.less";
 
 type ResumeResponseCardProps = {
@@ -158,6 +170,149 @@ function splitResumeCards(
   };
 }
 
+function getResumeCardKey(card: ResumeCardPayload, index: number): string {
+  return (
+    card.candidate_id ||
+    card.resume_detail_url ||
+    card.detail_url ||
+    `${index}`
+  );
+}
+
+function ResumeCardGroup(props: {
+  itemId: string;
+  cards: ResumeCardPayload[];
+}) {
+  const location = useLocation();
+  const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
+  const [batchAdding, setBatchAdding] = useState(false);
+  const cardKeys = useMemo(
+    () => props.cards.map((card, index) => getResumeCardKey(card, index)),
+    [props.cards],
+  );
+  const chatId = useMemo(() => {
+    const match = location.pathname.match(/^\/chat\/(.+)$/);
+    return match?.[1] || "";
+  }, [location.pathname]);
+
+  useEffect(() => {
+    setSelectedKeys(cardKeys);
+  }, [cardKeys]);
+
+  const allSelected =
+    cardKeys.length > 0 && selectedKeys.length === cardKeys.length;
+
+  const toggleCard = (key: string, checked: boolean) => {
+    setSelectedKeys((prev) => {
+      if (checked) {
+        return prev.includes(key) ? prev : [...prev, key];
+      }
+      return prev.filter((item) => item !== key);
+    });
+  };
+
+  const handleBatchAdd = async () => {
+    if (!chatId) {
+      message.warning("请先进入一个具体聊天，再把候选人加入 Pipeline");
+      return;
+    }
+    if (selectedKeys.length === 0) {
+      message.warning("请先选择至少一位候选人");
+      return;
+    }
+
+    setBatchAdding(true);
+    try {
+      const currentChat = await getCurrentChatForPipeline(chatId);
+      if (!currentChat) {
+        message.warning("没有找到当前聊天，请刷新后重试");
+        return;
+      }
+
+      const jobDetails = getJobDetailsOrThrow(currentChat);
+      const selectedCards = props.cards.filter((card, index) =>
+        selectedKeys.includes(getResumeCardKey(card, index)),
+      );
+
+      const result = await jobApi.batchAddPipelineCandidates(jobDetails.jobId, {
+        requests: selectedCards.map((card) =>
+          buildAddPipelineCandidatePayload(card, currentChat),
+        ),
+      });
+
+      notifyJobPipelineUpdated(jobDetails.jobId);
+      openJobDetailPanel(jobDetails);
+      message.success(formatBatchPipelineResult(result, jobDetails.jobName));
+    } catch (error) {
+      const errorMessage =
+        error instanceof globalThis.Error
+          ? error.message
+          : "批量加入 Pipeline 失败";
+      message.error(
+        errorMessage,
+      );
+    } finally {
+      setBatchAdding(false);
+    }
+  };
+
+  return (
+    <>
+      {props.cards.length > 1 ? (
+        <div className={styles.resumeBatchToolbar}>
+          <div className={styles.resumeBatchSelection}>
+            <Checkbox
+              checked={allSelected}
+              indeterminate={
+                selectedKeys.length > 0 && selectedKeys.length < cardKeys.length
+              }
+              onChange={(event) =>
+                setSelectedKeys(event.target.checked ? cardKeys : [])
+              }
+            >
+              全选
+            </Checkbox>
+            <span className={styles.resumeBatchSummary}>
+              已选 {selectedKeys.length} / {cardKeys.length}
+            </span>
+          </div>
+          <Button
+            size="small"
+            type="primary"
+            disabled={selectedKeys.length === 0}
+            loading={batchAdding}
+            onClick={() => {
+              void handleBatchAdd();
+            }}
+          >
+            批量加入 Pipeline
+          </Button>
+        </div>
+      ) : null}
+      <div className={styles.resumeCardList}>
+        {props.cards.map((card, index) => {
+          const key = getResumeCardKey(card, index);
+          return (
+            <ResumeCandidateCard
+              key={key || `${props.itemId}-${index}`}
+              card={card}
+              index={index}
+              selectionControl={
+                props.cards.length > 1 ? (
+                  <Checkbox
+                    checked={selectedKeys.includes(key)}
+                    onChange={(event) => toggleCard(key, event.target.checked)}
+                  />
+                ) : undefined
+              }
+            />
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
 export default function ResumeResponseCard(props: ResumeResponseCardProps) {
   const avatar = useChatAnywhereOptions((value) => value.welcome?.avatar);
   const nick = useChatAnywhereOptions((value) => value.welcome?.nick);
@@ -215,19 +370,7 @@ export default function ResumeResponseCard(props: ResumeResponseCardProps) {
                   </div>
                 ) : null}
                 {cards.length > 0 ? (
-                  <div className={styles.resumeCardList}>
-                    {cards.map((card, index) => (
-                      <ResumeCandidateCard
-                        key={
-                          card.candidate_id ||
-                          card.resume_detail_url ||
-                          `${item.id}-${index}`
-                        }
-                        card={card}
-                        index={index}
-                      />
-                    ))}
-                  </div>
+                  <ResumeCardGroup itemId={item.id} cards={cards} />
                 ) : null}
                 {isGenerating && pendingResumeCards > 0 ? (
                   <div className={styles.resumeCardList}>

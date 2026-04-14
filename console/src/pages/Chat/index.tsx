@@ -338,7 +338,7 @@ export default function ChatPage() {
 
   const openJobDetailPanel = useCallback((job: ChatJobDetails) => {
     setDetailPanelStack((currentStack) => {
-      const nextView: ChatDetailPanelView = { type: "job", job, tab: "detail" };
+      const nextView: ChatDetailPanelView = { type: "job", job, tab: "pipeline" };
       const currentView = currentStack[currentStack.length - 1];
       if (
         currentView?.type === "job" &&
@@ -350,7 +350,7 @@ export default function ChatPage() {
           {
             ...currentView,
             job,
-            tab: currentView.tab ?? "detail",
+            tab: currentView.tab ?? "pipeline",
           },
         ];
       }
@@ -543,7 +543,7 @@ export default function ChatPage() {
       const customEvent = event as CustomEvent<OpenJobDetailPanelDetail>;
       const nextJob = customEvent.detail?.job;
       if (!nextJob) return;
-      setDetailPanelStack([{ type: "job", job: nextJob }]);
+      setDetailPanelStack([{ type: "job", job: nextJob, tab: "pipeline" }]);
     };
 
     window.addEventListener(
@@ -778,7 +778,8 @@ export default function ChatPage() {
                 {
                   type: "text",
                   text: [
-                    "当前 chat 已经绑定职位，请把下面这份职位信息作为本轮对话的默认上下文继续推进。",
+                    "当前 chat 已经绑定职位。以下职位上下文已由 Console chat 元数据确认，请直接作为本轮对话的默认上下文继续推进。",
+                    "如果需要校验职位或继续做 Pipeline 操作，请优先使用官方职位 / Pipeline 脚本；不要因为当前工作区下的 `jobs.json` 为空，就判断“当前 chat 未绑定职位”。",
                     `职位 ID：${currentChatJobDetails.jobId || "未提供"}`,
                     `职位名称：${currentChatJobDetails.jobName}`,
                     currentChatJobDetails.description
@@ -929,7 +930,9 @@ export default function ChatPage() {
               currentChat={currentChat}
               onJobClick={() => {
                 if (currentChatJobDetails) {
-                  setDetailPanelStack([{ type: "job", job: currentChatJobDetails }]);
+                  setDetailPanelStack([
+                    { type: "job", job: currentChatJobDetails, tab: "pipeline" },
+                  ]);
                 }
               }}
             />

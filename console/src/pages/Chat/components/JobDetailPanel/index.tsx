@@ -1,20 +1,29 @@
 import {
   CloseOutlined,
   DeleteOutlined,
+  LinkOutlined,
   LeftOutlined,
 } from "@ant-design/icons";
-import { Button, Empty, Modal, Spin, Tabs, message } from "antd";
+import { Button, Empty, Modal, Spin, Tabs, Tag, message } from "antd";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { jobApi } from "../../../../api/modules/job";
-import type { JobDeleteResponse, JobSpec } from "../../../../api/types";
+import type {
+  ExternalJobLinkView,
+  JobDeleteResponse,
+  JobPipelineView,
+  JobSpec,
+} from "../../../../api/types";
+import { JOB_PIPELINE_UPDATED_EVENT } from "../../chatWorkspace";
 import type {
   ChatCandidateDetails,
   ChatDetailPanelView,
   ChatJobDetails,
   JobDetailTabKey,
+  JobPipelineUpdatedDetail,
 } from "../../chatWorkspace";
 import CandidateDetailPanel from "../CandidateDetailPanel";
 import JobPipelineBoard from "../JobPipelineBoard";
+import { getPipelineTabStats } from "../pipelineStats";
 import styles from "./index.module.less";
 
 const PANEL_WIDTH_STORAGE_KEY = "copaw-chat-job-panel-width";
@@ -66,6 +75,39 @@ function formatDateTime(raw?: string | null) {
   });
 }
 
+function formatPlatformLabel(platform?: string) {
+  const normalized = (platform || "").trim().toLowerCase();
+  if (!normalized) return "企业版";
+  if (normalized === "liepin") return "猎聘企业版";
+  return normalized;
+}
+
+function resolveExternalJobJumpUrl(link: ExternalJobLinkView) {
+  const directUrl = (link.external_job_url || "").trim();
+  if (directUrl) return directUrl;
+
+  const snapshot = link.remote_snapshot;
+  if (snapshot && typeof snapshot === "object") {
+    for (const key of ["urlPc", "ejobPcUrl", "pcUrl", "jobUrl", "url"]) {
+      const pcUrl = snapshot[key];
+      if (typeof pcUrl === "string" && pcUrl.trim()) {
+        return pcUrl.trim();
+      }
+    }
+  }
+
+  const normalizedPlatform = (link.platform || "").trim().toLowerCase();
+  if (normalizedPlatform === "liepin") {
+    return "https://vip.liepin.com/";
+  }
+
+  return "";
+}
+
+function openExternalJobLink(url: string) {
+  window.open(url, "_blank", "noopener,noreferrer");
+}
+
 export default function JobDetailPanel({
   open,
   view,
@@ -88,7 +130,12 @@ export default function JobDetailPanel({
   });
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [unlinkingLinkId, setUnlinkingLinkId] = useState<string | null>(null);
   const [jobDetail, setJobDetail] = useState<JobSpec | null>(null);
+  const [externalLinks, setExternalLinks] = useState<ExternalJobLinkView[]>([]);
+  const [pipelineSnapshot, setPipelineSnapshot] = useState<JobPipelineView | null>(
+    null,
+  );
   const [coverChat, setCoverChat] = useState(false);
   const [layoutWidth, setLayoutWidth] = useState(0);
   const panelRef = useRef<HTMLElement | null>(null);
@@ -98,7 +145,17 @@ export default function JobDetailPanel({
 
   const activeJob = view?.type === "job" ? view.job : null;
   const activeCandidate = view?.type === "candidate" ? view.candidate : null;
-  const activeJobTab = view?.type === "job" ? view.tab ?? "detail" : "detail";
+  const activeJobTab =
+    view?.type === "job" ? view.tab ?? "pipeline" : "pipeline";
+
+  const fetchExternalLinks = async (jobId: string) => {
+    try {
+      const data = await jobApi.getJobExternalLinks(jobId);
+      setExternalLinks(data);
+    } catch {
+      setExternalLinks([]);
+    }
+  };
 
   const handleResizeStart = (clientX: number) => {
     resizeCleanupRef.current?.();
@@ -225,6 +282,70 @@ export default function JobDetailPanel({
   }, [activeJob?.jobId, open]);
 
   useEffect(() => {
+    const jobId = activeJob?.jobId;
+    if (!open || !jobId) {
+      setExternalLinks([]);
+      return;
+    }
+
+    let cancelled = false;
+
+    fetchExternalLinks(jobId).catch(() => {
+      if (!cancelled) {
+        setExternalLinks([]);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeJob?.jobId, open]);
+
+  useEffect(() => {
+    const jobId = activeJob?.jobId;
+    if (!open || !jobId) {
+      setPipelineSnapshot(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    const fetchPipelineSnapshot = async () => {
+      try {
+        const data = await jobApi.getJobPipeline(jobId);
+        if (!cancelled) {
+          setPipelineSnapshot(data);
+        }
+      } catch {
+        if (!cancelled) {
+          setPipelineSnapshot(null);
+        }
+      }
+    };
+
+    void fetchPipelineSnapshot();
+
+    const handlePipelineUpdated = (event: Event) => {
+      const customEvent = event as CustomEvent<JobPipelineUpdatedDetail>;
+      if (customEvent.detail?.jobId !== jobId) return;
+      void fetchPipelineSnapshot();
+    };
+
+    window.addEventListener(
+      JOB_PIPELINE_UPDATED_EVENT,
+      handlePipelineUpdated as EventListener,
+    );
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener(
+        JOB_PIPELINE_UPDATED_EVENT,
+        handlePipelineUpdated as EventListener,
+      );
+    };
+  }, [activeJob?.jobId, open]);
+
+  useEffect(() => {
     return () => {
       resizeCleanupRef.current?.();
     };
@@ -240,6 +361,15 @@ export default function JobDetailPanel({
       updatedAt: jobDetail?.updated_at || null,
     };
   }, [activeJob, jobDetail]);
+
+  const pipelineTabStats = useMemo(
+    () => getPipelineTabStats(pipelineSnapshot),
+    [pipelineSnapshot],
+  );
+  const activeExternalLinks = useMemo(
+    () => externalLinks.filter((link) => link.status === "active"),
+    [externalLinks],
+  );
 
   const headerTitle = useMemo(() => {
     if (view?.type === "candidate") {
@@ -294,6 +424,35 @@ export default function JobDetailPanel({
           throw error;
         } finally {
           setDeleting(false);
+        }
+      },
+    });
+  };
+
+  const handleUnlinkExternalLink = (link: ExternalJobLinkView) => {
+    if (!activeJob?.jobId) return;
+
+    Modal.confirm({
+      title: "确认解除企业版关联？",
+      content:
+        "解除后，这个 CoPaw 职位将不再关联当前企业版职位，之后可以重新绑定其他职位。",
+      okText: "解除关联",
+      cancelText: "取消",
+      okButtonProps: { danger: true },
+      centered: true,
+      onOk: async () => {
+        setUnlinkingLinkId(link.id);
+        try {
+          await jobApi.unlinkJobExternalLink(activeJob.jobId as string, link.id);
+          await fetchExternalLinks(activeJob.jobId as string);
+          message.success("企业版职位关联已解除");
+        } catch (error) {
+          const errorMessage =
+            error instanceof Error ? error.message : "解除企业版关联失败";
+          message.error(errorMessage);
+          throw error;
+        } finally {
+          setUnlinkingLinkId(null);
         }
       },
     });
@@ -404,6 +563,106 @@ export default function JobDetailPanel({
                   children: (
                     <div className={styles.tabContent}>
                       <section className={styles.detailSection}>
+                        <div className={styles.detailSectionTitle}>企业版关联</div>
+                        {activeExternalLinks.length > 0 ? (
+                          <div className={styles.externalLinksWrap}>
+                            {activeExternalLinks.map((link) => {
+                              const platformLabel = formatPlatformLabel(
+                                link.platform,
+                              );
+                              const jumpUrl = resolveExternalJobJumpUrl(link);
+                              const jumpLabel =
+                                link.external_job_title ||
+                                link.external_job_code ||
+                                link.external_job_id;
+                              return (
+                                <div
+                                  key={link.id}
+                                  className={`${styles.externalLinkCard} ${
+                                    jumpUrl ? styles.externalLinkCardClickable : ""
+                                  }`}
+                                  role={jumpUrl ? "link" : undefined}
+                                  tabIndex={jumpUrl ? 0 : undefined}
+                                  onClick={
+                                    jumpUrl
+                                      ? () => {
+                                          openExternalJobLink(jumpUrl);
+                                        }
+                                      : undefined
+                                  }
+                                  onKeyDown={
+                                    jumpUrl
+                                      ? (event) => {
+                                          if (
+                                            event.key === "Enter" ||
+                                            event.key === " "
+                                          ) {
+                                            event.preventDefault();
+                                            openExternalJobLink(jumpUrl);
+                                          }
+                                        }
+                                      : undefined
+                                  }
+                                >
+                                  <div className={styles.externalLinkHeader}>
+                                    <div className={styles.externalLinkTitle}>
+                                      <Tag color="blue">{platformLabel}</Tag>
+                                    </div>
+                                    <div className={styles.externalLinkActions}>
+                                      {jumpUrl ? (
+                                        <Button
+                                          type="link"
+                                          size="small"
+                                          icon={<LinkOutlined />}
+                                          className={styles.externalLinkButton}
+                                          onClick={(event) => {
+                                            event.stopPropagation();
+                                            openExternalJobLink(jumpUrl);
+                                          }}
+                                        >
+                                          去企业版
+                                        </Button>
+                                      ) : null}
+                                      <Button
+                                        type="link"
+                                        size="small"
+                                        danger
+                                        className={styles.externalLinkDangerButton}
+                                        loading={unlinkingLinkId === link.id}
+                                        onClick={(event) => {
+                                          event.stopPropagation();
+                                          handleUnlinkExternalLink(link);
+                                        }}
+                                      >
+                                        解除关联
+                                      </Button>
+                                    </div>
+                                  </div>
+                                  <div className={styles.externalLinkMeta}>
+                                    <div className={styles.externalLinkName}>
+                                      {jumpLabel}
+                                    </div>
+                                    <div className={styles.externalLinkSubmeta}>
+                                      {link.account_name
+                                        ? `账号：${link.account_name}`
+                                        : "账号：未命名"}
+                                      {link.external_status
+                                        ? ` · 状态：${link.external_status}`
+                                        : ""}
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <div className={styles.detailHint}>
+                            暂未绑定企业版职位
+                          </div>
+                        )}
+                      </section>
+
+                      <section className={styles.detailSection}>
                         <div className={styles.detailSectionTitle}>职位描述</div>
                         <div className={styles.detailText}>
                           {jobDetailView.description || "暂未填写职位描述"}
@@ -439,7 +698,53 @@ export default function JobDetailPanel({
                 },
                 {
                   key: "pipeline",
-                  label: "候选人",
+                  label: (
+                    <span className={styles.pipelineTabLabel}>
+                      <span>候选人</span>
+                      {pipelineTabStats.lead > 0 ||
+                      pipelineTabStats.active > 0 ||
+                      pipelineTabStats.interviewing > 0 ? (
+                        <span className={styles.pipelineTabStats}>
+                          {pipelineTabStats.lead > 0 ? (
+                            <span
+                              className={`${styles.pipelineTabStat} ${styles.pipelineTabStatLead}`}
+                            >
+                              <span className={styles.pipelineTabStatLabel}>
+                                线索
+                              </span>
+                              <span className={styles.pipelineTabStatValue}>
+                                {pipelineTabStats.lead}
+                              </span>
+                            </span>
+                          ) : null}
+                          {pipelineTabStats.active > 0 ? (
+                            <span
+                              className={`${styles.pipelineTabStat} ${styles.pipelineTabStatActive}`}
+                            >
+                              <span className={styles.pipelineTabStatLabel}>
+                                推进中
+                              </span>
+                              <span className={styles.pipelineTabStatValue}>
+                                {pipelineTabStats.active}
+                              </span>
+                            </span>
+                          ) : null}
+                          {pipelineTabStats.interviewing > 0 ? (
+                            <span
+                              className={`${styles.pipelineTabStat} ${styles.pipelineTabStatInterview}`}
+                            >
+                              <span className={styles.pipelineTabStatLabel}>
+                                面试
+                              </span>
+                              <span className={styles.pipelineTabStatValue}>
+                                {pipelineTabStats.interviewing}
+                              </span>
+                            </span>
+                          ) : null}
+                        </span>
+                      ) : null}
+                    </span>
+                  ),
                   children: activeJob.jobId ? (
                     <JobPipelineBoard
                       jobId={activeJob.jobId}

@@ -39,7 +39,7 @@ export const i18n: Record<Lang, Record<string, string>> = {
       "可按招聘流程拆分成搜寻、初筛、面试协调、候选人跟进等角色，让多个 Agent 分工协作。",
     "features.skills.title": "招聘 Skills",
     "features.skills.desc":
-      "内置招聘场景 Skills，可自动加载本地扩展，例如多猎简历检索、文件阅读与可视浏览器操作。",
+      "内置招聘场景 Skills，可自动加载本地扩展，例如简历检索、文件阅读与可视浏览器操作。",
     "testimonials.title": "招聘团队怎么说",
     "testimonials.viewAll": "查看全部",
     "testimonials.1": "把搜人、看简历、发起沟通放在一个入口里，招聘效率一下顺了很多。",
@@ -56,7 +56,7 @@ export const i18n: Record<Lang, Record<string, string>> = {
     "usecases.social.1":
       "基于职位 JD、城市、年限、学历和关键词组合检索候选人，快速形成首批推荐名单。",
     "usecases.social.2":
-      "调用内置的多猎 Skill 搜索候选人，并直接查看简历详情，减少来回切系统的成本。",
+      "调用内置的招聘搜索 Skill 搜索候选人，并直接查看简历详情，减少来回切系统的成本。",
     "usecases.social.3":
       "把历史搜寻条件沉淀成可复用模板，让同类岗位的搜人动作标准化。",
     "usecases.creative.1":
@@ -177,7 +177,7 @@ export const i18n: Record<Lang, Record<string, string>> = {
       "Split work across sourcing, screening, interview coordination, and follow-up so multiple agents can collaborate on one hiring flow.",
     "features.skills.title": "Recruiting skills",
     "features.skills.desc":
-      "Built-in recruiting skills auto-load from your workspace, including local sourcing and resume lookup skills such as Duolie.",
+      "Built-in recruiting skills auto-load from your workspace, including local sourcing, resume lookup, file reading, and visible browser helpers.",
     "testimonials.title": "What recruiting teams say",
     "testimonials.viewAll": "View all",
     "testimonials.1":
@@ -196,7 +196,7 @@ export const i18n: Record<Lang, Record<string, string>> = {
     "usecases.social.1":
       "Search candidates by role, city, years of experience, school background, and hiring keywords to build a first-pass shortlist quickly.",
     "usecases.social.2":
-      "Use the built-in Duolie skill to search candidate records and open detailed resumes without leaving the recruiting workflow.",
+      "Use the built-in recruiting search skills to search candidate records and open detailed resumes without leaving the recruiting workflow.",
     "usecases.social.3":
       "Turn proven sourcing filters into reusable templates for similar mandates across the team.",
     "usecases.creative.1":

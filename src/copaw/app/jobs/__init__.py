@@ -1,6 +1,22 @@
 # -*- coding: utf-8 -*-
 """Minimal recruitment job helpers."""
 
+from .external_models import (
+    ExternalJobLink,
+    ExternalJobLinkView,
+    ExternalJobLinksFile,
+    RecruitPlatformAccount,
+    RecruitPlatformAccountsFile,
+)
+from .external_service import list_job_external_links
+from .external_service import (
+    ExternalJobLinkConflictError,
+    ExternalJobLinkNotFoundError,
+    PlatformAccountNotFoundError,
+    ensure_platform_account,
+    unlink_job_external_link,
+    upsert_job_external_link,
+)
 from .models import (
     BindJobToChatRequest,
     CreateJobFromChatRequest,
@@ -10,6 +26,8 @@ from .models import (
 )
 from .pipeline_models import (
     AddPipelineCandidateRequest,
+    BatchAddPipelineCandidatesRequest,
+    BatchPipelineEntryMutationResult,
     CandidateProfile,
     CandidateProfileInput,
     JobPipelineView,
@@ -23,6 +41,7 @@ from .pipeline_models import (
 )
 from .pipeline_service import (
     add_candidate_to_job_pipeline,
+    add_candidates_to_job_pipeline,
     list_job_pipeline,
     update_pipeline_entry_assessment,
     update_pipeline_entry_stage,
@@ -44,9 +63,19 @@ __all__ = [
     "BindJobToChatRequest",
     "CreateJobFromChatRequest",
     "DeleteJobResult",
+    "ExternalJobLink",
+    "ExternalJobLinksFile",
+    "ExternalJobLinkView",
     "JobSpec",
     "JobsFile",
+    "RecruitPlatformAccount",
+    "RecruitPlatformAccountsFile",
+    "PlatformAccountNotFoundError",
+    "ExternalJobLinkConflictError",
+    "ExternalJobLinkNotFoundError",
     "AddPipelineCandidateRequest",
+    "BatchAddPipelineCandidatesRequest",
+    "BatchPipelineEntryMutationResult",
     "CandidateProfile",
     "CandidateProfileInput",
     "JobPipelineView",
@@ -67,7 +96,12 @@ __all__ = [
     "list_jobs",
     "get_job",
     "job_binding_from_chat",
+    "list_job_external_links",
+    "ensure_platform_account",
+    "unlink_job_external_link",
+    "upsert_job_external_link",
     "add_candidate_to_job_pipeline",
+    "add_candidates_to_job_pipeline",
     "list_job_pipeline",
     "update_pipeline_entry_assessment",
     "update_pipeline_entry_stage",

@@ -99,6 +99,41 @@ def _extract_session_and_payload(request_data: Union[AgentRequest, dict]):
     return native_payload
 
 
+def _build_console_agent_request(
+    request_data: Union[AgentRequest, dict],
+    *,
+    session_id: str,
+    user_id: str,
+    channel_id: str,
+) -> AgentRequest:
+    """Normalize console chat input into an AgentRequest without losing roles."""
+    if isinstance(request_data, AgentRequest):
+        request = request_data.model_copy(
+            update={
+                "session_id": session_id,
+                "user_id": user_id,
+                "channel": channel_id,
+            }
+        )
+        existing_meta = getattr(request_data, "channel_meta", None) or {}
+    else:
+        payload = dict(request_data)
+        payload["session_id"] = session_id
+        payload["user_id"] = user_id
+        payload["channel"] = channel_id
+        payload.pop("reconnect", None)
+        payload.pop("stream", None)
+        request = AgentRequest.model_validate(payload)
+        existing_meta = {}
+
+    request.channel_meta = {
+        **existing_meta,
+        "session_id": session_id,
+        "user_id": user_id,
+    }
+    return request
+
+
 @router.post(
     "/chat",
     status_code=200,
@@ -166,9 +201,15 @@ async def post_console_chat(
                 detail="No running chat for this session",
             )
     else:
+        request_payload = _build_console_agent_request(
+            request_data,
+            session_id=session_id,
+            user_id=native_payload["sender_id"],
+            channel_id=native_payload["channel_id"],
+        )
         queue, _ = await tracker.attach_or_start(
             chat.id,
-            native_payload,
+            request_payload,
             console_channel.stream_one,
         )
 

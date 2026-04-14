@@ -68,6 +68,16 @@ class SafeJSONSession(SessionBase):
             file_path = f"{safe_sid}.json"
         return os.path.join(self.save_dir, file_path)
 
+    def session_state_exists(
+        self,
+        session_id: str,
+        user_id: str = "",
+    ) -> bool:
+        """Return whether the persisted session file exists on disk."""
+        return os.path.exists(
+            self._get_save_path(session_id, user_id=user_id),
+        )
+
     async def save_session_state(
         self,
         session_id: str,

@@ -51,3 +51,23 @@ python scripts/run_tests.py -p
 # Show help
 python scripts/run_tests.py -h
 ```
+
+## Run Workspace Checks
+
+```bash
+# Run backend tests + frontend checks
+python scripts/run_workspace_checks.py
+
+# Run backend tests only
+python scripts/run_workspace_checks.py --backend
+
+# Run one backend unit test directory
+python scripts/run_workspace_checks.py --unit providers
+
+# Run frontend checks only
+python scripts/run_workspace_checks.py --frontend
+
+# Run console or website checks separately
+python scripts/run_workspace_checks.py --console
+python scripts/run_workspace_checks.py --website
+```

@@ -73,7 +73,7 @@ interface ResizableHeaderCellProps
 }
 
 const DEFAULT_COLUMN_WIDTHS: ColumnWidths = {
-  candidate: 144,
+  candidate: 120,
   current_stage: 148,
   latest_work_experience: 260,
   age: 96,
@@ -86,7 +86,7 @@ const DEFAULT_COLUMN_WIDTHS: ColumnWidths = {
 };
 
 const MIN_COLUMN_WIDTHS: ColumnWidths = {
-  candidate: 120,
+  candidate: 96,
   current_stage: 132,
   latest_work_experience: 220,
   age: 80,
@@ -100,16 +100,34 @@ const MIN_COLUMN_WIDTHS: ColumnWidths = {
 
 const TABLE_WIDTH_STORAGE_KEY = "copaw-job-pipeline-table-widths";
 const VIEW_MODE_STORAGE_KEY_PREFIX = "copaw-job-pipeline-view-mode";
-const COLUMN_ORDER_STORAGE_KEY = "copaw-job-pipeline-table-order";
+const COLUMN_ORDER_STORAGE_KEY = "copaw-job-pipeline-table-order-v2";
+
+function normalizeStoredColumnWidths(
+  parsed: Partial<ColumnWidths>,
+): ColumnWidths {
+  return {
+    ...DEFAULT_COLUMN_WIDTHS,
+    ...parsed,
+    candidate: Math.max(
+      MIN_COLUMN_WIDTHS.candidate,
+      Math.min(
+        typeof parsed.candidate === "number"
+          ? parsed.candidate
+          : DEFAULT_COLUMN_WIDTHS.candidate,
+        DEFAULT_COLUMN_WIDTHS.candidate,
+      ),
+    ),
+  };
+}
 
 const DEFAULT_MOVABLE_COLUMN_ORDER: PipelineTableColumnKey[] = [
   "current_stage",
+  "candidate_interest",
+  "recruiter_interest",
   "latest_work_experience",
   "age",
   "education_experience",
   "source_type",
-  "recruiter_interest",
-  "candidate_interest",
   "summary",
   "latest_activity_at",
 ];
@@ -374,7 +392,7 @@ export default function JobPipelineBoard(props: JobPipelineBoardProps) {
     useState<string | null>(null);
   const [draggingEntryId, setDraggingEntryId] = useState<string | null>(null);
   const [dragOverStageId, setDragOverStageId] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<PipelineViewMode>("board");
+  const [viewMode, setViewMode] = useState<PipelineViewMode>("table");
   const [columnWidths, setColumnWidths] =
     useState<ColumnWidths>(DEFAULT_COLUMN_WIDTHS);
   const [columnOrder, setColumnOrder] = useState<PipelineTableColumnKey[]>(
@@ -399,10 +417,7 @@ export default function JobPipelineBoard(props: JobPipelineBoardProps) {
       const raw = window.localStorage.getItem(TABLE_WIDTH_STORAGE_KEY);
       if (!raw) return;
       const parsed = JSON.parse(raw) as Partial<ColumnWidths>;
-      setColumnWidths({
-        ...DEFAULT_COLUMN_WIDTHS,
-        ...parsed,
-      });
+      setColumnWidths(normalizeStoredColumnWidths(parsed));
     } catch {
       setColumnWidths(DEFAULT_COLUMN_WIDTHS);
     }
@@ -437,11 +452,11 @@ export default function JobPipelineBoard(props: JobPipelineBoardProps) {
         `${VIEW_MODE_STORAGE_KEY_PREFIX}:${props.jobId}`,
       );
       if (raw === "board" || raw === "table") {
-        setViewMode(raw);
+        setViewMode(raw === "board" ? "table" : raw);
         return;
       }
     } catch {}
-    setViewMode("board");
+    setViewMode("table");
   }, [props.jobId]);
 
   useEffect(() => {

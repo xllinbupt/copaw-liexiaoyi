@@ -1070,9 +1070,11 @@ def reconcile_workspace_manifest(workspace_dir: Path) -> dict[str, Any]:
                 pool_signature = (
                     pool_entry.get("signature", "") if pool_entry else ""
                 )
+                is_protected_builtin = _is_protected_builtin_skill(skill_name)
                 source = (
                     "builtin"
-                    if workspace_signature == pool_signature
+                    if is_protected_builtin
+                    or workspace_signature == pool_signature
                     else "customized"
                 )
                 protected = (

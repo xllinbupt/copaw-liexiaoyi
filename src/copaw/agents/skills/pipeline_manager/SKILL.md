@@ -3,7 +3,7 @@ name: pipeline_manager
 description: "职位 Pipeline 管理。适用于当前 chat 已经绑定职位后，把候选人真实加入该职位的 Pipeline，或把候选人推进到新的 Pipeline 节点。默认用于招聘推进，不要用写 MEMORY、手改 JSON 或口头承诺来冒充已加入/已更新。该 skill 只在当前 chat 已绑定职位时可用。"
 metadata:
   {
-    "builtin_skill_version": "1.1",
+    "builtin_skill_version": "1.2",
     "copaw":
       {
         "emoji": "🧭",
@@ -25,8 +25,10 @@ metadata:
 5. 当前第一版的主要动作是：
    - 查看当前职位 Pipeline
    - 把候选人加入当前职位 Pipeline
+   - 批量把候选人加入当前职位 Pipeline
    - 把候选人推进到新的节点
    - 更新我方判断（很合适 / 合适 / 待评估 / 淘汰）
+6. 当同一轮要加入 **2 位及以上候选人** 时，优先使用批量脚本；不要循环调用多次 `add_candidate.py` 来冒充“批量加入”。
 
 ## 默认阶段语义
 
@@ -131,6 +133,77 @@ fi
 - 若是主动投递，把 `source-type` 改成 `inbound`，并把 `candidate-interest` 设为 `yes`。
 - 如果信息足够，尽量把这些字段一起传进去：`age`、`school`、`education-experience`、`latest-work-experience`。不要只塞姓名和一句摘要。
 
+### Step 2B：批量加入候选人到当前职位 Pipeline
+
+当你已经拿到多位候选人的信息，且用户希望一次性把这批人正式放进当前职位推进时，优先运行：
+
+```bash
+PYTHON_BIN="/app/venv/bin/python"
+if [ ! -x "$PYTHON_BIN" ]; then
+  PYTHON_BIN="python3"
+fi
+
+"$PYTHON_BIN" skills/pipeline_manager/scripts/add_candidates.py \
+  --workspace-dir . \
+  --session-id "<Session ID>" \
+  --user-id "<User ID>" \
+  --channel "<Channel>" \
+  --requests-file "<候选人批量 JSON 文件路径>"
+```
+
+也支持直接传 JSON 字符串：
+
+```bash
+PYTHON_BIN="/app/venv/bin/python"
+if [ ! -x "$PYTHON_BIN" ]; then
+  PYTHON_BIN="python3"
+fi
+
+"$PYTHON_BIN" skills/pipeline_manager/scripts/add_candidates.py \
+  --workspace-dir . \
+  --session-id "<Session ID>" \
+  --user-id "<User ID>" \
+  --channel "<Channel>" \
+  --requests-json '<JSON 数组或 {"requests": [...]} 对象>'
+```
+
+批量 JSON 推荐使用下面这种结构：
+
+```json
+{
+  "requests": [
+    {
+      "candidate": {
+        "name": "候选人 A",
+        "source_platform": "liexiaoxia",
+        "source_candidate_key": "resume-a",
+        "school": "北京大学",
+        "education_experience": "北京大学 计算机 本科 2015-2019",
+        "current_title": "AI产品经理",
+        "current_company": "某公司",
+        "latest_work_experience": "某公司 AI产品经理 (2023-至今)",
+        "city": "北京",
+        "education": "本科",
+        "expected_salary": "30k-40k"
+      },
+      "source_resume_id": "resume-a",
+      "source_type": "outbound",
+      "stage": "lead",
+      "recruiter_interest": "unsure",
+      "candidate_interest": "unknown",
+      "summary": "一句话推荐理由"
+    }
+  ]
+}
+```
+
+补充说明：
+
+- 顶层既支持 `{"requests": [...]}`，也支持直接传 `[...]`。
+- 每一项既支持完整的 `{"candidate": {...}}` 结构，也支持把候选人字段直接平铺到条目里。
+- 批量脚本会返回 `total`、`created_count`、`existing_count`，并逐条给出结果。
+- 如果某位候选人已经在当前职位里，批量脚本会标记为已有记录，不会重复加入。
+
 ### Step 3：把候选人推进到新节点
 
 优先用稳定标识定位候选人：
@@ -187,6 +260,7 @@ fi
 ## 什么时候用这个 skill
 
 - 用户说“把这个人加入 Pipeline”
+- 用户说“把这批人加入 Pipeline”
 - 用户说“把 TA 放到这个职位里跟进”
 - 用户说“把这个候选人推进到面试中 / Offer 中 / 归档”
 - 用户说“把这个候选人标成很合适 / 合适 / 待评估 / 淘汰”

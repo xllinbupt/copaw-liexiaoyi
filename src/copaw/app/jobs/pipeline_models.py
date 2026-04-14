@@ -194,6 +194,12 @@ class AddPipelineCandidateRequest(BaseModel):
     source_resume_id: str = ""
 
 
+class BatchAddPipelineCandidatesRequest(BaseModel):
+    """Add multiple candidates to a job pipeline in one request."""
+
+    requests: list[AddPipelineCandidateRequest] = Field(default_factory=list)
+
+
 class UpdatePipelineEntryStageRequest(BaseModel):
     """Update the current stage for a pipeline entry."""
 
@@ -223,6 +229,15 @@ class PipelineEntryMutationResult(BaseModel):
 
     created: bool = False
     entry: PipelineEntryView
+
+
+class BatchPipelineEntryMutationResult(BaseModel):
+    """Batch mutation result when creating multiple pipeline entries."""
+
+    total: int = 0
+    created_count: int = 0
+    existing_count: int = 0
+    results: list[PipelineEntryMutationResult] = Field(default_factory=list)
 
 
 class JobPipelineView(BaseModel):

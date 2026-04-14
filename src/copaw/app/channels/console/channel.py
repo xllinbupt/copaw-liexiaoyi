@@ -336,8 +336,11 @@ class ConsoleChannel(BaseChannel):
             request = payload
             if getattr(request, "input", None):
                 session_id = getattr(request, "session_id", "") or ""
+                inputs = list(getattr(request, "input", None) or [])
+                target_index = len(inputs) - 1
+                target_message = inputs[target_index] if inputs else None
                 contents = list(
-                    getattr(request.input[0], "content", None) or [],
+                    getattr(target_message, "content", None) or [],
                 )
                 should_process, merged = self._apply_no_text_debounce(
                     session_id,
@@ -345,8 +348,23 @@ class ConsoleChannel(BaseChannel):
                 )
                 if not should_process:
                     return
-                if merged and hasattr(request.input[0], "content"):
-                    request.input[0].content = merged
+                if merged and target_message is not None:
+                    if hasattr(target_message, "model_copy"):
+                        updated_message = target_message.model_copy(
+                            update={"content": merged},
+                        )
+                    else:
+                        updated_message = target_message
+                        if hasattr(updated_message, "content"):
+                            updated_message.content = merged
+                    if hasattr(request, "model_copy"):
+                        inputs[target_index] = updated_message
+                        request = request.model_copy(update={"input": inputs})
+                        request.channel_meta = (
+                            getattr(payload, "channel_meta", None) or {}
+                        )
+                    else:
+                        request.input[target_index] = updated_message
         try:
             send_meta = getattr(request, "channel_meta", None) or {}
             send_meta.setdefault("bot_prefix", self.bot_prefix)

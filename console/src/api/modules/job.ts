@@ -1,7 +1,10 @@
 import { request } from "../request";
 import type {
   AddPipelineCandidateRequest,
+  BatchAddPipelineCandidatesRequest,
+  BatchPipelineEntryMutationResult,
   CandidatePipelineDetailView,
+  ExternalJobLinkView,
   JobDeleteResponse,
   JobPipelineView,
   JobSpec,
@@ -15,6 +18,21 @@ export const jobApi = {
 
   getJob: (jobId: string) =>
     request<JobSpec>(`/jobs/${encodeURIComponent(jobId)}`),
+
+  getJobExternalLinks: (jobId: string) =>
+    request<ExternalJobLinkView[]>(
+      `/jobs/${encodeURIComponent(jobId)}/external-links`,
+    ),
+
+  unlinkJobExternalLink: (jobId: string, linkId: string) =>
+    request<void>(
+      `/jobs/${encodeURIComponent(jobId)}/external-links/${encodeURIComponent(
+        linkId,
+      )}`,
+      {
+        method: "DELETE",
+      },
+    ),
 
   getJobPipeline: (jobId: string) =>
     request<JobPipelineView>(`/jobs/${encodeURIComponent(jobId)}/pipeline`),
@@ -30,6 +48,18 @@ export const jobApi = {
   ) =>
     request<PipelineEntryMutationResult>(
       `/jobs/${encodeURIComponent(jobId)}/pipeline/entries`,
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+      },
+    ),
+
+  batchAddPipelineCandidates: (
+    jobId: string,
+    payload: BatchAddPipelineCandidatesRequest,
+  ) =>
+    request<BatchPipelineEntryMutationResult>(
+      `/jobs/${encodeURIComponent(jobId)}/pipeline/entries/batch`,
       {
         method: "POST",
         body: JSON.stringify(payload),

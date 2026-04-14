@@ -43,7 +43,7 @@
 说明：
 
 - `resume_snapshot` 用来保存当前看到的简历摘要，避免后续外部简历变化后历史无法追溯
-- `source_candidate_key` 用于后续去重，例如多猎简历唯一标识
+- `source_candidate_key` 用于后续去重，例如外部简历系统里的唯一标识
 
 ### 2.2 PipelineEntry
 

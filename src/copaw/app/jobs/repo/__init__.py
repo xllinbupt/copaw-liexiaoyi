@@ -2,6 +2,10 @@
 """Job repository helpers."""
 
 from .base import BaseJobRepository
+from .external_json_repo import (
+    JsonExternalJobLinkRepository,
+    JsonRecruitPlatformAccountRepository,
+)
 from .json_repo import JsonJobRepository
 from .pipeline_json_repo import (
     JsonCandidateRepository,
@@ -12,9 +16,11 @@ from .pipeline_json_repo import (
 
 __all__ = [
     "BaseJobRepository",
+    "JsonExternalJobLinkRepository",
     "JsonJobRepository",
     "JsonCandidateRepository",
     "JsonPipelineActivityRepository",
     "JsonPipelineEntryRepository",
     "JsonPipelineStageRepository",
+    "JsonRecruitPlatformAccountRepository",
 ]

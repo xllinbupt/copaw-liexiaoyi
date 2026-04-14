@@ -2,6 +2,7 @@
 """Tests for recruitment pipeline services."""
 from __future__ import annotations
 
+import asyncio
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -11,12 +12,14 @@ from copaw.app.jobs import paths as job_paths
 from copaw.app.jobs.models import JobSpec
 from copaw.app.jobs.pipeline_models import (
     AddPipelineCandidateRequest,
+    BatchPipelineEntryMutationResult,
     CandidateProfileInput,
     UpdatePipelineEntryAssessmentRequest,
     UpdatePipelineEntryStageRequest,
 )
 from copaw.app.jobs.pipeline_service import (
     add_candidate_to_job_pipeline,
+    add_candidates_to_job_pipeline,
     get_candidate_pipeline_detail,
     list_job_pipeline,
     update_pipeline_entry_assessment,
@@ -64,7 +67,7 @@ async def test_add_candidate_to_pipeline_creates_default_stages(
         AddPipelineCandidateRequest(
             candidate=CandidateProfileInput(
                 name="张三",
-                source_platform="duolie",
+                source_platform="liexiaoxia",
                 source_candidate_key="resume-001",
                 age=28,
                 school="北京大学",
@@ -116,7 +119,7 @@ async def test_add_candidate_to_pipeline_deduplicates_and_updates_stage(
     request = AddPipelineCandidateRequest(
         candidate=CandidateProfileInput(
             name="李四",
-            source_platform="duolie",
+            source_platform="liexiaoxia",
             source_candidate_key="resume-002",
             current_title="后端工程师",
             current_company="某互联网公司",
@@ -166,6 +169,120 @@ async def test_add_candidate_to_pipeline_deduplicates_and_updates_stage(
 
 
 @pytest.mark.asyncio
+async def test_add_candidate_to_pipeline_serializes_concurrent_requests(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setattr(job_paths, "WORKING_DIR", tmp_path)
+
+    jobs_repo = JsonJobRepository(tmp_path / "recruitment_jobs.json")
+    await jobs_repo.upsert_job(_build_job("job-1"))
+
+    async def add_candidate(index: int) -> str:
+        result = await add_candidate_to_job_pipeline(
+            "job-1",
+            AddPipelineCandidateRequest(
+                candidate=CandidateProfileInput(
+                    name=f"候选人{index}",
+                    source_platform="liexiaoxia",
+                    source_candidate_key=f"resume-{index:03d}",
+                    current_title="AI 产品经理",
+                    current_company=f"公司{index}",
+                ),
+                source_type="outbound",
+                added_by="agent",
+                summary=f"并发加入 {index}",
+                source_resume_id=f"resume-{index:03d}",
+            ),
+        )
+        assert result.created is True
+        return result.entry.candidate.id
+
+    candidate_ids = await asyncio.gather(
+        add_candidate(1),
+        add_candidate(2),
+        add_candidate(3),
+    )
+
+    candidates_repo = JsonCandidateRepository(
+        tmp_path / "recruitment_candidates.json",
+    )
+    entries_repo = JsonPipelineEntryRepository(
+        tmp_path / "recruitment_pipeline_entries.json",
+    )
+
+    candidates = await candidates_repo.list_candidates()
+    entries = await entries_repo.list_entries_by_job("job-1")
+
+    assert sorted(candidate.id for candidate in candidates) == sorted(candidate_ids)
+    assert len(entries) == 3
+
+
+@pytest.mark.asyncio
+async def test_add_candidates_to_pipeline_supports_batch_requests(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setattr(job_paths, "WORKING_DIR", tmp_path)
+
+    jobs_repo = JsonJobRepository(tmp_path / "recruitment_jobs.json")
+    await jobs_repo.upsert_job(_build_job("job-1"))
+
+    result = await add_candidates_to_job_pipeline(
+        "job-1",
+        [
+            AddPipelineCandidateRequest(
+                candidate=CandidateProfileInput(
+                    name="批量候选人A",
+                    source_platform="liexiaoxia",
+                    source_candidate_key="batch-a",
+                    current_title="AI 产品经理",
+                ),
+                source_type="outbound",
+                added_by="agent",
+                summary="第一位",
+                source_resume_id="batch-a",
+            ),
+            AddPipelineCandidateRequest(
+                candidate=CandidateProfileInput(
+                    name="批量候选人A",
+                    source_platform="liexiaoxia",
+                    source_candidate_key="batch-a",
+                    current_title="AI 产品经理",
+                ),
+                source_type="outbound",
+                added_by="agent",
+                summary="重复候选人",
+                source_resume_id="batch-a",
+            ),
+            AddPipelineCandidateRequest(
+                candidate=CandidateProfileInput(
+                    name="批量候选人B",
+                    source_platform="liexiaoxia",
+                    source_candidate_key="batch-b",
+                    current_title="Agent 产品经理",
+                ),
+                source_type="outbound",
+                added_by="agent",
+                summary="第二位",
+                source_resume_id="batch-b",
+            ),
+        ],
+    )
+
+    assert isinstance(result, BatchPipelineEntryMutationResult)
+    assert result.total == 3
+    assert result.created_count == 2
+    assert result.existing_count == 1
+
+    entries_repo = JsonPipelineEntryRepository(
+        tmp_path / "recruitment_pipeline_entries.json",
+    )
+    entries = await entries_repo.list_entries_by_job("job-1")
+    assert len(entries) == 2
+
+
+@pytest.mark.asyncio
 async def test_update_pipeline_entry_assessment(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
@@ -180,7 +297,7 @@ async def test_update_pipeline_entry_assessment(
         AddPipelineCandidateRequest(
             candidate=CandidateProfileInput(
                 name="赵六",
-                source_platform="duolie",
+                source_platform="liexiaoxia",
                 source_candidate_key="resume-009",
                 current_title="高级产品经理",
             ),
@@ -231,7 +348,7 @@ async def test_update_pipeline_entry_assessment_marks_closed_when_rejected(
         AddPipelineCandidateRequest(
             candidate=CandidateProfileInput(
                 name="钱七",
-                source_platform="duolie",
+                source_platform="liexiaoxia",
                 source_candidate_key="resume-010",
                 current_title="产品经理",
             ),
@@ -287,7 +404,7 @@ async def test_delete_job_removes_related_pipeline_records(
         AddPipelineCandidateRequest(
             candidate=CandidateProfileInput(
                 name="王五",
-                source_platform="duolie",
+                source_platform="liexiaoxia",
                 source_candidate_key="resume-003",
                 current_title="算法工程师",
             ),
@@ -339,7 +456,7 @@ async def test_get_candidate_pipeline_detail_aggregates_cross_job_history(
     request = AddPipelineCandidateRequest(
         candidate=CandidateProfileInput(
             name="周七",
-            source_platform="duolie",
+            source_platform="liexiaoxia",
             source_candidate_key="resume-777",
             current_title="高级产品经理",
             current_company="某平台公司",

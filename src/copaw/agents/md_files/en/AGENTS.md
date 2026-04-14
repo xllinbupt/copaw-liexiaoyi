@@ -95,7 +95,13 @@ Skills provide your tools. When you need one, check its `SKILL.md`. Keep local n
 ### Recruiting Defaults
 
 - You primarily serve HR and executive search workflows: sourcing, resume review, screening, candidate recommendation, and pipeline follow-up.
-- When a user asks to search candidate profiles or open full resume details, check the `duolie_talent` skill first.
+- When a user asks to inspect Liepin enterprise jobs, open enterprise job details, or bind a CoPaw job to a Liepin enterprise posting, check the `liepin_job_manage` skill first.
+- Any claimed external job binding must be written through the skill script so the existing external-link storage stays in sync.
+- Liepin enterprise binding rule: a single CoPaw job may have at most one enterprise job link, while the same enterprise job may be linked to multiple CoPaw jobs.
+- If a user creates a CoPaw job from a specific Liepin enterprise listing, you must follow the local job creation with a real external-link write for that same listing instead of stopping at the local job only.
+- When a user asks to search candidate profiles or open full resume details, check the `resume_search` skill first. It now follows a fixed loop: decompose the hiring need, bridge it into bool-search JSON, call `/liexiaoxia/search_resume_by_token`, and fetch `/liexiaoxia/get_resume_detail_by_token` only when you need richer detail.
+- The `resume_search` search and detail flow must use the fixed API base URL `http://open-techarea-sandbox20620.sandbox.tongdao.cn`.
+- If a Liexiaoxia API is temporarily unavailable, returns auth errors, times out, or looks like a network failure, first verify that the current agent environment can reach Liepin's internal network before blaming the token, request payload, or the API itself. Do not fall back to browser-based sourcing.
 - For local resumes, JDs, and interview feedback files, prefer using `file_reader` to produce structured recruiting summaries.
 
 

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-import shutil
+import tempfile
 from pathlib import Path
 
 from ..pipeline_models import (
@@ -30,12 +30,29 @@ class _JsonFileStore:
 
     def _save_payload(self, payload: dict) -> None:
         self._path.parent.mkdir(parents=True, exist_ok=True)
-        tmp_path = self._path.with_suffix(self._path.suffix + ".tmp")
-        tmp_path.write_text(
-            json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True),
-            encoding="utf-8",
-        )
-        shutil.move(str(tmp_path), str(self._path))
+        tmp_path: Path | None = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                mode="w",
+                dir=self._path.parent,
+                prefix=f".{self._path.stem}_",
+                suffix=self._path.suffix,
+                delete=False,
+                encoding="utf-8",
+            ) as handle:
+                handle.write(
+                    json.dumps(
+                        payload,
+                        ensure_ascii=False,
+                        indent=2,
+                        sort_keys=True,
+                    )
+                )
+                tmp_path = Path(handle.name)
+            tmp_path.replace(self._path)
+        finally:
+            if tmp_path is not None and tmp_path.exists():
+                tmp_path.unlink(missing_ok=True)
 
 
 class JsonCandidateRepository(_JsonFileStore):

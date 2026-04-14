@@ -32,7 +32,7 @@ An AI recruiting assistant for HR and executive search teams — easy to install
 >
 > **Under your control** — Memory and personalization fully under your control. Deploy locally (data stays on your machine) or in the cloud (your chosen server). No third-party hosting, no data upload.
 >
-> **Skills extension** — Built-in recruiting-ready skills with auto-loaded custom skills. This version includes `duolie_talent` for talent search and resume lookup in Duolie.
+> **Skills extension** — Built-in recruiting-ready skills with auto-loaded custom skills. This version includes an upgraded `resume_search` workflow for requirement decomposition, bool-search assembly, resume search, and on-demand resume detail lookup.
 >
 > **Multi-agent collaboration** — Create multiple independent agents, each with their own role; enable collaboration skills for inter-agent communication to tackle complex tasks together.
 >

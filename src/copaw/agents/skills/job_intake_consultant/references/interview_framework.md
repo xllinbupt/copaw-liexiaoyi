@@ -87,7 +87,7 @@
 
 ## 五、与搜人 skill 的交接格式
 
-当要衔接 `duolie_talent` 或其他搜人环节时，建议最终沉淀成以下结构：
+当要衔接 `resume_search` 或其他搜人环节时，建议最终沉淀成以下结构：
 
 ```markdown
 ## Search Brief

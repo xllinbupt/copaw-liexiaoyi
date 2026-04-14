@@ -1,16 +1,18 @@
 .headerContent {
   min-width: 0;
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
 }
 
 .chatName {
+  flex: 0 1 auto;
   font-size: 16px;
   font-weight: 500;
   line-height: 22px;
   color: var(--colorText, rgba(0, 0, 0, 0.88));
-  max-width: 280px;
+  max-width: min(360px, 100%);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -19,6 +21,9 @@
 .chatMeta {
   display: flex;
   align-items: center;
+  justify-content: flex-start;
+  flex: 0 1 auto;
+  flex-wrap: wrap;
   gap: 8px;
   min-width: 0;
   font-size: 12px;
@@ -39,7 +44,7 @@
   align-items: center;
   gap: 6px;
   min-width: 0;
-  max-width: 320px;
+  max-width: min(360px, 100%);
   padding: 2px 8px;
   border: 1px solid rgba(255, 122, 0, 0.12);
   border-radius: 999px;
@@ -76,6 +81,39 @@
   opacity: 0.75;
 }
 
+.pipelineStatsInline {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+
+.pipelineStatChip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+  background: rgba(255, 122, 0, 0.08);
+  color: rgba(138, 75, 0, 0.88);
+}
+
+.pipelineStatChipLead {
+  background: rgba(255, 153, 0, 0.1);
+  color: #a85d00;
+}
+
+.pipelineStatChipActive {
+  background: rgba(255, 122, 0, 0.12);
+  color: #c45f00;
+}
+
+.pipelineStatChipInterviewing {
+  background: rgba(255, 92, 0, 0.14);
+  color: #d94d00;
+}
+
 .metaTag {
   padding: 0 8px;
   border-radius: 999px;
@@ -86,6 +124,20 @@
 
 .unassignedText {
   color: rgba(0, 0, 0, 0.45);
+}
+
+@media (max-width: 720px) {
+  .headerContent {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .chatMeta {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    flex-basis: 100%;
+  }
 }
 
 /* Dark mode */
@@ -113,6 +165,26 @@
 
   .jobNameButton:focus-visible {
     box-shadow: 0 0 0 3px rgba(255, 179, 107, 0.12);
+  }
+
+  .pipelineStatChip {
+    background: rgba(255, 179, 107, 0.1);
+    color: rgba(255, 209, 153, 0.92);
+  }
+
+  .pipelineStatChipLead {
+    background: rgba(255, 179, 107, 0.12);
+    color: rgba(255, 209, 153, 0.92);
+  }
+
+  .pipelineStatChipActive {
+    background: rgba(255, 145, 77, 0.16);
+    color: #ffc082;
+  }
+
+  .pipelineStatChipInterviewing {
+    background: rgba(255, 128, 64, 0.18);
+    color: #ffd0a1;
   }
 
   .metaTag {

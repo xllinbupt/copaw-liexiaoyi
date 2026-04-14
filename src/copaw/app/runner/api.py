@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Chat management API."""
 from __future__ import annotations
+import logging
 from typing import Optional
 from uuid import uuid4
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
@@ -16,6 +17,7 @@ from .utils import agentscope_msg_to_message
 
 
 router = APIRouter(prefix="/chats", tags=["chats"])
+logger = logging.getLogger(__name__)
 
 
 async def get_workspace(request: Request):
@@ -61,11 +63,27 @@ async def get_session(
     return workspace.runner.session
 
 
+def _is_pristine_empty_chat(spec: ChatSpec) -> bool:
+    return (
+        spec.name == "New Chat"
+    )
+
+
+async def _is_orphaned_chat(
+    spec: ChatSpec,
+    session: SafeJSONSession,
+) -> bool:
+    if session.session_state_exists(spec.session_id, spec.user_id):
+        return False
+    return not _is_pristine_empty_chat(spec)
+
+
 @router.get("", response_model=list[ChatSpec])
 async def list_chats(
     user_id: Optional[str] = Query(None, description="Filter by user ID"),
     channel: Optional[str] = Query(None, description="Filter by channel"),
     mgr: ChatManager = Depends(get_chat_manager),
+    session: SafeJSONSession = Depends(get_session),
     workspace=Depends(get_workspace),
 ):
     """List all chats with optional filters.
@@ -78,9 +96,22 @@ async def list_chats(
     chats = await mgr.list_chats(user_id=user_id, channel=channel)
     tracker = workspace.task_tracker
     result = []
+    orphan_chat_ids: list[str] = []
     for spec in chats:
+        if await _is_orphaned_chat(spec, session):
+            orphan_chat_ids.append(spec.id)
+            logger.warning(
+                "Detected orphaned chat %s for missing session %s; hiding from list.",
+                spec.id,
+                spec.session_id,
+            )
+            continue
         status = await tracker.get_status(spec.id)
         result.append(spec.model_copy(update={"status": status}))
+
+    if orphan_chat_ids:
+        await mgr.delete_chats(orphan_chat_ids)
+
     return result
 
 
@@ -156,6 +187,18 @@ async def get_chat(
         raise HTTPException(
             status_code=404,
             detail=f"Chat not found: {chat_id}",
+        )
+
+    if await _is_orphaned_chat(chat_spec, session):
+        logger.warning(
+            "Detected orphaned chat %s for missing session %s; deleting stale spec.",
+            chat_id,
+            chat_spec.session_id,
+        )
+        await mgr.delete_chats([chat_id])
+        raise HTTPException(
+            status_code=404,
+            detail=f"Chat content missing: {chat_id}",
         )
 
     state = await session.get_session_state_dict(

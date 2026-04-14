@@ -109,6 +109,8 @@ BUILTIN_QA_AGENT_SKILL_NAMES: tuple[str, ...] = (
 )
 
 PROTECTED_BUILTIN_SKILL_NAMES: tuple[str, ...] = (
+    "job_creator",
+    "job_intake_consultant",
     "pipeline_manager",
 )
 

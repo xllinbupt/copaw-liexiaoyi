@@ -36,7 +36,8 @@ DEFAULT_AGENT_DESCRIPTION = "给到 HR 的专属猎头 Agent 助手"
 DEFAULT_AGENT_FIRST_RUN_SKILL_NAMES: tuple[str, ...] = (
     "job_creator",
     "job_intake_consultant",
-    "duolie_talent",
+    "liepin_job_manage",
+    "resume_search",
     "pipeline_manager",
     "cron",
 )

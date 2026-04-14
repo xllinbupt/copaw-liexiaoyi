@@ -2,6 +2,32 @@
   display: grid;
   gap: 8px;
   margin: 8px 0 16px;
+  justify-items: start;
+}
+
+.resumeBatchToolbar {
+  width: min(90%, 900px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 8px 0 4px;
+  padding: 8px 12px;
+  border: 1px solid rgba(20, 20, 20, 0.08);
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(255, 248, 240, 0.92) 0%, #fff 100%);
+}
+
+.resumeBatchSelection {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.resumeBatchSummary {
+  color: rgba(0, 0, 0, 0.58);
+  font-size: 12px;
+  line-height: 1.4;
 }
 
 .cardLoading {
@@ -11,6 +37,7 @@
     linear-gradient(180deg, rgba(255, 248, 240, 0.88) 0%, rgba(255, 255, 255, 1) 100%);
   padding: 12px 14px;
   overflow: hidden;
+  width: min(90%, 900px) !important;
 }
 
 .cardLoadingHeader {
@@ -99,6 +126,7 @@
   border-radius: 14px;
   background: #fff;
   padding: 12px 16px 10px;
+  width: min(90%, 900px) !important;
   cursor: pointer;
   transition:
     transform 0.14s ease,
@@ -171,6 +199,11 @@
   align-items: flex-start;
   gap: 10px;
   min-width: 0;
+}
+
+.resumeCardSelection {
+  flex: 0 0 auto;
+  padding-top: 1px;
 }
 
 .resumeCardName {
@@ -759,6 +792,13 @@
   color: rgba(255, 255, 255, 0.45);
 }
 
+@media (max-width: 1200px) {
+  .resumeCardShell {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
 @media (max-width: 900px) {
   .resumeCardShell {
     grid-template-columns: 1fr;
@@ -767,7 +807,9 @@
 }
 
 @media (max-width: 768px) {
+  .cardLoading,
   .resumeCard {
+    width: 100%;
     padding: 12px;
   }
 
