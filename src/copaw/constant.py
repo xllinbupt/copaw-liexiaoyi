@@ -111,7 +111,9 @@ BUILTIN_QA_AGENT_SKILL_NAMES: tuple[str, ...] = (
 PROTECTED_BUILTIN_SKILL_NAMES: tuple[str, ...] = (
     "job_creator",
     "job_intake_consultant",
+    "liepin_job_manage",
     "pipeline_manager",
+    "resume_search",
 )
 
 TOKEN_USAGE_FILE = EnvVarLoader.get_str(

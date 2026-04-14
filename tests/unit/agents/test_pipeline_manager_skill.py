@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Tests for the protected builtin pipeline manager skill."""
+"""Tests for protected builtin recruiting skills."""
 
 from pathlib import Path
 
@@ -14,13 +14,20 @@ from copaw.agents.skills_manager import (
     reconcile_workspace_manifest,
     update_single_builtin,
 )
+from copaw.app.migration import DEFAULT_AGENT_FIRST_RUN_SKILL_NAMES
 from copaw.app.migration import _sync_default_agent_prompt_rules
 from copaw.config.config import AgentProfileConfig
 
 
 @pytest.mark.parametrize(
     "skill_name",
-    ["job_creator", "job_intake_consultant", "pipeline_manager"],
+    [
+        "job_creator",
+        "job_intake_consultant",
+        "liepin_job_manage",
+        "pipeline_manager",
+        "resume_search",
+    ],
 )
 def test_recruiting_builtins_import_as_protected_builtin(
     monkeypatch,
@@ -65,7 +72,13 @@ def test_pipeline_manager_cannot_be_deleted_from_workspace(
 
 @pytest.mark.parametrize(
     "skill_name",
-    ["job_creator", "job_intake_consultant", "pipeline_manager"],
+    [
+        "job_creator",
+        "job_intake_consultant",
+        "liepin_job_manage",
+        "pipeline_manager",
+        "resume_search",
+    ],
 )
 def test_protected_builtin_skill_keeps_builtin_source_after_local_edits(
     monkeypatch,
@@ -127,3 +140,8 @@ def test_default_agent_prompt_rules_sync_latest_agents_md(tmp_path: Path):
 
     synced = (workspace_dir / "AGENTS.md").read_text(encoding="utf-8")
     assert "pipeline_manager" in synced
+
+
+def test_default_agent_first_run_skills_include_recruiting_builtins():
+    assert "liepin_job_manage" in DEFAULT_AGENT_FIRST_RUN_SKILL_NAMES
+    assert "resume_search" in DEFAULT_AGENT_FIRST_RUN_SKILL_NAMES
