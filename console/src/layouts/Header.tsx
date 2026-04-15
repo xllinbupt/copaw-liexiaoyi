@@ -6,7 +6,6 @@ import { Button, Modal } from "@agentscope-ai/design";
 import styles from "./index.module.less";
 import api from "../api";
 import {
-  getReleaseNotesUrl,
   PYPI_URL,
   ONE_HOUR_MS,
   UPDATE_MD,
@@ -151,17 +150,6 @@ export default function Header() {
     setUpdateModalOpen(true);
   };
 
-  const handleNavClick = (url: string) => {
-    if (url) {
-      const pywebview = (window as any).pywebview;
-      if (pywebview?.api) {
-        pywebview.api.open_external_link(url);
-      } else {
-        window.open(url, "_blank");
-      }
-    }
-  };
-
   return (
     <>
       <AntHeader className={styles.header}>
@@ -204,17 +192,6 @@ export default function Header() {
         footer={[
           <Button key="close" onClick={() => setUpdateModalOpen(false)}>
             {t("common.close")}
-          </Button>,
-          <Button
-            key="releases"
-            type="primary"
-            className={styles.updateViewReleasesBtn}
-            onClick={() => {
-              dismissUpdateDot();
-              handleNavClick(getReleaseNotesUrl(i18n.language));
-            }}
-          >
-            {t("sidebar.updateModal.viewReleases")}
           </Button>,
         ]}
         width={960}

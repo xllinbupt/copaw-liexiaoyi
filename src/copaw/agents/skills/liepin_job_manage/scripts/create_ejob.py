@@ -9,6 +9,7 @@ import re
 import sys
 import urllib.error
 from datetime import datetime
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any
 
@@ -43,6 +44,9 @@ _INTERN_REQUIRED_FIELDS = (
     "salaryHigh",
 )
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+_SALARY_WITH_UNIT_RE = re.compile(
+    r"^\s*(\d+(?:\.\d+)?)\s*([kKwW]|千|万)?\s*$"
+)
 
 
 def _bootstrap_import_path() -> None:
@@ -97,6 +101,62 @@ def _require_int(
         raise ValueError(f"{key} 不能大于 {maximum}")
     payload[key] = parsed
     return parsed
+
+
+def _require_salary_int(
+    payload: dict[str, Any],
+    key: str,
+    *,
+    minimum: int | None = None,
+    allow_unit_suffix: bool = False,
+) -> int:
+    value = payload.get(key)
+    if isinstance(value, bool):
+        raise ValueError(f"{key} 必须是整数")
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        parsed = int(value)
+    elif isinstance(value, str):
+        text = value.strip()
+        if not text:
+            raise ValueError(f"{key} 不能为空")
+        if allow_unit_suffix:
+            parsed = _parse_salary_amount(text, field_name=key)
+        else:
+            try:
+                parsed = int(text)
+            except ValueError as exc:
+                raise ValueError(f"{key} 必须是整数") from exc
+    else:
+        raise ValueError(f"{key} 必须是整数")
+    if minimum is not None and parsed < minimum:
+        raise ValueError(f"{key} 不能小于 {minimum}")
+    payload[key] = parsed
+    return parsed
+
+
+def _parse_salary_amount(raw: str, *, field_name: str) -> int:
+    matched = _SALARY_WITH_UNIT_RE.fullmatch(raw)
+    if not matched:
+        raise ValueError(
+            f"{field_name} 必须是整数元，或使用 K/W/千/万 这类可换算单位"
+        )
+
+    number_text, unit = matched.groups()
+    try:
+        base = Decimal(number_text)
+    except InvalidOperation as exc:
+        raise ValueError(f"{field_name} 不是合法数字") from exc
+
+    multiplier = Decimal("1")
+    if unit in {"k", "K", "千"}:
+        multiplier = Decimal("1000")
+    elif unit in {"w", "W", "万"}:
+        multiplier = Decimal("10000")
+
+    amount = base * multiplier
+    if amount != amount.to_integral_value():
+        raise ValueError(f"{field_name} 换算后必须是整数元")
+    return int(amount)
 
 
 def _optional_int(payload: dict[str, Any], key: str, *, minimum: int | None = None) -> None:
@@ -183,8 +243,18 @@ def validate_ejob_info(raw_payload: dict[str, Any]) -> dict[str, Any]:
         work_year_high = _require_int(payload, "workYearHigh", minimum=0)
         if work_year_high < work_year_low:
             raise ValueError("workYearHigh 不能小于 workYearLow")
-        salary_low = _require_int(payload, "salaryLow", minimum=0)
-        salary_high = _require_int(payload, "salaryHigh", minimum=0)
+        salary_low = _require_salary_int(
+            payload,
+            "salaryLow",
+            minimum=0,
+            allow_unit_suffix=True,
+        )
+        salary_high = _require_salary_int(
+            payload,
+            "salaryHigh",
+            minimum=0,
+            allow_unit_suffix=True,
+        )
         if salary_high < salary_low:
             raise ValueError("salaryHigh 不能小于 salaryLow")
         _optional_int(payload, "salaryMonth", minimum=1)
@@ -192,8 +262,18 @@ def validate_ejob_info(raw_payload: dict[str, Any]) -> dict[str, Any]:
         _require_bool(payload, "requireOverseasEduExp")
     elif recruit_kind == 1:
         _ensure_required_fields(payload, _CAMPUS_REQUIRED_FIELDS)
-        salary_low = _require_int(payload, "salaryLow", minimum=0)
-        salary_high = _require_int(payload, "salaryHigh", minimum=0)
+        salary_low = _require_salary_int(
+            payload,
+            "salaryLow",
+            minimum=0,
+            allow_unit_suffix=True,
+        )
+        salary_high = _require_salary_int(
+            payload,
+            "salaryHigh",
+            minimum=0,
+            allow_unit_suffix=True,
+        )
         if salary_high < salary_low:
             raise ValueError("salaryHigh 不能小于 salaryLow")
         _optional_int(payload, "salaryMonth", minimum=1)
@@ -201,8 +281,8 @@ def validate_ejob_info(raw_payload: dict[str, Any]) -> dict[str, Any]:
         _ensure_required_fields(payload, _INTERN_REQUIRED_FIELDS)
         _require_int(payload, "internshipDaysPerWeek", minimum=1, maximum=5)
         _require_int(payload, "internshipMonths", minimum=1, maximum=12)
-        salary_low = _require_int(payload, "salaryLow", minimum=1)
-        salary_high = _require_int(payload, "salaryHigh", minimum=1)
+        salary_low = _require_salary_int(payload, "salaryLow", minimum=1)
+        salary_high = _require_salary_int(payload, "salaryHigh", minimum=1)
         if salary_high < salary_low:
             raise ValueError("salaryHigh 不能小于 salaryLow")
         payload.pop("salaryMonth", None)

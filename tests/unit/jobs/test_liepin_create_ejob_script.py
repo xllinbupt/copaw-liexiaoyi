@@ -60,6 +60,31 @@ def test_validate_ejob_info_normalizes_social_job_payload() -> None:
     assert payload["requireOverseasEduExp"] is True
 
 
+def test_validate_ejob_info_converts_month_salary_units() -> None:
+    module = _load_module()
+
+    payload = module.validate_ejob_info(
+        {
+            "recruitKindCode": 1,
+            "ejobTitle": "校招产品经理",
+            "jobCategory": "产品经理",
+            "dutyQualify": "负责校园招聘产品方向",
+            "workRegion": "上海,浦东新区",
+            "address": "张江高科技园区",
+            "eduLevel": "本科",
+            "recruitCnt": 3,
+            "recruitExpireDate": "20260731",
+            "receiveResumeEmails": "campus@example.com",
+            "salaryLow": "25K",
+            "salaryHigh": "3W",
+            "salaryMonth": 12,
+        }
+    )
+
+    assert payload["salaryLow"] == 25000
+    assert payload["salaryHigh"] == 30000
+
+
 def test_main_posts_stringified_ejob_info_and_returns_ids(monkeypatch, capsys) -> None:
     module = _load_module()
     calls = {}

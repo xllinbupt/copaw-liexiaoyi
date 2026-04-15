@@ -67,6 +67,12 @@ const DEFAULT_SIDEBAR_WIDTH = 240;
 const MIN_SIDEBAR_WIDTH = 220;
 const MAX_SIDEBAR_WIDTH = 420;
 const SIDEBAR_WIDTH_STORAGE_KEY = "copaw-sidebar-width";
+const HIDDEN_MENU_KEYS = new Set([
+  "mcp",
+  "token-usage",
+  "voice-transcription",
+]);
+const COLLAPSED_VISIBLE_KEYS = new Set(["chat"]);
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -455,7 +461,10 @@ export default function Sidebar({ selectedKey }: SidebarProps) {
       path: "/voice-transcription",
       label: t("nav.voiceTranscription"),
     },
-  ];
+  ].filter(
+    (item) =>
+      !HIDDEN_MENU_KEYS.has(item.key) && COLLAPSED_VISIBLE_KEYS.has(item.key),
+  );
 
   // ── Menu items ────────────────────────────────────────────────────────────
 
@@ -563,7 +572,23 @@ export default function Sidebar({ selectedKey }: SidebarProps) {
         },
       ],
     },
-  ];
+  ]
+    .map((item) => {
+      if (!item || !("children" in item) || !Array.isArray(item.children)) {
+        return item;
+      }
+      return {
+        ...item,
+        children: item.children.filter(
+          (child) =>
+            child &&
+            typeof child === "object" &&
+            "key" in child &&
+            !HIDDEN_MENU_KEYS.has(String(child.key)),
+        ),
+      };
+    })
+    .filter(Boolean);
   const secondaryMenuItems =
     selectedKey === "chat"
       ? menuItems.filter((item) => item?.key !== "chat")

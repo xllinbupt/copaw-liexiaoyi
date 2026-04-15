@@ -97,6 +97,7 @@ fi
   - `recruitKindCode` 只能是 `0 / 1 / 2`
   - `recruitExpireDate` 会被规范成 `yyyyMMdd`，并校验是否为合法日期
   - `receiveResumeEmails` 会校验邮箱格式，并统一成英文逗号分隔
+  - 社招 / 应届的 `salaryLow`、`salaryHigh` 支持 `25K`、`2W`、`2.5万` 这类输入，脚本会自动换算成整数元
   - 社招会校验工作年限、月薪范围、海外工作/教育两个布尔字段
   - 应届会校验月薪范围
   - 实习会校验每周实习天数、实习月数、日薪范围
@@ -146,6 +147,13 @@ fi
 - `internshipMonths`
 - `salaryLow`
 - `salaryHigh`
+
+### 2.5 薪资单位规则
+
+- 社招和应届的 `salaryLow` / `salaryHigh` 单位是 `元/月`
+- 如果 HR 用 `25K`、`30k`、`2W`、`2.5万` 这类口语表达，必须先换算成整数元再调用接口
+- 例如：`25K -> 25000`，`2W -> 20000`
+- 实习的 `salaryLow` / `salaryHigh` 单位是 `元/天`，不要按月薪理解
 
 对话策略：
 
