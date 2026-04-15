@@ -1,6 +1,6 @@
 <div align="center">
 
-# LieXiaoYi
+# Talora
 
 [![GitHub Repo](https://img.shields.io/badge/GitHub-Repo-black.svg?logo=github)](https://github.com/agentscope-ai/CoPaw)
 [![PyPI](https://img.shields.io/pypi/v/copaw?color=3775A9&label=PyPI&logo=pypi)](https://pypi.org/project/copaw/)
@@ -19,7 +19,7 @@
 [[Documentation](https://copaw.agentscope.io/)] [[中文](README_zh.md)] [[日本語](README_ja.md)] [[Русский](README_ru.md)]
 
 <p align="center">
-  <img src="https://img.alicdn.com/imgextra/i2/O1CN014TIqyO1U5wDiSbFfA_!!6000000002467-2-tps-816-192.png" alt="CoPaw Logo" width="120">
+  <img src="https://img.alicdn.com/imgextra/i2/O1CN014TIqyO1U5wDiSbFfA_!!6000000002467-2-tps-816-192.png" alt="Talora Logo" width="120">
 </p>
 
 <p align="center"><b>Your dedicated AI headhunting assistant for HR teams.</b></p>
@@ -38,10 +38,10 @@ An AI recruiting assistant for HR and executive search teams — easy to install
 >
 > **Multi-layer security** — Tool guard, file access control, skill security scanning to ensure safe operation.
 >
-> **Every channel** — DingTalk, Feishu, WeChat, Discord, Telegram, and more. One CoPaw, connect as needed.
+> **Every channel** — DingTalk, Feishu, WeChat, Discord, Telegram, and more. One Talora, connect as needed.
 >
 > <details>
-> <summary><b>What you can do with CoPaw</b></summary>
+> <summary><b>What you can do with Talora</b></summary>
 >
 > <br>
 >
@@ -97,7 +97,7 @@ An AI recruiting assistant for HR and executive search teams — easy to install
 - [Roadmap](#roadmap)
 - [Install from source](#install-from-source)
 - [Contributing](#contributing)
-- [Why CoPaw?](#why-copaw)
+- [Why Talora?](#why-copaw)
 - [Built by](#built-by)
 - [License](#license)
 
@@ -123,7 +123,7 @@ Then open the Console in your browser at **http://127.0.0.1:8088/** to configure
 
 ### Option 2: Script install
 
-No Python setup required, one command installs everything. The script will automatically download uv (Python package manager), create a virtual environment, and install CoPaw with all dependencies (including Node.js and frontend assets). Note: May not work in restricted network environments or corporate firewalls.
+No Python setup required, one command installs everything. The script will automatically download uv (Python package manager), create a virtual environment, and install Talora with all dependencies (including Node.js and frontend assets). Note: May not work in restricted network environments or corporate firewalls.
 
 **macOS / Linux:**
 
@@ -164,9 +164,9 @@ irm https://copaw.agentscope.io/install.ps1 | iex
 >
 >    The script completes file installation. Due to **Constrained Language Mode**, it cannot automatically update environment variables. Manually configure as follows:
 >    - **Locate the installation directory**:
->      - Check if `uv` is available: Enter `uv --version` in CMD. If a version number appears, **only configure the CoPaw path**. If you receive the prompt `'uv' is not recognized as an internal or external command, operable program or batch file,` configure both paths.
+>      - Check if `uv` is available: Enter `uv --version` in CMD. If a version number appears, **only configure the Talora path**. If you receive the prompt `'uv' is not recognized as an internal or external command, operable program or batch file,` configure both paths.
 >      - uv path (choose one based on installation location; use if `uv` fails): Typically `%USERPROFILE%\.local\bin`, `%USERPROFILE%\AppData\Local\uv`, or the `Scripts` folder within your Python installation directory
->      - CoPaw path: Typically located at `%USERPROFILE%\.copaw\bin`.
+>      - Talora path: Typically located at `%USERPROFILE%\.copaw\bin`.
 >    - **Manually add to the system's Path environment variable**:
 >      - Press `Win + R`, type `sysdm.cpl` and press Enter to open System Properties.
 >      - Click “Advanced” -> “Environment Variables”.
@@ -247,7 +247,7 @@ Then open **http://127.0.0.1:8088/** for the Console. Config, memory, and skills
 
 > **Connecting to Ollama or other services on the host machine**
 >
-> Inside a Docker container, `localhost` refers to the container itself, not your host machine. If you run Ollama (or other model services) on the host and want CoPaw in Docker to reach them, use one of these approaches:
+> Inside a Docker container, `localhost` refers to the container itself, not your host machine. If you run Ollama (or other model services) on the host and want Talora in Docker to reach them, use one of these approaches:
 >
 > **Option A** — Explicit host binding (all platforms):
 > ```bash
@@ -257,7 +257,7 @@ Then open **http://127.0.0.1:8088/** for the Console. Config, memory, and skills
 >   -v copaw-secrets:/app/working.secret \
 >   agentscope/copaw:latest
 > ```
-> Then in CoPaw **Settings → Models**, change the Base URL to `http://host.docker.internal:<port>` — for example, `http://host.docker.internal:11434` for Ollama, or `http://host.docker.internal:1234/v1` for LM Studio.
+> Then in Talora **Settings → Models**, change the Base URL to `http://host.docker.internal:<port>` — for example, `http://host.docker.internal:11434` for Ollama, or `http://host.docker.internal:1234/v1` for LM Studio.
 >
 > **Option B** — Host networking (Linux only):
 > ```bash
@@ -276,13 +276,13 @@ The image is built from scratch. To build the image yourself, please refer to th
 
 ### Option 4: Deploy on Alibaba Cloud ECS
 
-To run CoPaw on Alibaba Cloud (ECS), use the one-click deployment: open the [CoPaw on Alibaba Cloud (ECS) deployment link](https://computenest.console.aliyun.com/service/instance/create/cn-hangzhou?type=user&ServiceId=service-1ed84201799f40879884) and follow the prompts. For step-by-step instructions, see [Alibaba Cloud Developer: Deploy your AI assistant in 3 minutes](https://developer.aliyun.com/article/1713682).
+To run Talora on Alibaba Cloud (ECS), use the one-click deployment: open the [Talora on Alibaba Cloud (ECS) deployment link](https://computenest.console.aliyun.com/service/instance/create/cn-hangzhou?type=user&ServiceId=service-1ed84201799f40879884) and follow the prompts. For step-by-step instructions, see [Alibaba Cloud Developer: Deploy your AI assistant in 3 minutes](https://developer.aliyun.com/article/1713682).
 
 ---
 
 ### Option 5: Using ModelScope
 
-**No local install?** [ModelScope Studio](https://modelscope.cn/studios/fork?target=AgentScope/CoPaw) one-click cloud setup. Set your Studio to **non-public** so others cannot control your CoPaw.
+**No local install?** [ModelScope Studio](https://modelscope.cn/studios/fork?target=AgentScope/CoPaw) one-click cloud setup. Set your Studio to **non-public** so others cannot control your Talora.
 
 ---
 
@@ -293,7 +293,7 @@ To run CoPaw on Alibaba Cloud (ECS), use the one-click deployment: open the [CoP
 > - **Potential performance issues**: Startup time, memory usage, and other performance aspects may need further optimization
 > - **Features under development**: Some features may be unstable or missing
 
-If you're not comfortable with command-line tools, you can download and use CoPaw's desktop application without manually configuring Python environments or running commands.
+If you're not comfortable with command-line tools, you can download and use Talora's desktop application without manually configuring Python environments or running commands.
 
 #### Download
 
@@ -314,13 +314,13 @@ Download the desktop app from [GitHub Releases](https://github.com/agentscope-ai
 
 #### macOS: Bypass System Security Restrictions
 
-When you download the CoPaw macOS app from Releases, macOS may show: *"Apple cannot verify that 'CoPaw' contains no malicious software"*. This happens because the app is not notarized. You can still open it as follows:
+When you download the Talora macOS app from Releases, macOS may show: *"Apple cannot verify that 'Talora' contains no malicious software"*. This happens because the app is not notarized. You can still open it as follows:
 
 - **Right-click to open (recommended)**
-  Right-click (or Control+click) the CoPaw app → **Open** → in the dialog click **Open** again. This tells Gatekeeper you trust the app; after that you can double-click to launch as usual.
+  Right-click (or Control+click) the Talora app → **Open** → in the dialog click **Open** again. This tells Gatekeeper you trust the app; after that you can double-click to launch as usual.
 
 - **Allow in System Settings**
-  If it is still blocked, go to **System Settings → Privacy & Security**, scroll to the message like *"CoPaw was blocked because it is from an unidentified developer"*, and click **Open Anyway** or **Allow**.
+  If it is still blocked, go to **System Settings → Privacy & Security**, scroll to the message like *"Talora was blocked because it is from an unidentified developer"*, and click **Open Anyway** or **Allow**.
 
 - **Remove quarantine attribute (not recommended for most users)**
   In Terminal run:
@@ -333,7 +333,7 @@ For detailed usage instructions, troubleshooting, and common issues, see the [De
 
 ## API Key
 
-If you use a **cloud LLM API** (e.g., Qianwen, Gemini, OpenAI), you must configure an API key before chatting. CoPaw will not work until a valid key is set. See the [official docs](https://copaw.agentscope.io/docs/models) for details.
+If you use a **cloud LLM API** (e.g., Qianwen, Gemini, OpenAI), you must configure an API key before chatting. Talora will not work until a valid key is set. See the [official docs](https://copaw.agentscope.io/docs/models) for details.
 
 **How to configure:**
 
@@ -347,7 +347,7 @@ Tools that need extra keys (e.g. `TAVILY_API_KEY` for web search) can be set in 
 
 ## Local Models
 
-CoPaw can run LLMs entirely on your machine — no API keys or cloud services required. See the [official docs](https://copaw.agentscope.io/docs/models) for details.
+Talora can run LLMs entirely on your machine — no API keys or cloud services required. See the [official docs](https://copaw.agentscope.io/docs/models) for details.
 
 | Backend       | Best for                                 | Install                                                              |
 | ------------- | ---------------------------------------- | -------------------------------------------------------------------- |
@@ -361,7 +361,7 @@ CoPaw can run LLMs entirely on your machine — no API keys or cloud services re
 
 | Topic                                                                 | Description                                      |
 | --------------------------------------------------------------------- | ------------------------------------------------ |
-| [Introduction](https://copaw.agentscope.io/docs/intro)                | What CoPaw is and how to use it                  |
+| [Introduction](https://copaw.agentscope.io/docs/intro)                | What Talora is and how to use it                  |
 | [Quick start](https://copaw.agentscope.io/docs/quickstart)            | Install and run (local or ModelScope Studio)    |
 | [Console](https://copaw.agentscope.io/docs/console)                   | Web UI: chat and agent configuration            |
 | [Models](https://copaw.agentscope.io/docs/models)                     | Configure cloud, local, and custom providers    |
@@ -383,7 +383,7 @@ Full docs in this repo: [website/public/docs/](website/public/docs/).
 
 ## Security Features
 
-CoPaw includes multi-layer security mechanisms to protect your data and system:
+Talora includes multi-layer security mechanisms to protect your data and system:
 
 - **Tool guard** — Automatically intercepts dangerous shell commands (e.g., `rm -rf /`, fork bombs, reverse shells, etc.)
 - **File access guard** — Restricts agent access to sensitive paths (e.g., `~/.ssh`, key files, system directories, etc.)
@@ -403,10 +403,10 @@ For common questions, troubleshooting tips, and known issues, please visit the *
 ## Staying ahead
 
 <a href="https://github.com/agentscope-ai/CoPaw">
-  <img src="https://img.alicdn.com/imgextra/i1/O1CN0197AtT32351zYCnOUU_!!6000000007203-1-tps-2214-1080.gif" width="600" alt="Star CoPaw" />
+  <img src="https://img.alicdn.com/imgextra/i1/O1CN0197AtT32351zYCnOUU_!!6000000007203-1-tps-2214-1080.gif" width="600" alt="Star Talora" />
 </a>
 
-Star the project on GitHub and stay up to date with new LieXiaoYi releases.
+Star the project on GitHub and stay up to date with new Talora releases.
 
 ---
 
@@ -458,7 +458,7 @@ pip install -e .
 
 ## Contributing
 
-CoPaw evolves through open collaboration, and we welcome all forms of contribution! Check the [Roadmap](#roadmap) above (especially items marked **Seeking Contributors**) to find areas that interest you, and read [CONTRIBUTING](https://github.com/agentscope-ai/CoPaw/blob/main/CONTRIBUTING.md) to get started. We particularly welcome:
+Talora evolves through open collaboration, and we welcome all forms of contribution! Check the [Roadmap](#roadmap) above (especially items marked **Seeking Contributors**) to find areas that interest you, and read [CONTRIBUTING](https://github.com/agentscope-ai/CoPaw/blob/main/CONTRIBUTING.md) to get started. We particularly welcome:
 
 - **Horizontal expansion** — new channels, model providers, skills, MCPs.
 - **Existing feature extension & refinement** — display and interaction improvements, download hints, Windows path compatibility, etc.
@@ -467,9 +467,9 @@ Join [GitHub Discussions](https://github.com/agentscope-ai/CoPaw/discussions) to
 
 ---
 
-## Why CoPaw?
+## Why Talora?
 
-CoPaw represents both a **Co Personal Agent Workstation** and a "co-paw"—a partner always by your side. More than just a cold tool, CoPaw is a warm "little paw" always ready to lend a hand (or a paw!). It is the ultimate teammate for your digital life.
+Talora represents both a **Co Personal Agent Workstation** and a "co-paw"—a partner always by your side. More than just a cold tool, Talora is a warm "little paw" always ready to lend a hand (or a paw!). It is the ultimate teammate for your digital life.
 
 ---
 
@@ -489,11 +489,11 @@ CoPaw represents both a **Co Personal Agent Workstation** and a "co-paw"—a par
 
 ## Telemetry
 
-CoPaw collects **anonymous** usage data during `copaw init` to help us understand our user base and prioritize improvements. Data is sent **once per version** — when you upgrade CoPaw, telemetry is re-collected so we can track version adoption.
+Talora collects **anonymous** usage data during `copaw init` to help us understand our user base and prioritize improvements. Data is sent **once per version** — when you upgrade Talora, telemetry is re-collected so we can track version adoption.
 
 **What we collect:**
 
-- CoPaw version (e.g., 0.0.7)
+- Talora version (e.g., 0.0.7)
 - Install method (pip, Docker, or desktop app)
 - OS and version (e.g., macOS 14.0, Ubuntu 22.04)
 - Python version (e.g., 3.13)
@@ -502,13 +502,13 @@ CoPaw collects **anonymous** usage data during `copaw init` to help us understan
 
 **What we do NOT collect:** No personal data, no files, no credentials, no IP addresses, no identifiable information.
 
-When running `copaw init` interactively, you will be asked whether to opt in. If you choose `--defaults`, telemetry is accepted automatically. The prompt appears once per version and never affects CoPaw's functionality.
+When running `copaw init` interactively, you will be asked whether to opt in. If you choose `--defaults`, telemetry is accepted automatically. The prompt appears once per version and never affects Talora's functionality.
 
 ---
 
 ## License
 
-CoPaw is released under the [Apache License 2.0](LICENSE).
+Talora is released under the [Apache License 2.0](LICENSE).
 
 ---
 

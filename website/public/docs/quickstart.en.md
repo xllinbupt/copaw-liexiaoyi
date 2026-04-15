@@ -1,6 +1,6 @@
 # Quick start
 
-This section describes multiple ways to install CoPaw:
+This section describes multiple ways to install Talora:
 
 | Installation Method   | Best For                                      | Advantages                                                  | Prerequisites         |
 | --------------------- | --------------------------------------------- | ----------------------------------------------------------- | --------------------- |
@@ -62,7 +62,7 @@ copaw app
 ```
 
 The server listens on `127.0.0.1:8088` by default. If you've already configured
-channels, CoPaw will reply there. Otherwise, you can complete this section
+channels, Talora will reply there. Otherwise, you can complete this section
 first and then configure channels.
 
 ---
@@ -93,7 +93,7 @@ curl -fsSL https://copaw.agentscope.io/install.bat -o install.bat && install.bat
 irm https://copaw.agentscope.io/install.ps1 | iex
 ```
 
-Then open a new terminal (the installer adds CoPaw to your PATH automatically).
+Then open a new terminal (the installer adds Talora to your PATH automatically).
 
 > **⚠️ Special Notice for Windows Enterprise LTSC Users**
 >
@@ -104,9 +104,9 @@ Then open a new terminal (the installer adds CoPaw to your PATH automatically).
 >    The script completes file installation. Due to **Constrained Language Mode**, it cannot automatically update environment variables. Manually configure as follows:
 >
 >    - **Locate the installation directory**:
->      - Check if `uv` is available: Enter `uv --version` in CMD. If a version number appears, **only configure the CoPaw path**. If you receive `'uv' is not recognized as an internal or external command, operable program or batch file,` configure both paths.
+>      - Check if `uv` is available: Enter `uv --version` in CMD. If a version number appears, **only configure the Talora path**. If you receive `'uv' is not recognized as an internal or external command, operable program or batch file,` configure both paths.
 >      - uv path (choose one based on installation location; fill if `uv` is unavailable): Typically `%USERPROFILE%\.local\bin`, `%USERPROFILE%\AppData\Local\uv`, or the `Scripts` folder within your Python installation directory
->      - CoPaw path: Typically `%USERPROFILE%\.copaw\bin`.
+>      - Talora path: Typically `%USERPROFILE%\.copaw\bin`.
 >    - **Manually add to the system's Path environment variable**:
 >      - Press `Win + R`, type `sysdm.cpl` and press Enter to open System Properties.
 >      - Click "Advanced" → "Environment Variables".
@@ -172,7 +172,7 @@ copaw app
 ```
 
 The server listens on `127.0.0.1:8088` by default. If you've already configured
-channels, CoPaw will reply there. Otherwise, you can complete this section
+channels, Talora will reply there. Otherwise, you can complete this section
 first and then configure channels.
 
 ---
@@ -218,31 +218,31 @@ and API keys are stored in the `copaw-secrets` volume. To pass API keys, add
 
 ## Option 4: Deploy to Alibaba Cloud ECS
 
-To deploy CoPaw on Alibaba Cloud, use the ECS one-click deployment:
+To deploy Talora on Alibaba Cloud, use the ECS one-click deployment:
 
-1. Open the [CoPaw Alibaba Cloud ECS deployment link](https://computenest.console.aliyun.com/service/instance/create/cn-hangzhou?type=user&ServiceId=service-1ed84201799f40879884) and fill in the deployment parameters as prompted;
+1. Open the [Talora Alibaba Cloud ECS deployment link](https://computenest.console.aliyun.com/service/instance/create/cn-hangzhou?type=user&ServiceId=service-1ed84201799f40879884) and fill in the deployment parameters as prompted;
 2. After parameter configuration, confirm the cost and create the instance. Once deployment is complete, you can get the access URL and use the service.
 
-For detailed steps and instructions, see [Alibaba Cloud Developer Community: Deploy your AI assistant with CoPaw in 3 minutes](https://developer.aliyun.com/article/1713682).
+For detailed steps and instructions, see [Alibaba Cloud Developer Community: Deploy your AI assistant with Talora in 3 minutes](https://developer.aliyun.com/article/1713682).
 
 ---
 
 ## Option 5: ModelScope Studio one-click setup (no installation)
 
-If you don't want to install Python locally, you can deploy CoPaw to the cloud
+If you don't want to install Python locally, you can deploy Talora to the cloud
 through ModelScope Studio:
 
 1. First go to [ModelScope](https://modelscope.cn/register?back=%2Fhome) to register and log in;
-2. Open [CoPaw Studio](https://modelscope.cn/studios/fork?target=AgentScope/CoPaw) and complete the one-click setup.
+2. Open [Talora Studio](https://modelscope.cn/studios/fork?target=AgentScope/CoPaw) and complete the one-click setup.
 
-**Important**: Set your Studio to **non-public**, or others may control your CoPaw.
+**Important**: Set your Studio to **non-public**, or others may control your Talora.
 
 ---
 
 ## Option 6: Desktop application
 
 If you're not comfortable with command-line tools, you can download and use
-CoPaw's desktop application without manually configuring Python environments
+Talora's desktop application without manually configuring Python environments
 or running commands.
 
 ### Features
@@ -304,7 +304,7 @@ Use the same `session_id` for multi-turn conversations.
 
 #### ✅ 1. Configure models (required)
 
-CoPaw needs a large language model to work. You can choose either option:
+Talora needs a large language model to work. You can choose either option:
 
 **Option A: Use cloud models (requires API Key)**
 
@@ -328,7 +328,7 @@ See [Models - Configure cloud providers](./models).
 2. Download models:
 
 - For CoPaw Local (llama.cpp), you can download models directly from the provider settings in the Console, or manually place GGUF model files in the local models directory (default `~/.copaw/local_models/models/<org>/<model>`, for example: `~/.copaw/local_models/models/Qwen/Qwen3-0.6B-GGUF`).
-- For Ollama and LM Studio, you need to add models in their respective services first, then CoPaw can automatically fetch the model list and connect to them.
+- For Ollama and LM Studio, you need to add models in their respective services first, then Talora can automatically fetch the model list and connect to them.
 
 3. Select the local provider and model in the Console
 
@@ -337,7 +337,7 @@ After configuring the local model, you can select it in the Console's **Default 
 #### 🎯 2. Test chat in Console
 
 After model configuration is complete, send a message in the Console's **Chat**
-page to test functionality and confirm CoPaw can reply normally.
+page to test functionality and confirm Talora can reply normally.
 
 ---
 
@@ -347,16 +347,16 @@ After configuring models and testing successfully, you can extend as needed:
 
 #### 📱 Connect messaging channels
 
-Chat with CoPaw in DingTalk, Feishu, QQ, Discord, iMessage, and other apps:
+Chat with Talora in DingTalk, Feishu, QQ, Discord, iMessage, and other apps:
 
 1. In the Console, go to **Control → Channels**
 2. Select the channel to connect
 3. Follow the [Channels](./channels) documentation to obtain credentials and fill them in
-4. After saving, you can send messages to CoPaw in the corresponding app
+4. After saving, you can send messages to Talora in the corresponding app
 
 #### 🔧 Enable and extend skills
 
-Give CoPaw more capabilities (PDF processing, Office documents, news summaries, etc.):
+Give Talora more capabilities (PDF processing, Office documents, news summaries, etc.):
 
 - In the Console, go to **Agent → Skill Pool** or **Agent → Skills**
 - Import built-in skills, import from Skill Hub, or create custom skills
@@ -372,7 +372,7 @@ Extend external tool capabilities through MCP (Model Context Protocol):
 
 #### ⏰ Set up scheduled tasks and heartbeat
 
-Let CoPaw execute tasks automatically:
+Let Talora execute tasks automatically:
 
 - **Scheduled tasks**: Create in Console **Control → Scheduled tasks**, or use `copaw cron` command in [CLI](./cli)
 - **Heartbeat**: Configure scheduled check-ins or digests, see [Heartbeat](./heartbeat)

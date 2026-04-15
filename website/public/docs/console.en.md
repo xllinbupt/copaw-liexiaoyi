@@ -1,16 +1,16 @@
 # Console
 
-The **Console** is CoPaw's built-in web interface. After running `copaw app`,
+The **Console** is Talora's built-in web interface. After running `copaw app`,
 open `http://127.0.0.1:8088/` in your browser to enter the Console.
 
 **In the Console, you can:**
 
-- Chat with CoPaw in real time
+- Chat with Talora in real time
 - Enable/disable/configure messaging channels
 - View and manage all chat sessions
 - Manage scheduled jobs and heartbeat
-- Edit CoPaw's persona and behavior files
-- Enable/import skills to extend CoPaw's capabilities
+- Edit Talora's persona and behavior files
+- Enable/import skills to extend Talora's capabilities
 - Toggle tools on or off
 - Manage MCP clients
 - Modify runtime configuration
@@ -34,7 +34,7 @@ walk through each feature in order.
 
 > Sidebar: **Chat → Chat**
 
-This is where you talk to CoPaw. It is the default page when the Console opens.
+This is where you talk to Talora. It is the default page when the Console opens.
 
 ![Chat](https://img.alicdn.com/imgextra/i1/O1CN01TZtpUC23sUlflQYuT_!!6000000007311-2-tps-3822-2064.png)
 
@@ -44,7 +44,7 @@ current agent.
 
 **Send a message:**
 Type in the input box at the bottom, then press **Enter** or click the send
-button (↑). CoPaw replies in real time.
+button (↑). Talora replies in real time.
 
 **Voice input:**
 The composer supports **voice input** (browser and OS microphone permission
@@ -119,7 +119,7 @@ Select rows → click **Batch Delete** → confirm.
 
 > Sidebar: **Control → Cron Jobs**
 
-Create and manage scheduled jobs that CoPaw runs automatically by time.
+Create and manage scheduled jobs that Talora runs automatically by time.
 
 ![Cron Jobs](https://img.alicdn.com/imgextra/i2/O1CN018jn4Wm1C9SBJy58mo_!!6000000000038-2-tps-3822-2064.png)
 
@@ -127,7 +127,7 @@ Create and manage scheduled jobs that CoPaw runs automatically by time.
 
 > If the cron job fails to be created, please refer to the **Troubleshooting Scheduled (Cron) Tasks** section in the [FAQ](https://copaw.agentscope.io/docs/faq) to identify the cause.
 
-The **simplest way to create a cron job is to chat directly with CoPaw** and let it handle the creation for you. For example, if you want to receive a reminder to drink water on DingTalk, simply message CoPaw on DingTalk: "Help me create a cron job to remind me to drink water every 5 minutes." Once created, you can view the new task on the Cron Jobs page in the console.
+The **simplest way to create a cron job is to chat directly with Talora** and let it handle the creation for you. For example, if you want to receive a reminder to drink water on DingTalk, simply message Talora on DingTalk: "Help me create a cron job to remind me to drink water every 5 minutes." Once created, you can view the new task on the Cron Jobs page in the console.
 
 Alternatively, you can create tasks directly via the Console interface:
 
@@ -139,7 +139,7 @@ Alternatively, you can create tasks directly via the Console interface:
      expression** (five fields, e.g. `0 9 * * *` = 9:00 daily). Timezone defaults
      to the current agent's user timezone; you can change it here.
    - **Task type & content** — **Text**: send fixed text from **Message content**.
-     **Agent**: fill **Request content**; on each run CoPaw receives the text
+     **Agent**: fill **Request content**; on each run Talora receives the text
      from `content.text` as the request.
    - **Delivery** — Target channel (Console, DingTalk, etc.), target user,
      target session id, and mode (**Stream** = token stream, **Final** = one
@@ -168,7 +168,7 @@ Click **Execute Now** → confirm.
 ![Heartbeat](https://img.alicdn.com/imgextra/i1/O1CN01jo9tcj1UfCirFJSqV_!!6000000002544-2-tps-3822-2064.png)
 
 Configure periodic "self-check" for the **currently selected agent**: on each
-tick, send the contents of `HEARTBEAT.md` as a user message to CoPaw, and
+tick, send the contents of `HEARTBEAT.md` as a user message to Talora, and
 optionally deliver the reply to a chosen target.
 
 **Common options:**
@@ -188,11 +188,11 @@ Click **Save** to apply. See [Heartbeat](./heartbeat) for wording and semantics.
 
 > Sidebar: **Workspace → Files**
 
-Edit files that define CoPaw's persona and behavior — `SOUL.md`, `AGENTS.md`,
+Edit files that define Talora's persona and behavior — `SOUL.md`, `AGENTS.md`,
 `HEARTBEAT.md`, etc. — directly in the browser.
 
-> **Multi-agent:** Starting from **v0.1.0**, CoPaw supports **multi-agent** mode.
-> You can run multiple independent agents in one CoPaw instance, each with its own
+> **Multi-agent:** Starting from **v0.1.0**, Talora supports **multi-agent** mode.
+> You can run multiple independent agents in one Talora instance, each with its own
 > workspace, configuration, memory, and history. Agents can collaborate. Use the
 > switcher at the top of the Console to change the active agent. See
 > [Multi-Agent](./multi-agent).
@@ -222,7 +222,7 @@ replaced. Useful for migration and backup restore.
 
 > Sidebar: **Workspace → Skills**
 
-Manage skills that extend CoPaw (e.g. read PDF, create Word, fetch news). More
+Manage skills that extend Talora (e.g. read PDF, create Word, fetch news). More
 detail: [Skills](./skills).
 
 ![Skills](https://img.alicdn.com/imgextra/i3/O1CN01UFlTdO1eHWOt2Lnk9_!!6000000003846-2-tps-3822-2064.png)
@@ -348,7 +348,7 @@ Configure LLM providers and choose the **global default** model. New agents use
 this default; you can override the model per agent in the top-right control on
 the Chat page.
 
-CoPaw supports cloud providers (API key) and local providers (no API key). See
+Talora supports cloud providers (API key) and local providers (no API key). See
 [Models](./models) for details.
 
 ![Models](https://img.alicdn.com/imgextra/i2/O1CN01GumhVY26BqjjKriDe_!!6000000007624-2-tps-3822-2064.png)
@@ -415,16 +415,16 @@ automatically when models are added/removed via Ollama CLI or Console.
 
 **How it differs from local providers:**
 
-- Models come from the Ollama daemon (not downloaded directly by CoPaw)
+- Models come from the Ollama daemon (not downloaded directly by Talora)
 - Model list is auto-synced with Ollama
 - Popular model examples: `mistral:7b`, `qwen3:8b`
 
 > You can also manage Ollama models via Ollama CLI: `ollama pull`,
 > `ollama list`, `ollama rm`. See [Ollama CLI](https://docs.ollama.com/cli).
 
-> ⚠️ **Before running CoPaw, you must set the context length to 32K or higher**
+> ⚠️ **Before running Talora, you must set the context length to 32K or higher**
 >
-> To run CoPaw properly, you must set the model context length to
+> To run Talora properly, you must set the model context length to
 > **32K or higher**. Note that this can consume substantial compute resources,
 > so make sure your local machine can handle it.
 >
@@ -450,11 +450,11 @@ OpenAI-compatible local server to discover and use loaded models.
 4. Select **LM Studio** in the **Provider** dropdown and pick a model.
 
 > LM Studio does not require an API key by default. Models must be loaded
-> in LM Studio before they appear in CoPaw.
+> in LM Studio before they appear in Talora.
 
-> ⚠️ **Before running CoPaw, you must set the context length to 32K or higher**
+> ⚠️ **Before running Talora, you must set the context length to 32K or higher**
 >
-> To run CoPaw properly, you must set the model context length to
+> To run Talora properly, you must set the model context length to
 > **32K or higher**. Note that this can consume substantial compute resources,
 > so make sure your local machine can handle it.
 >
@@ -467,7 +467,7 @@ OpenAI-compatible local server to discover and use loaded models.
 2. Select a **Model**.
 3. Click **Save**.
 
-> **Note:** Cloud API key validity is your responsibility. CoPaw does not
+> **Note:** Cloud API key validity is your responsibility. Talora does not
 > verify key correctness.
 >
 > For provider details, see [Config — LLM Providers](./config#llm-providers).
@@ -498,7 +498,7 @@ On this page you can:
 
 > Sidebar: **Settings → Environments**
 
-Manage runtime environment variables needed by CoPaw tools and skills (e.g.
+Manage runtime environment variables needed by Talora tools and skills (e.g.
 `TAVILY_API_KEY`).
 
 ![Environment Variables](https://img.alicdn.com/imgextra/i2/O1CN01g5syLq1qYGGVLKdSM_!!6000000005507-2-tps-3822-2064.png)
@@ -519,7 +519,7 @@ Click the **🗑** icon on a row → confirm.
 **Batch delete:**
 Select rows → click **Delete** in the toolbar → confirm.
 
-> **Note:** Variable validity is your responsibility. CoPaw only stores and loads
+> **Note:** Variable validity is your responsibility. Talora only stores and loads
 > values.
 >
 > See [Config — Environment variables](./config#environment-variables).

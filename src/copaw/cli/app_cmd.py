@@ -50,7 +50,7 @@ from ..utils.logging import setup_logger, SuppressPathAccessLogFilter
     default=None,
     help="[DEPRECATED] Number of worker processes. "
     "This option is deprecated and will be removed in a future version. "
-    "CoPaw always uses 1 worker.",
+    "Talora always uses 1 worker.",
 )
 def app_cmd(
     host: str,
@@ -60,7 +60,7 @@ def app_cmd(
     log_level: str,
     hide_access_paths: tuple[str, ...],
 ) -> None:
-    """Run CoPaw FastAPI app."""
+    """Run Talora FastAPI app."""
     auth_enabled = os.environ.get("COPAW_AUTH_ENABLED", "").strip().lower() in (
         "true",
         "1",
@@ -69,7 +69,7 @@ def app_cmd(
 
     if host not in ("127.0.0.1", "localhost", "::1") and not auth_enabled:
         click.echo(
-            "WARNING: CoPaw is binding to a non-local host without login "
+            "WARNING: Talora is binding to a non-local host without login "
             "protection enabled. Set COPAW_AUTH_ENABLED=true before "
             "sharing it on your intranet.",
             err=True,
@@ -83,7 +83,7 @@ def app_cmd(
             err=True,
         )
         click.echo(
-            "   CoPaw always uses 1 worker for stability. "
+            "   Talora always uses 1 worker for stability. "
             "Your specified value will be ignored.",
             err=True,
         )

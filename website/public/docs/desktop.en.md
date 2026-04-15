@@ -1,4 +1,4 @@
-# CoPaw Desktop Application Guide
+# Talora Desktop Application Guide
 
 > ⚠️ **Beta Version Notice**
 >
@@ -12,7 +12,7 @@
 
 **Download**: [GitHub Releases][releases]
 
-This guide explains how to install and use the CoPaw Desktop application on Windows and macOS.
+This guide explains how to install and use the Talora Desktop application on Windows and macOS.
 
 [releases]: https://github.com/agentscope-ai/CoPaw/releases
 
@@ -49,21 +49,21 @@ This guide explains how to install and use the CoPaw Desktop application on Wind
 
 After installation, you'll see **two launch shortcuts**:
 
-#### **CoPaw Desktop** (Recommended for daily use)
+#### **Talora Desktop** (Recommended for daily use)
 
 - **Features**: Silent launch, no terminal window, clean interface
 - **Use Case**: Normal usage when you don't need to view technical logs
-- **How to Launch**: Double-click the "CoPaw Desktop" icon on desktop or Start Menu
+- **How to Launch**: Double-click the "Talora Desktop" icon on desktop or Start Menu
 - **Technical Note**: Uses VBScript launcher, runs Python process in background
 
-#### **CoPaw Desktop (Debug)** (Debug Mode)
+#### **Talora Desktop (Debug)** (Debug Mode)
 
 - **Features**: Shows terminal window with real-time logging
 - **Use Cases**:
   - Need to view error messages when encountering problems
   - Development and testing
   - Need to provide logs when reporting bugs
-- **How to Launch**: Double-click "CoPaw Desktop (Debug)" icon in Start Menu
+- **How to Launch**: Double-click "Talora Desktop (Debug)" icon in Start Menu
 - **Log Contents**:
   - Application startup information
   - Python error stack traces
@@ -73,10 +73,10 @@ After installation, you'll see **two launch shortcuts**:
 ### Common Issues
 
 **Q: Application doesn't respond after launch?**
-A: Use "CoPaw Desktop (Debug)" mode to view terminal output for error messages
+A: Use "Talora Desktop (Debug)" mode to view terminal output for error messages
 
 **Q: How to uninstall?**
-A: Go to Windows Settings → Apps → Installed apps → Find "CoPaw Desktop" → Uninstall
+A: Go to Windows Settings → Apps → Installed apps → Find "Talora Desktop" → Uninstall
 
 **Q: Is the installer safe?**
 A:
@@ -111,7 +111,7 @@ A:
 
 #### Why manual trust is needed?
 
-CoPaw is **not Apple Developer-signed or notarized**, so macOS Gatekeeper will block it by default.
+Talora is **not Apple Developer-signed or notarized**, so macOS Gatekeeper will block it by default.
 
 **Why no signature?**
 
@@ -138,7 +138,7 @@ If still blocked:
 
 1. Open **System Settings → Privacy & Security**
 2. Scroll down to find a message like:
-   _"'CoPaw' was blocked from use because it cannot verify the developer"_
+   _"'Talora' was blocked from use because it cannot verify the developer"_
 3. Click the **"Open Anyway"** or **"Allow"** button
 4. Enter your administrator password to confirm
 

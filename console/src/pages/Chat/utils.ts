@@ -27,10 +27,13 @@ export type ResumeCardPayload = {
   card_type?: string;
   candidate_id?: string;
   resIdEncode?: string;
+  res_id_encode?: string;
   resumeIdEncode?: string;
+  resume_id_encode?: string;
   source_platform?: string;
   candidate_name?: string;
   name?: string;
+  resName?: string;
   gender?: string;
   sex?: string;
   sexName?: string;
@@ -43,8 +46,15 @@ export type ResumeCardPayload = {
   city?: string;
   location?: string;
   dqName?: string;
+  expectDqName?: string;
   years_experience?: number | string;
+  work_years?: number | string;
+  workYears?: number | string;
   education?: string;
+  expect_title?: string;
+  expectTitle?: string;
+  expect_location?: string;
+  expectLocation?: string;
   eduLevelName?: string;
   eduLevelTzName?: string;
   industryName?: string;
@@ -52,6 +62,9 @@ export type ResumeCardPayload = {
   salary?: number | string;
   salaryMonths?: number | string;
   expected_salary?: string;
+  expect_salary?: string;
+  salary_expect?: string;
+  expectSalaryShowName?: string;
   updated_at?: string;
   tags?: string[];
   highlights?: string[];
@@ -76,6 +89,27 @@ export type ResumeCardPayload = {
         summary?: string;
       }
   >;
+  recent_work?: Array<{
+    company?: string;
+    company_name?: string;
+    companyName?: string;
+    title?: string;
+    title_name?: string;
+    titleName?: string;
+    period?: string;
+    start_time?: string;
+    end_time?: string;
+    startTime?: string;
+    endTime?: string;
+    summary?: string;
+  }>;
+  recentWorkList?: Array<{
+    companyName?: string | null;
+    titleName?: string | null;
+    startTime?: string | null;
+    endTime?: string | null;
+    summary?: string | null;
+  }>;
   education_experiences?: Array<
     | string
     | {
@@ -85,6 +119,24 @@ export type ResumeCardPayload = {
         period?: string;
       }
   >;
+  highestEdu?: {
+    school?: string | null;
+    school_name?: string | null;
+    schoolName?: string | null;
+    major?: string | null;
+    major_name?: string | null;
+    majorName?: string | null;
+    degree?: string | null;
+    eduLevelName?: string | null;
+    enrollment_type?: string | null;
+    enrollmentType?: string | null;
+    unifiedEnrollmentName?: string | null;
+    period?: string | null;
+    enroll_time?: string | null;
+    enrollTime?: string | null;
+    graduate_time?: string | null;
+    graduateTime?: string | null;
+  };
   expectList?: Array<{
     salaryLower?: number | string | null;
     salaryUpper?: number | string | null;
@@ -121,10 +173,16 @@ export type ResumeCardPayload = {
   selfAssessment?: string;
   additional?: string;
   match_reason?: string;
+  match_note?: string;
   summary?: string;
   source?: string;
   resume_detail_url?: string;
   detail_url?: string;
+  urlPc?: string;
+  urlH5?: string;
+  url_pc?: string;
+  url_h5?: string;
+  resume_url?: string;
   avatar_url?: string;
   [key: string]: unknown;
 };
@@ -313,6 +371,28 @@ function isLikelyResumeToken(value: string): boolean {
   return /^[a-zA-Z0-9]{16,}$/.test(value.trim());
 }
 
+function extractResumeToken(value: string | undefined): string {
+  if (!value) return "";
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+
+  const matched = trimmed.match(/[?&]resIdEncode=([A-Za-z0-9]+)/i);
+  if (matched?.[1]) return matched[1];
+  if (trimmed.startsWith("resIdEncode=")) {
+    return trimmed.slice("resIdEncode=".length).trim();
+  }
+  if (isLikelyResumeToken(trimmed)) {
+    return trimmed;
+  }
+  return "";
+}
+
+function buildLiepinResumeDetailUrl(resumeToken: string | undefined): string {
+  const token = extractResumeToken(resumeToken);
+  if (!token) return "";
+  return `https://lpt.liepin.com/resume/detail?resIdEncode=${encodeURIComponent(token)}&sfrom=R_SEARCH_CONDITION`;
+}
+
 function normalizeResumeDetailUrl(value: string | undefined): string {
   if (!value) return "";
 
@@ -328,7 +408,7 @@ function normalizeResumeDetailUrl(value: string | undefined): string {
   }
 
   if (trimmed.includes("resIdEncode=") || isLikelyResumeToken(trimmed)) {
-    return "";
+    return buildLiepinResumeDetailUrl(trimmed);
   }
 
   return toDisplayUrl(trimmed);
@@ -429,6 +509,57 @@ function normalizeEducationExperiencesFromDetail(
     .filter(Boolean) as NonNullable<ResumeCardPayload["education_experiences"]>;
 }
 
+function normalizeEducationSummaryObject(
+  value: unknown,
+): NonNullable<ResumeCardPayload["education_experiences"]> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return [];
+
+  const education = value as Record<string, unknown>;
+  const school = firstNonEmptyString(
+    education.school,
+    education.school_name,
+    education.schoolName,
+  );
+  const major = firstNonEmptyString(
+    education.major,
+    education.major_name,
+    education.majorName,
+  );
+  const enrollmentType = firstNonEmptyString(
+    education.enrollment_type,
+    education.enrollmentType,
+    education.unifiedEnrollmentName,
+  );
+  const degreeBase = firstNonEmptyString(
+    education.degree,
+    education.eduLevelName,
+  );
+  const degree = [degreeBase, enrollmentType ? `(${enrollmentType})` : ""]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+  const period = firstNonEmptyString(
+    education.period,
+    buildPeriodFromYearMonth(
+      firstNonEmptyString(
+        education.enroll_time,
+        education.enrollTime,
+        education.start_time,
+        education.startTime,
+      ),
+      firstNonEmptyString(
+        education.graduate_time,
+        education.graduateTime,
+        education.end_time,
+        education.endTime,
+      ),
+    ),
+  );
+
+  if (!school && !major && !degree && !period) return [];
+  return [{ school, major, degree, period }];
+}
+
 function normalizeWorkExperiencesFromDetail(
   value: ResumeCardPayload["workExperienceList"],
 ): NonNullable<ResumeCardPayload["work_experiences"]> {
@@ -451,18 +582,119 @@ function normalizeWorkExperiencesFromDetail(
     .filter(Boolean) as NonNullable<ResumeCardPayload["work_experiences"]>;
 }
 
+function normalizeWorkExperiencesFromSummary(
+  value: unknown,
+): NonNullable<ResumeCardPayload["work_experiences"]> {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map((item) => {
+      if (!item || typeof item !== "object" || Array.isArray(item)) {
+        return null;
+      }
+      const experience = item as Record<string, unknown>;
+      const company = firstNonEmptyString(
+        experience.company,
+        experience.company_name,
+        experience.companyName,
+      );
+      const title = firstNonEmptyString(
+        experience.title,
+        experience.title_name,
+        experience.titleName,
+        experience.jobtitleName,
+      );
+      const period = firstNonEmptyString(
+        experience.period,
+        buildPeriodFromYearMonth(
+          firstNonEmptyString(experience.start_time, experience.startTime),
+          firstNonEmptyString(experience.end_time, experience.endTime),
+        ),
+      );
+      const summary = firstNonEmptyString(experience.summary);
+      if (!company && !title && !period && !summary) return null;
+      return { company, title, period, summary };
+    })
+    .filter(Boolean) as NonNullable<ResumeCardPayload["work_experiences"]>;
+}
+
+function normalizeTagText(value: string | undefined): string {
+  if (!value) return "";
+  return value.replace(/\s+/g, " ").trim();
+}
+
+function isEducationRelatedTag(
+  tag: string,
+  payload: ResumeCardPayload,
+): boolean {
+  const normalizedTag = normalizeTagText(tag);
+  if (!normalizedTag) return false;
+
+  const educationTokens = new Set<string>();
+  const educationExperiences = Array.isArray(payload.education_experiences)
+    ? payload.education_experiences
+    : [];
+
+  for (const item of educationExperiences) {
+    if (typeof item === "string") {
+      educationTokens.add(normalizeTagText(item));
+      continue;
+    }
+
+    const school = normalizeTagText(item.school);
+    const major = normalizeTagText(item.major);
+    const degree = normalizeTagText(item.degree);
+    const period = normalizeTagText(item.period);
+
+    [school, major, degree].filter(Boolean).forEach((token) => {
+      educationTokens.add(token);
+    });
+
+    [
+      [school, degree].filter(Boolean).join(" · "),
+      [school, major, degree].filter(Boolean).join(" · "),
+      [school, degree, period].filter(Boolean).join(" · "),
+      [school, major, degree, period].filter(Boolean).join(" · "),
+      [school, degree].filter(Boolean).join(" | "),
+      [school, major, degree].filter(Boolean).join(" | "),
+    ]
+      .map((itemText) => normalizeTagText(itemText))
+      .filter(Boolean)
+      .forEach((token) => educationTokens.add(token));
+  }
+
+  [
+    normalizeTagText(payload.education),
+    normalizeTagText(payload.eduLevelName),
+  ]
+    .filter(Boolean)
+    .forEach((token) => educationTokens.add(token));
+
+  for (const token of educationTokens) {
+    if (!token) continue;
+    if (normalizedTag === token) return true;
+    if (normalizedTag.includes(token) || token.includes(normalizedTag)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 function normalizeTagsFromDetail(payload: ResumeCardPayload): string[] {
   const tags = new Set<string>();
   const rawTags = Array.isArray(payload.tags) ? payload.tags : [];
   for (const tag of rawTags) {
-    if (typeof tag === "string" && tag.trim()) tags.add(tag.trim());
+    if (typeof tag === "string" && tag.trim()) {
+      const normalizedTag = normalizeTagText(tag);
+      if (normalizedTag && !isEducationRelatedTag(normalizedTag, payload)) {
+        tags.add(normalizedTag);
+      }
+    }
   }
 
   const industry = firstNonEmptyString(payload.industryName);
   if (industry) tags.add(industry);
-
-  const education = firstNonEmptyString(payload.eduLevelName, payload.education);
-  if (education) tags.add(education);
 
   const languages = Array.isArray(payload.languageList)
     ? payload.languageList
@@ -533,16 +765,40 @@ export function normalizeResumeCardPayload(
   payload: ResumeCardPayload,
 ): ResumeCardPayload {
   const normalized = { ...payload };
+  normalized.resIdEncode = firstNonEmptyString(
+    normalized.resIdEncode,
+    normalized.res_id_encode,
+  );
+  normalized.resumeIdEncode = firstNonEmptyString(
+    normalized.resumeIdEncode,
+    normalized.resume_id_encode,
+  );
   const normalizedEducationExperiences =
     Array.isArray(normalized.education_experiences) &&
     normalized.education_experiences.length > 0
       ? normalized.education_experiences
       : normalizeEducationExperiencesFromDetail(normalized.eduExperienceList);
+  const summaryEducationExperiences =
+    normalizedEducationExperiences.length > 0
+      ? normalizedEducationExperiences
+      : normalizeEducationSummaryObject(normalized.education);
+  const highestEducationExperiences =
+    summaryEducationExperiences.length > 0
+      ? summaryEducationExperiences
+      : normalizeEducationSummaryObject(normalized.highestEdu);
   const normalizedWorkExperiences =
     Array.isArray(normalized.work_experiences) &&
     normalized.work_experiences.length > 0
       ? normalized.work_experiences
       : normalizeWorkExperiencesFromDetail(normalized.workExperienceList);
+  const summaryWorkExperiences =
+    normalizedWorkExperiences.length > 0
+      ? normalizedWorkExperiences
+      : normalizeWorkExperiencesFromSummary(normalized.recent_work);
+  const recentWorkListExperiences =
+    summaryWorkExperiences.length > 0
+      ? summaryWorkExperiences
+      : normalizeWorkExperiencesFromSummary(normalized.recentWorkList);
   const expectedSalaryFromExpect = Array.isArray(normalized.expectList)
     ? formatSalaryRange({
         lower: normalized.expectList[0]?.salaryLower,
@@ -557,14 +813,24 @@ export function normalizeResumeCardPayload(
 
   normalized.resume_detail_url = firstNonEmptyString(
     normalized.resume_detail_url,
+    normalized.resume_url,
+    typeof normalized.url_pc === "string" ? normalized.url_pc : "",
     typeof normalized.urlPc === "string" ? normalized.urlPc : "",
+    typeof normalized.url_h5 === "string" ? normalized.url_h5 : "",
     typeof normalized.urlH5 === "string" ? normalized.urlH5 : "",
+    buildLiepinResumeDetailUrl(normalized.resIdEncode),
+    buildLiepinResumeDetailUrl(normalized.resumeIdEncode),
   );
   normalized.detail_url = firstNonEmptyString(
     normalized.detail_url,
     normalized.resume_detail_url,
+    normalized.resume_url,
+    typeof normalized.url_pc === "string" ? normalized.url_pc : "",
     typeof normalized.urlPc === "string" ? normalized.urlPc : "",
+    typeof normalized.url_h5 === "string" ? normalized.url_h5 : "",
     typeof normalized.urlH5 === "string" ? normalized.urlH5 : "",
+    buildLiepinResumeDetailUrl(normalized.resIdEncode),
+    buildLiepinResumeDetailUrl(normalized.resumeIdEncode),
   );
 
   normalized.source_platform = firstNonEmptyString(
@@ -580,6 +846,7 @@ export function normalizeResumeCardPayload(
   normalized.candidate_name = firstNonEmptyString(
     normalized.candidate_name,
     normalized.name,
+    normalized.resName,
   );
   normalized.gender = firstNonEmptyString(
     normalized.gender,
@@ -589,7 +856,13 @@ export function normalizeResumeCardPayload(
   normalized.current_title = firstNonEmptyString(
     normalized.current_title,
     normalized.title,
+    normalized.expect_title,
+    normalized.expectTitle,
     normalized.companyName ? "" : normalized.title,
+    recentWorkListExperiences[0] &&
+      typeof recentWorkListExperiences[0] !== "string"
+      ? recentWorkListExperiences[0].title
+      : "",
     normalized.workExperienceList?.[0]?.jobtitleName,
     normalized.workExperienceList?.[0]?.title,
   );
@@ -597,27 +870,34 @@ export function normalizeResumeCardPayload(
     normalized.current_company,
     normalized.company,
     normalized.companyName,
+    recentWorkListExperiences[0] &&
+      typeof recentWorkListExperiences[0] !== "string"
+      ? recentWorkListExperiences[0].company
+      : "",
     normalized.workExperienceList?.[0]?.companyName,
   );
   normalized.city = firstNonEmptyString(
     normalized.city,
     normalized.location,
     normalized.dqName,
+    normalized.expectDqName,
+    normalized.expect_location,
+    normalized.expectLocation,
     normalized.expectList?.[0]?.dqName,
     normalized.workExperienceList?.[0]?.workPlaceName,
   );
-  normalized.education_experiences = normalizedEducationExperiences;
-  normalized.work_experiences = normalizedWorkExperiences;
+  normalized.education_experiences = highestEducationExperiences;
+  normalized.work_experiences = recentWorkListExperiences;
   normalized.education = firstNonEmptyString(
     normalized.education,
     normalized.eduLevelName,
-    Array.isArray(normalizedEducationExperiences) &&
-      normalizedEducationExperiences.length > 0 &&
-      typeof normalizedEducationExperiences[0] !== "string"
+    Array.isArray(highestEducationExperiences) &&
+      highestEducationExperiences.length > 0 &&
+      typeof highestEducationExperiences[0] !== "string"
       ? [
-          normalizedEducationExperiences[0].school,
-          normalizedEducationExperiences[0].major,
-          normalizedEducationExperiences[0].degree,
+          highestEducationExperiences[0].school,
+          highestEducationExperiences[0].major,
+          highestEducationExperiences[0].degree,
         ]
           .filter(Boolean)
           .join(" ")
@@ -625,6 +905,9 @@ export function normalizeResumeCardPayload(
   );
   normalized.expected_salary = firstNonEmptyString(
     normalized.expected_salary,
+    normalized.expect_salary,
+    normalized.salary_expect,
+    normalized.expectSalaryShowName,
     expectedSalaryFromExpect,
   );
   normalized.current_salary = firstNonEmptyString(
@@ -635,10 +918,15 @@ export function normalizeResumeCardPayload(
     (normalized.years_experience === undefined ||
       normalized.years_experience === null ||
       normalized.years_experience === "") &&
-    Array.isArray(normalized.workExperienceList) &&
-    normalized.workExperienceList.length > 0
+    (normalized.work_years !== undefined ||
+      normalized.workYears !== undefined ||
+      (Array.isArray(normalized.workExperienceList) &&
+        normalized.workExperienceList.length > 0))
   ) {
-    normalized.years_experience = normalized.workExperienceList.length;
+    normalized.years_experience =
+      normalized.work_years ??
+      normalized.workYears ??
+      normalized.workExperienceList?.length;
   }
   if (!Array.isArray(normalized.tags) || normalized.tags.length === 0) {
     normalized.tags = normalizeTagsFromDetail(normalized);
@@ -653,6 +941,7 @@ export function normalizeResumeCardPayload(
   );
   normalized.match_reason = firstNonEmptyString(
     normalized.match_reason,
+    normalized.match_note,
     normalized.summary,
   );
   if (typeof normalized.resume_detail_url === "string") {

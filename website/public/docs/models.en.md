@@ -1,12 +1,12 @@
 # Models
 
-Before using CoPaw, you need to configure at least one available model. CoPaw supports multiple model providers, which you can configure and manage on the **Settings -> Models** page in the left sidebar.
+Before using Talora, you need to configure at least one available model. Talora supports multiple model providers, which you can configure and manage on the **Settings -> Models** page in the left sidebar.
 
 ![Settings Models](https://gw.alicdn.com/imgextra/i3/O1CN01MmM8iv1rcfh95wdn3_!!6000000005652-2-tps-3394-1880.png)
 
 ## Provider Configuration
 
-CoPaw supports various LLM providers:
+Talora supports various LLM providers:
 
 - **Cloud Providers** (usually require an API Key)
 - **Local Providers** (llama.cpp / Ollama / LM Studio)
@@ -53,25 +53,25 @@ Currently supported local providers include:
 - [Ollama](https://ollama.com/)
 - [LM Studio](https://lmstudio.ai/)
 
-CoPaw Local (llama.cpp) is built into CoPaw and does not require additional software installation. Ollama and LM Studio require you to install the corresponding software in advance.
+Talora Local (llama.cpp) is built into Talora and does not require additional software installation. Ollama and LM Studio require you to install the corresponding software in advance.
 
-#### CoPaw Local (llama.cpp) Configuration
+#### Talora Local (llama.cpp) Configuration
 
-CoPaw Local is a local model provider based on llama.cpp. You can configure and manage it on the **Models** page.
+Talora Local is a local model provider based on llama.cpp. You can configure and manage it on the **Models** page.
 
-> CoPaw Local is currently in the beta phase. There may be stability and compatibility issues on different devices. For a more stable local model experience, it is recommended to use Ollama or LM Studio in the short term.
+> Talora Local is currently in the beta phase. There may be stability and compatibility issues on different devices. For a more stable local model experience, it is recommended to use Ollama or LM Studio in the short term.
 
 ![CoPaw Local Provider](https://gw.alicdn.com/imgextra/i4/O1CN01OAi8oN1acoLWlsm6B_!!6000000003351-2-tps-2410-1634.png)
 
-When configuring CoPaw Local for the first time, you need to download the llama.cpp runtime. Click the **Download llama.cpp** button, and CoPaw will automatically download and configure the runtime. Once the download is complete, you can use the CoPaw Local provider.
+When configuring Talora Local for the first time, you need to download the llama.cpp runtime. Click the **Download llama.cpp** button, and Talora will automatically download and configure the runtime. Once the download is complete, you can use the Talora Local provider.
 
 ![Download llama.cpp](https://gw.alicdn.com/imgextra/i3/O1CN01Nqs9Cg1Vp6uA2WdiM_!!6000000002701-2-tps-1270-874.png)
 
-CoPaw team has trained a series of small models (CoPaw-flash series) suitable for local deployment. Based on your current device (CPU / NVIDIA GPU / Apple M series chip), CoPaw will automatically recommend suitable model versions for you. You can select the models you need to download. If you want to use other models, you can add them by entering the _Model Repository ID_ and _Download Source_. The Model Repository ID refers to the identifier of the model in ModelScope / Hugging Face, such as `Qwen/Qwen3-0.6B-GGUF`. The Download Source refers to the source for downloading the model. Currently, ModelScope and Hugging Face are supported.
+Talora team has trained a series of small models (CoPaw-flash series) suitable for local deployment. Based on your current device (CPU / NVIDIA GPU / Apple M series chip), Talora will automatically recommend suitable model versions for you. You can select the models you need to download. If you want to use other models, you can add them by entering the _Model Repository ID_ and _Download Source_. The Model Repository ID refers to the identifier of the model in ModelScope / Hugging Face, such as `Qwen/Qwen3-0.6B-GGUF`. The Download Source refers to the source for downloading the model. Currently, ModelScope and Hugging Face are supported.
 
 ![Download Model](https://gw.alicdn.com/imgextra/i2/O1CN01IF2OXz1c99w9W8XGU_!!6000000003557-2-tps-1226-1202.png)
 
-After the model is downloaded, you can click the **Start** button to launch the model. The startup time may vary depending on the model size. Once started, CoPaw will automatically set this model as the global default. Only one model can be running at a time; starting another model will automatically stop the currently running one.
+After the model is downloaded, you can click the **Start** button to launch the model. The startup time may vary depending on the model size. Once started, Talora will automatically set this model as the global default. Only one model can be running at a time; starting another model will automatically stop the currently running one.
 
 ![Start Model](https://gw.alicdn.com/imgextra/i1/O1CN01NSNFUN1I21RynZwGy_!!6000000000834-2-tps-1224-1194.png)
 
@@ -79,7 +79,7 @@ When you do not need to use a model temporarily, you can click **Stop** to stop 
 
 ![Stop Model](https://gw.alicdn.com/imgextra/i4/O1CN01ewNXXD1nMrYq8zvuC_!!6000000005076-2-tps-1230-1284.png)
 
-CoPaw Local will automatically record the model's running state. If you close the CoPaw process while a CoPaw Local model is running, it will attempt to restart the last used model the next time you open CoPaw, so you do not need to start the model manually each time.
+Talora Local will automatically record the model's running state. If you close the Talora process while a Talora Local model is running, it will attempt to restart the last used model the next time you open Talora, so you do not need to start the model manually each time.
 
 #### Ollama Configuration
 
@@ -87,11 +87,11 @@ Before using Ollama, you need to [install Ollama](https://ollama.com/download) o
 
 ![Ollama Settings](https://gw.alicdn.com/imgextra/i4/O1CN01pWWxlV1QiApLwDzbU_!!6000000002009-2-tps-1912-1510.png)
 
-To verify that Ollama is working properly, go to the **Settings** page of the CoPaw Ollama provider and click the **Test Connection** button.
+To verify that Ollama is working properly, go to the **Settings** page of the Talora Ollama provider and click the **Test Connection** button.
 
-> For users deploying CoPaw in a Docker container, if Ollama is installed on the host machine, ensure that the Docker network configuration allows the container to access the host's Ollama service (add `--add-host=host.docker.internal:host-gateway` to the `docker run` command), and set the API address to `http://host.docker.internal:11434`.
+> For users deploying Talora in a Docker container, if Ollama is installed on the host machine, ensure that the Docker network configuration allows the container to access the host's Ollama service (add `--add-host=host.docker.internal:host-gateway` to the `docker run` command), and set the API address to `http://host.docker.internal:11434`.
 
-After installing and configuring Ollama, go to the **Models** page of the CoPaw Ollama provider and click **Auto Fetch Models** to get the list of available Ollama models. After fetching, you can further click **Test Connection** to verify if the models are working properly.
+After installing and configuring Ollama, go to the **Models** page of the Talora Ollama provider and click **Auto Fetch Models** to get the list of available Ollama models. After fetching, you can further click **Test Connection** to verify if the models are working properly.
 
 ![Ollama Model List](https://gw.alicdn.com/imgextra/i3/O1CN01esQyTg1eSyIlpRK69_!!6000000003871-2-tps-1208-1322.png)
 
@@ -103,25 +103,25 @@ By default, LM Studio does not enable the model API service. After installing LM
 
 ![LM Studio Local Server](https://gw.alicdn.com/imgextra/i3/O1CN01kLXu3D1VwRF3lokZz_!!6000000002717-2-tps-1654-1256.png)
 
-To ensure a good experience in CoPaw, set the **Default Context Length** to at least 32768 in **Settings -> Model Defaults**, and enable "When applicable, separate `reasoning_content` and `content` in API responses" in **Settings -> Developer -> Experimental Settings**.
+To ensure a good experience in Talora, set the **Default Context Length** to at least 32768 in **Settings -> Model Defaults**, and enable "When applicable, separate `reasoning_content` and `content` in API responses" in **Settings -> Developer -> Experimental Settings**.
 
 ![LM Studio Context Length](https://gw.alicdn.com/imgextra/i4/O1CN011jc2q71hc51etcf7x_!!6000000004297-2-tps-1654-1256.png)
 
 ![LM Studio Reasoning Content](https://gw.alicdn.com/imgextra/i4/O1CN01dInPGl1oDX6nOH0Wh_!!6000000005191-2-tps-1654-1256.png)
 
-After completing the above LM Studio configuration, go to the **Settings** page of the CoPaw LM Studio provider and enter the LM Studio API address, which can be found on the **Developer -> Local Server** page. Be sure to add the `/v1` suffix, e.g., `http://localhost:1234/v1`.
+After completing the above LM Studio configuration, go to the **Settings** page of the Talora LM Studio provider and enter the LM Studio API address, which can be found on the **Developer -> Local Server** page. Be sure to add the `/v1` suffix, e.g., `http://localhost:1234/v1`.
 
 The subsequent process is the same as for Ollama: click **Test Connection** to verify the connection, then go to the LM Studio model management page and click **Auto Fetch Models** to get the list of available models. After fetching, you can further click **Test Connection** to verify if the models are working properly.
 
-> For users deploying CoPaw in a Docker container, if LM Studio is installed on the host machine, ensure that the Docker network configuration allows the container to access the host's LM Studio service (add `--add-host=host.docker.internal:host-gateway` to the `docker run` command), and set the API address to `http://host.docker.internal:1234/v1`.
+> For users deploying Talora in a Docker container, if LM Studio is installed on the host machine, ensure that the Docker network configuration allows the container to access the host's LM Studio service (add `--add-host=host.docker.internal:host-gateway` to the `docker run` command), and set the API address to `http://host.docker.internal:1234/v1`.
 
 ### Custom Provider Configuration
 
-If the preset cloud and local providers do not meet your needs, CoPaw also supports custom providers.
+If the preset cloud and local providers do not meet your needs, Talora also supports custom providers.
 
 #### Add Provider
 
-You can add a new provider by clicking **Add Provider** in the upper right corner of **Settings -> Models -> Providers**. When adding, you need to provide the **Provider ID** (for internal indexing in CoPaw) and **Provider Name** (for display in the UI), and select the API compatibility mode (currently supports OpenAI `chat.completions` and Anthropic `messages`). After adding, you can add models under this provider just like with cloud providers, and select the provider's models in chat and other scenarios.
+You can add a new provider by clicking **Add Provider** in the upper right corner of **Settings -> Models -> Providers**. When adding, you need to provide the **Provider ID** (for internal indexing in Talora) and **Provider Name** (for display in the UI), and select the API compatibility mode (currently supports OpenAI `chat.completions` and Anthropic `messages`). After adding, you can add models under this provider just like with cloud providers, and select the provider's models in chat and other scenarios.
 
 ![Add Provider](https://gw.alicdn.com/imgextra/i1/O1CN01UE3Vbu1hGYPWlzpps_!!6000000004250-2-tps-3394-1882.png)
 
@@ -135,15 +135,15 @@ After adding a provider, go to its **Settings** page to configure the API access
 
 After configuring a custom provider, go to its **Models** page and click **Add Model**. When adding, you need to provide the **Model ID** (the identifier used by the API) and **Model Name** (for display in the UI). After adding, you can also use **Test Connection** to verify if the model is working properly.
 
-> For example, if you deploy vLLM at `http://localhost:8000` and have a model at `/path/to/Qwen3.5`, you can add a custom provider, set the API compatibility mode to OpenAI `chat.completions`, set the Base URL to `http://localhost:8000/v1`, then add a model under this provider with Model ID `/path/to/Qwen3.5` and Model Name `Qwen3.5`. After testing the connection, if everything is configured correctly, you can use this vLLM model in CoPaw.
+> For example, if you deploy vLLM at `http://localhost:8000` and have a model at `/path/to/Qwen3.5`, you can add a custom provider, set the API compatibility mode to OpenAI `chat.completions`, set the Base URL to `http://localhost:8000/v1`, then add a model under this provider with Model ID `/path/to/Qwen3.5` and Model Name `Qwen3.5`. After testing the connection, if everything is configured correctly, you can use this vLLM model in Talora.
 
 ## Selecting a Model
 
-Configured model providers and models will appear in the **Settings -> Models -> Default LLM** list. You can select a model as the global default and click the **Save** button on the right. The model set on this page will be used as the global default by CoPaw. If you do not specify a model in certain scenarios (such as chat), CoPaw will use the default model set here.
+Configured model providers and models will appear in the **Settings -> Models -> Default LLM** list. You can select a model as the global default and click the **Save** button on the right. The model set on this page will be used as the global default by Talora. If you do not specify a model in certain scenarios (such as chat), Talora will use the default model set here.
 
 ![Default Model Settings](https://gw.alicdn.com/imgextra/i4/O1CN01NH2eBZ1UBQyhucWdj_!!6000000002479-2-tps-3388-808.png)
 
-Since different tasks may require different model capabilities, CoPaw also supports using different models in different chats. You can select the appropriate provider and model from the dropdown menu in the upper right corner of the **Chat** page. This setting only applies to the current agent and chat. If you do not configure a provider or model in the chat page, CoPaw will use the global default model.
+Since different tasks may require different model capabilities, Talora also supports using different models in different chats. You can select the appropriate provider and model from the dropdown menu in the upper right corner of the **Chat** page. This setting only applies to the current agent and chat. If you do not configure a provider or model in the chat page, Talora will use the global default model.
 
 ![Chat Model Settings](https://gw.alicdn.com/imgextra/i3/O1CN01BjQlqH1eC1eC7xNm8_!!6000000003834-2-tps-3402-1768.png)
 
@@ -151,11 +151,11 @@ Since different tasks may require different model capabilities, CoPaw also suppo
 
 ### Model Configuration Files
 
-All provider configurations in CoPaw are saved in the `$COPAW_SECRET_DIR/providers` folder (default `~/.copaw.secret/providers`). Built-in provider configurations are in the `builtin` directory, and user-added custom provider configurations are in the `custom` directory. Each provider has a corresponding JSON file named after its ID, e.g., the configuration file for a provider with ID `Qwen` is `Qwen.json`. The file contains the provider's API access information and model list. It is not recommended for regular users to modify these files directly to avoid unnecessary errors. Also, changes to the configuration files require restarting CoPaw to take effect.
+All provider configurations in Talora are saved in the `$COPAW_SECRET_DIR/providers` folder (default `~/.copaw.secret/providers`). Built-in provider configurations are in the `builtin` directory, and user-added custom provider configurations are in the `custom` directory. Each provider has a corresponding JSON file named after its ID, e.g., the configuration file for a provider with ID `Qwen` is `Qwen.json`. The file contains the provider's API access information and model list. It is not recommended for regular users to modify these files directly to avoid unnecessary errors. Also, changes to the configuration files require restarting Talora to take effect.
 
 ### Local Models
 
-If you use the CoPaw Local (llama.cpp) provider, CoPaw will save the llama.cpp runtime and model files in the `$COPAW_WORKING_DIR/local_models` folder (default `~/.copaw/local_models`). The runtime is saved in the `$COPAW_WORKING_DIR/local_models/bin` directory, and downloaded models are saved in the `$COPAW_WORKING_DIR/local_models/models` directory. Each model has a corresponding folder named after its ID, e.g., the folder for the model ID `Qwen/Qwen3-0.6B-GGUF` is `$COPAW_WORKING_DIR/local_models/models/Qwen/Qwen3-0.6B-GGUF`. The model folder contains the GGUF file and some model metadata files.
+If you use the CoPaw Local (llama.cpp) provider, Talora will save the llama.cpp runtime and model files in the `$COPAW_WORKING_DIR/local_models` folder (default `~/.copaw/local_models`). The runtime is saved in the `$COPAW_WORKING_DIR/local_models/bin` directory, and downloaded models are saved in the `$COPAW_WORKING_DIR/local_models/models` directory. Each model has a corresponding folder named after its ID, e.g., the folder for the model ID `Qwen/Qwen3-0.6B-GGUF` is `$COPAW_WORKING_DIR/local_models/models/Qwen/Qwen3-0.6B-GGUF`. The model folder contains the GGUF file and some model metadata files.
 
 If you need more advanced usage of llama.cpp (such as using hardware-specific acceleration), you can compile your own version of llama.cpp and replace the `llama-server` file in the `bin` directory.
 
@@ -163,7 +163,7 @@ If you want to use GGUF model files from other sources, you can create a subfold
 
 ### Generation Parameters
 
-Since different models and tasks may require different generation parameters (such as `temperature`, `top_p`, `max_tokens`), CoPaw supports configuring generation parameters in the provider settings. Go to the provider's **Settings** page, expand **Advanced Configuration**, and enter the parameter configuration in JSON format, for example:
+Since different models and tasks may require different generation parameters (such as `temperature`, `top_p`, `max_tokens`), Talora supports configuring generation parameters in the provider settings. Go to the provider's **Settings** page, expand **Advanced Configuration**, and enter the parameter configuration in JSON format, for example:
 
 ```json
 {
@@ -173,6 +173,6 @@ Since different models and tasks may require different generation parameters (su
 }
 ```
 
-After configuring, click **Save**. CoPaw will automatically include these parameters when generating with models from this provider.
+After configuring, click **Save**. Talora will automatically include these parameters when generating with models from this provider.
 
 ![Generation Parameters](https://gw.alicdn.com/imgextra/i2/O1CN01et3R371uamugLZiT0_!!6000000006054-2-tps-1078-1732.png)

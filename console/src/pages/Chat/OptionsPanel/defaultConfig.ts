@@ -7,7 +7,7 @@ const defaultConfig = {
     prefix: "copaw",
     leftHeader: {
       logo: "",
-      title: "猎小侠",
+      title: "Talora",
     },
   },
   sender: {
@@ -16,7 +16,7 @@ const defaultConfig = {
     disclaimer: "给到 HR 的专属猎头 Agent 助手",
   },
   welcome: {
-    greeting: "你好，我是猎小侠。",
+    greeting: "你好，我是Talora。",
     description: "我会帮你处理搜人、读简历、初筛和招聘推进。",
     avatar: `${import.meta.env.BASE_URL}copaw-symbol.svg`,
     prompts: [

@@ -31,7 +31,7 @@ from ..config.utils import load_config, save_config
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_AGENT_NAME = "猎小侠"
+DEFAULT_AGENT_NAME = "Talora"
 DEFAULT_AGENT_DESCRIPTION = "给到 HR 的专属猎头 Agent 助手"
 DEFAULT_AGENT_FIRST_RUN_SKILL_NAMES: tuple[str, ...] = (
     "job_creator",
@@ -869,7 +869,7 @@ def ensure_qa_agent_exists() -> None:
         id=qa_id,
         name=BUILTIN_QA_AGENT_NAME,
         description=(
-            "Builtin Q&A helper for CoPaw setup, local config under "
+            "Builtin Q&A helper for Talora setup, local config under "
             "COPAW_WORKING_DIR, and documentation. Prefer reading files "
             "before answering; use absolute paths for code outside this "
             "workspace."

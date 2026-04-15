@@ -84,16 +84,38 @@ function normalizeVisibleText(text: string): string {
   return text.replace(/\n{3,}/g, "\n\n").trim();
 }
 
+function applyCardTypeHint(
+  value: unknown,
+  cardTypeHint?: "job_card" | "resume_card",
+): unknown {
+  if (!cardTypeHint || !value || typeof value !== "object") {
+    return value;
+  }
+
+  const payload = value as Record<string, unknown>;
+  if (typeof payload.type === "string" || typeof payload.card_type === "string") {
+    return value;
+  }
+
+  return {
+    ...payload,
+    type: cardTypeHint,
+  };
+}
+
 function parseCardSegmentsFromValue(
   value: unknown,
+  cardTypeHint?: "job_card" | "resume_card",
 ): Array<Extract<TextSegment, { type: "jobCards" | "resumeCards" }>> {
   const segments: Array<
     Extract<TextSegment, { type: "jobCards" | "resumeCards" }>
   > = [];
 
   const appendCardValue = (cardValue: unknown) => {
-    if (isJobCardPayload(cardValue)) {
-      const normalized = normalizeJobCardPayload(cardValue);
+    const hintedCardValue = applyCardTypeHint(cardValue, cardTypeHint);
+
+    if (isJobCardPayload(hintedCardValue)) {
+      const normalized = normalizeJobCardPayload(hintedCardValue);
       const lastSegment = segments[segments.length - 1];
       if (lastSegment?.type === "jobCards") {
         lastSegment.cards.push(normalized);
@@ -103,8 +125,8 @@ function parseCardSegmentsFromValue(
       return;
     }
 
-    if (isResumeCardPayload(cardValue)) {
-      const normalized = normalizeResumeCardPayload(cardValue);
+    if (isResumeCardPayload(hintedCardValue)) {
+      const normalized = normalizeResumeCardPayload(hintedCardValue);
       const lastSegment = segments[segments.length - 1];
       if (lastSegment?.type === "resumeCards") {
         lastSegment.cards.push(normalized);
@@ -169,7 +191,7 @@ function parseTextSegments(text: string | undefined): TextSegment[] {
   if (!sourceText) return [];
 
   const segments: TextSegment[] = [];
-  const fencePattern = /```(?:json)?\s*([\s\S]*?)```/gi;
+  const fencePattern = /```([a-zA-Z0-9_-]+)?[ \t]*\n?([\s\S]*?)```/gi;
   let cursor = 0;
   let matchedCardFence = false;
   let match: RegExpExecArray | null;
@@ -213,13 +235,23 @@ function parseTextSegments(text: string | undefined): TextSegment[] {
 
   while ((match = fencePattern.exec(sourceText)) !== null) {
     const fullMatch = match[0];
-    const jsonText = String(match[1] || "").trim();
+    const fenceLanguage = String(match[1] || "")
+      .trim()
+      .toLowerCase();
+    const jsonText = String(match[2] || "").trim();
+    const cardTypeHint =
+      fenceLanguage === "job_card" || fenceLanguage === "resume_card"
+        ? fenceLanguage
+        : undefined;
     let parsedSegments: Array<
       Extract<TextSegment, { type: "jobCards" | "resumeCards" }>
     > = [];
 
     try {
-      parsedSegments = parseCardSegmentsFromValue(JSON.parse(jsonText));
+      parsedSegments = parseCardSegmentsFromValue(
+        JSON.parse(jsonText),
+        cardTypeHint,
+      );
     } catch {
       parsedSegments = [];
     }

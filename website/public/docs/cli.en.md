@@ -1,6 +1,6 @@
 # CLI
 
-`copaw` is the command-line tool for CoPaw. This page is organized from
+`copaw` is the command-line tool for Talora. This page is organized from
 "get-up-and-running" to "advanced management" — read from top to bottom if
 you're new, or jump to the section you need.
 
@@ -33,7 +33,7 @@ copaw init --force      # Overwrite existing config files
 
 ### copaw app
 
-Start the CoPaw server. Everything else — channels, cron jobs, the Console
+Start the Talora server. Everything else — channels, cron jobs, the Console
 UI — depends on this.
 
 ```bash
@@ -48,9 +48,9 @@ copaw app --log-level debug           # Verbose logging
 | `--port`      | `8088`      | Bind port                                                     |
 | `--reload`    | off         | Auto-reload on file changes (dev only)                        |
 | `--log-level` | `info`      | `critical` / `error` / `warning` / `info` / `debug` / `trace` |
-| `--workers`   | —           | **[DEPRECATED]** Ignored. CoPaw always uses 1 worker          |
+| `--workers`   | —           | **[DEPRECATED]** Ignored. Talora always uses 1 worker          |
 
-> **Note:** The `--workers` option is deprecated for stability reasons. CoPaw is designed to run with a single worker process. Multi-worker mode can cause issues with in-memory state management and WebSocket connections. This option will be removed in a future version.
+> **Note:** The `--workers` option is deprecated for stability reasons. Talora is designed to run with a single worker process. Multi-worker mode can cause issues with in-memory state management and WebSocket connections. This option will be removed in a future version.
 
 ### Console
 
@@ -58,7 +58,7 @@ Once `copaw app` is running, open `http://127.0.0.1:8088/` in your browser to
 access the **Console** — a web UI for chat, channels, cron, skills, models,
 and more. See [Console](./console) for a full walkthrough.
 
-If the frontend was not built, the root URL returns a JSON message like `{"message": "CoPaw Web Console is not available."}` but the API still works.
+If the frontend was not built, the root URL returns a JSON message like `{"message": "Talora Web Console is not available."}` but the API still works.
 
 **To build the frontend:** in the project's `console/` directory run
 `npm ci && npm run build`, then copy the output to the package directory:
@@ -92,7 +92,7 @@ copaw daemon logs -n 50
 
 ## Models & environment variables
 
-Before using CoPaw you need at least one LLM provider configured. Environment
+Before using Talora you need at least one LLM provider configured. Environment
 variables power many built-in tools (e.g. web search).
 
 ### copaw models
@@ -120,7 +120,7 @@ copaw models set-llm                 # Change active model only
 
 #### Local models
 
-CoPaw can also run models locally via llama.cpp — no API key needed.
+Talora can also run models locally via llama.cpp — no API key needed.
 Install the backend first: `pip install 'copaw[local]'`
 
 ```bash
@@ -145,7 +145,7 @@ copaw models remove-local <model_id> --yes   # skip confirmation
 
 #### Ollama models
 
-CoPaw integrates with Ollama to run models locally. Models are dynamically loaded from your Ollama daemon — install Ollama first from [ollama.com](https://ollama.com).
+Talora integrates with Ollama to run models locally. Models are dynamically loaded from your Ollama daemon — install Ollama first from [ollama.com](https://ollama.com).
 
 Install the Ollama SDK: `pip install 'copaw[ollama]'` (or re-run the installer with `--extras ollama`)
 
@@ -167,11 +167,11 @@ copaw models set-llm          # Switch to a different Ollama model
 
 **Key differences from local models:**
 
-- Models come from Ollama daemon (not downloaded by CoPaw)
+- Models come from Ollama daemon (not downloaded by Talora)
 - Use `ollama` CLI to manage models (not `copaw models download/remove-local`)
-- Model list updates dynamically when you add/remove via Ollama CLI or CoPaw
+- Model list updates dynamically when you add/remove via Ollama CLI or Talora
 
-> **Note:** You are responsible for ensuring the API key is valid. CoPaw does
+> **Note:** You are responsible for ensuring the API key is valid. Talora does
 > not verify key correctness. See [Config — LLM Providers](./config#llm-providers).
 
 ### copaw env
@@ -191,7 +191,7 @@ copaw env set GITHUB_TOKEN "ghp_xxxxxxxx"
 copaw env delete TAVILY_API_KEY
 ```
 
-> **Note:** CoPaw only stores and loads these values; you are responsible for
+> **Note:** Talora only stores and loads these values; you are responsible for
 > ensuring they are correct. See
 > [Config — Environment Variables](./config#environment-variables).
 
@@ -199,7 +199,7 @@ copaw env delete TAVILY_API_KEY
 
 ## Channels
 
-Connect CoPaw to messaging platforms.
+Connect Talora to messaging platforms.
 
 ### copaw channels
 
@@ -401,7 +401,7 @@ When tasks are complex (e.g., data analysis, batch processing, report generation
 ## Cron (scheduled tasks)
 
 Create jobs that run on a timed schedule — "every day at 9am", "every 2 hours
-ask CoPaw and send the reply". **Requires `copaw app` to be running.**
+ask Talora and send the reply". **Requires `copaw app` to be running.**
 
 ### copaw cron
 
@@ -425,7 +425,7 @@ ask CoPaw and send the reply". **Requires `copaw app` to be running.**
 Two task types:
 
 - **text** — send a fixed message to a channel on schedule.
-- **agent** — ask CoPaw a question on schedule and deliver the reply.
+- **agent** — ask Talora a question on schedule and deliver the reply.
 
 ```bash
 # Text: send "Good morning!" to DingTalk every day at 9:00 (default agent)
@@ -517,7 +517,7 @@ copaw chats delete <chat_id>
 
 ## Skills
 
-Extend CoPaw's capabilities with skills (PDF reading, web search, etc.).
+Extend Talora's capabilities with skills (PDF reading, web search, etc.).
 
 ### copaw skills
 
@@ -621,7 +621,7 @@ See [Config & Working Directory](./config) and [Multi-Agent](./multi-agent) for 
 
 ## Related pages
 
-- [Introduction](./intro) — What CoPaw can do
+- [Introduction](./intro) — What Talora can do
 - [Console](./console) — Web-based management UI
 - [Channels](./channels) — DingTalk, Feishu, iMessage, Discord, QQ setup
 - [Heartbeat](./heartbeat) — Scheduled check-in / digest

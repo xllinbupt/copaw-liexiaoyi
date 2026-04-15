@@ -16,15 +16,15 @@ export const i18n: Record<Lang, Record<string, string>> = {
       "面向猎头与招聘团队的 AI 助手；支持本地部署、多端接入、招聘流程自动化，并可通过内置招聘 Skills 持续扩展。",
     "hero.cta": "查看文档",
     "follow.title": "关注我们",
-    "follow.sub": "第一时间获取猎小易的招聘自动化更新",
+    "follow.sub": "第一时间获取Talora的招聘自动化更新",
     "follow.xiaohongshu": "小红书：",
     "follow.x": "X：",
     "follow.community.title": "加入社区",
     "follow.community.discord": "Discord",
     "follow.community.dingtalk": "钉钉群",
-    "brandstory.title": "为什么是猎小易？",
+    "brandstory.title": "为什么是Talora？",
     "brandstory.para1":
-      "猎小易是一位为 HR 和猎头顾问打造的专属招聘 Agent，围绕搜人、读简历、初筛与协同推进而设计。",
+      "Talora是一位为 HR 和猎头顾问打造的专属招聘 Agent，围绕搜人、读简历、初筛与协同推进而设计。",
     "brandstory.para2":
       "它不是泛用聊天机器人，而是能嵌入招聘日常、连接招聘数据、帮你持续推进候选人流程的团队成员。",
     "features.title": "核心能力",
@@ -45,7 +45,7 @@ export const i18n: Record<Lang, Record<string, string>> = {
     "testimonials.1": "把搜人、看简历、发起沟通放在一个入口里，招聘效率一下顺了很多。",
     "testimonials.2": "本地部署让候选人数据更安心，Skills 也能按团队流程自己加。",
     "testimonials.3": "很适合需要沉淀方法论和流程标准的猎头团队。",
-    "usecases.title": "你可以用猎小易做什么",
+    "usecases.title": "你可以用Talora做什么",
     "usecases.sub": "",
     "usecases.category.social": "人才搜寻",
     "usecases.category.creative": "岗位拆解",
@@ -76,13 +76,13 @@ export const i18n: Record<Lang, Record<string, string>> = {
     "usecases.assistant.1":
       "阅读本地简历、职位说明书和面试反馈文档，自动提炼重点并与候选人信息串联。",
     "usecases.explore.1":
-      "继续接入更多招聘系统、表格或内部流程工具，把猎小易扩展成团队专属招聘操作台。",
+      "继续接入更多招聘系统、表格或内部流程工具，把Talora扩展成团队专属招聘操作台。",
     "quickstart.title": "快速开始",
     "quickstart.serviceNotice":
       "几分钟，获得一位面向 HR 的专属招聘 Agent。可本地部署，也可按你的团队流程继续扩展。",
     "quickstart.hintBefore": "安装 → 初始化 → 启动；频道配置见 ",
     "quickstart.hintLink": "文档",
-    "quickstart.hintAfter": "，即可在控制台或协同频道里使用猎小易处理招聘任务。",
+    "quickstart.hintAfter": "，即可在控制台或协同频道里使用Talora处理招聘任务。",
     "quickstart.method.pip": "pip",
     "quickstart.method.script": "脚本安装",
     "quickstart.method.docker": "Docker",
@@ -90,7 +90,7 @@ export const i18n: Record<Lang, Record<string, string>> = {
     "quickstart.method.desktop": "桌面应用",
     "quickstart.desc.pip": "适合自行管理 Python 环境的用户",
     "quickstart.desc.script":
-      "无需手动配置 Python，一行命令自动完成安装。脚本会自动下载 uv、创建虚拟环境并安装猎小易运行所需依赖（含 Node.js 和前端资源）。",
+      "无需手动配置 Python，一行命令自动完成安装。脚本会自动下载 uv、创建虚拟环境并安装Talora运行所需依赖（含 Node.js 和前端资源）。",
     "quickstart.desc.docker":
       "使用官方 Docker 镜像快速部署，隔离环境、便于管理",
     "quickstart.desc.cloud": "云端一键部署或在线运行，无需本地环境配置",
@@ -112,7 +112,7 @@ export const i18n: Record<Lang, Record<string, string>> = {
     "quickstart.desktop.viewGuide": "查看使用指南",
     "quickstart.desktop.recommended": "推荐",
     "quickstart.badgeBeta": "Beta",
-    footer: "猎小易 — 给到 HR 的专属猎头 Agent 助手",
+    footer: "Talora — 给到 HR 的专属猎头 Agent 助手",
     "footer.poweredBy.p1": "由 ",
     "footer.poweredBy.p2": " 基于 ",
     "footer.poweredBy.p3": "、",
@@ -154,15 +154,15 @@ export const i18n: Record<Lang, Record<string, string>> = {
       "An AI recruiting assistant for HR and headhunting teams, built for private deployment, resume workflows, candidate search, and extensible recruiting skills.",
     "hero.cta": "Read the docs",
     "follow.title": "Follow us",
-    "follow.sub": "Follow us for the latest LieXiaoYi recruiting workflow updates",
+    "follow.sub": "Follow us for the latest Talora recruiting workflow updates",
     "follow.xiaohongshu": "Rednote:",
     "follow.x": "X:",
     "follow.community.title": "Join the community",
     "follow.community.discord": "Discord",
     "follow.community.dingtalk": "DingTalk",
-    "brandstory.title": "Why LieXiaoYi?",
+    "brandstory.title": "Why Talora?",
     "brandstory.para1":
-      "LieXiaoYi is designed for HR and executive search teams that want a focused recruiting agent instead of a generic chat bot.",
+      "Talora is designed for HR and executive search teams that want a focused recruiting agent instead of a generic chat bot.",
     "brandstory.para2":
       "It helps search for talent, read resumes, structure evaluations, and keep recruiting pipelines moving inside your own environment.",
     "features.title": "Key capabilities",
@@ -185,7 +185,7 @@ export const i18n: Record<Lang, Record<string, string>> = {
     "testimonials.2":
       "Private deployment made adoption easier, and custom recruiting skills fit our process quickly.",
     "testimonials.3": "It feels much closer to a recruiting copilot than a generic assistant.",
-    "usecases.title": "What you can do with LieXiaoYi",
+    "usecases.title": "What you can do with Talora",
     "usecases.sub": "",
     "usecases.category.social": "Talent sourcing",
     "usecases.category.creative": "Role design",
@@ -216,12 +216,12 @@ export const i18n: Record<Lang, Record<string, string>> = {
     "usecases.assistant.1":
       "Read local resumes, JDs, and interview feedback files, then extract the most relevant points for the hiring team.",
     "usecases.explore.1":
-      "Connect more recruiting systems, spreadsheets, or internal workflows and turn LieXiaoYi into your team's recruiting control center.",
+      "Connect more recruiting systems, spreadsheets, or internal workflows and turn Talora into your team's recruiting control center.",
     "quickstart.title": "Quick start",
     "quickstart.serviceNotice":
       "Get a recruiting-first AI agent for your HR team in minutes, then extend it with your own sourcing and resume workflows.",
     "quickstart.hintBefore":
-      "Install → init → start. Configure channels if you want to use LieXiaoYi across team tools. See ",
+      "Install → init → start. Configure channels if you want to use Talora across team tools. See ",
     "quickstart.hintLink": "docs",
     "quickstart.hintAfter": ".",
     "quickstart.method.pip": "pip",
@@ -231,7 +231,7 @@ export const i18n: Record<Lang, Record<string, string>> = {
     "quickstart.method.desktop": "Desktop",
     "quickstart.desc.pip": "If you prefer managing Python yourself",
     "quickstart.desc.script":
-      "No Python setup required. One command downloads uv, creates a virtual environment, and installs LieXiaoYi with all required dependencies, including Node.js and frontend assets.",
+      "No Python setup required. One command downloads uv, creates a virtual environment, and installs Talora with all required dependencies, including Node.js and frontend assets.",
     "quickstart.desc.docker":
       "Quick deployment with official Docker images, isolated environment and easy management",
     "quickstart.desc.cloud":
@@ -254,7 +254,7 @@ export const i18n: Record<Lang, Record<string, string>> = {
     "quickstart.desktop.viewGuide": "View User Guide",
     "quickstart.desktop.recommended": "recommended",
     "quickstart.badgeBeta": "Beta",
-    footer: "LieXiaoYi — Your dedicated AI headhunting assistant for HR teams",
+    footer: "Talora — Your dedicated AI headhunting assistant for HR teams",
     "footer.poweredBy.p1": "Built by ",
     "footer.poweredBy.p2": " with ",
     "footer.poweredBy.p3": ", ",

@@ -38,6 +38,11 @@ type WorkExperienceItem = Exclude<
   string
 >;
 
+type EducationExperienceItem = Exclude<
+  NonNullable<ResumeCardPayload["education_experiences"]>[number],
+  string
+>;
+
 function getInitials(name: string): string {
   const trimmed = name.trim();
   if (!trimmed) return "LP";
@@ -126,23 +131,37 @@ function formatWorkPeriod(item: WorkExperienceItem): string {
   return "";
 }
 
+function formatEducationPeriod(item: EducationExperienceItem): string {
+  return normalizePeriodValue(item.period?.trim());
+}
+
 function normalizeEducationEntries(
   value: ResumeCardPayload["education_experiences"],
-): string[] {
+): TimelineEntry[] {
   if (!Array.isArray(value)) return [];
   return value
     .map((item) => {
-      if (typeof item === "string") return item.trim();
-      return [
-        item.school?.trim(),
-        item.major?.trim(),
-        item.degree?.trim(),
-        item.period?.trim(),
-      ]
-        .filter(Boolean)
-        .join(" | ");
+      if (typeof item === "string") {
+        return { fallback: item.trim() };
+      }
+
+      const company = item.school?.trim() || "";
+      const title = item.degree?.trim() || "";
+      const summary = item.major?.trim() || "";
+      const period = formatEducationPeriod(item);
+
+      return {
+        company,
+        title,
+        period,
+        summary,
+        fallback: [company, title, summary, period].filter(Boolean).join(" | "),
+      };
     })
-    .filter(Boolean);
+    .filter(
+      (item) =>
+        item.company || item.title || item.period || item.summary || item.fallback,
+    );
 }
 
 function getLatestWorkExperienceSummary(item?: TimelineEntry): string {
@@ -192,8 +211,20 @@ export default function ResumeCandidateCard(
   const salaryLine = [
     card.expected_salary ? `期望薪资 ${card.expected_salary}` : "",
   ].filter(Boolean);
-  const educationEntries = normalizeEducationEntries(card.education_experiences);
-  const educationText = educationEntries[0] || card.education || "暂无教育信息";
+  const educationTimeline = normalizeEducationEntries(card.education_experiences);
+  const educationText =
+    educationTimeline[0]?.fallback ||
+    [educationTimeline[0]?.company, educationTimeline[0]?.title, educationTimeline[0]?.period]
+      .filter(Boolean)
+      .join(" | ") ||
+    card.education ||
+    "";
+  const educationSummary: TimelineEntry[] =
+    educationTimeline.length > 0
+      ? educationTimeline.slice(0, 2)
+      : card.education
+        ? [{ fallback: card.education }]
+        : [];
   const workTimeline = normalizeTimelineEntries(card.work_experiences);
   const latestWorkExperience = getLatestWorkExperienceSummary(workTimeline[0]);
   const workSummary: TimelineEntry[] =
@@ -208,8 +239,11 @@ export default function ResumeCandidateCard(
     (typeof card.candidate_id === "string" && card.candidate_id.trim()) ||
     "";
 
-  const openPreview = () => {
-    if (!detailUrl) return;
+  const openCardDetail = () => {
+    if (detailUrl) {
+      window.open(detailUrl, "_blank", "noopener,noreferrer");
+      return;
+    }
     setOpen(true);
   };
 
@@ -323,22 +357,16 @@ export default function ResumeCandidateCard(
   return (
     <>
       <div
-        className={`${styles.resumeCard} ${
-          !detailUrl ? styles.resumeCardDisabled : ""
-        }`}
-        onClick={detailUrl ? openPreview : undefined}
-        role={detailUrl ? "button" : undefined}
-        tabIndex={detailUrl ? 0 : -1}
-        onKeyDown={
-          detailUrl
-            ? (event) => {
-                if (event.key === "Enter" || event.key === " ") {
-                  event.preventDefault();
-                  openPreview();
-                }
-              }
-            : undefined
-        }
+        className={styles.resumeCard}
+        onClick={openCardDetail}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            openCardDetail();
+          }
+        }}
       >
         <div className={styles.resumeCardShell}>
           <div className={styles.resumeCardLeft}>
@@ -384,7 +412,6 @@ export default function ResumeCandidateCard(
                     ))}
                   </div>
                 ) : null}
-                <div className={styles.resumeEducationInline}>{educationText}</div>
                 {updateLabel ? (
                   <div className={styles.resumeUpdateBadge}>{updateLabel}</div>
                 ) : null}
@@ -396,6 +423,11 @@ export default function ResumeCandidateCard(
             <div className={styles.resumeTimeline}>
               {workSummary.map(renderTimelineEntry)}
             </div>
+            {educationSummary.length > 0 ? (
+              <div className={styles.resumeTimeline}>
+                {educationSummary.map(renderTimelineEntry)}
+              </div>
+            ) : null}
           </div>
         </div>
 
@@ -467,16 +499,16 @@ export default function ResumeCandidateCard(
         ]}
         destroyOnHidden
       >
-        {detailUrl ? (
-          <div className={styles.resumeDetailPanel}>
-            <div className={styles.resumeDetailPrimary}>
-              <div className={styles.resumeDetailHeader}>
-                <div className={styles.resumeDetailTitleBlock}>
-                  <div className={styles.resumeDetailName}>{name}</div>
-                  <div className={styles.resumeDetailHeadline}>
-                    {[title, company].filter(Boolean).join(" | ") || "暂无当前职位信息"}
-                  </div>
+        <div className={styles.resumeDetailPanel}>
+          <div className={styles.resumeDetailPrimary}>
+            <div className={styles.resumeDetailHeader}>
+              <div className={styles.resumeDetailTitleBlock}>
+                <div className={styles.resumeDetailName}>{name}</div>
+                <div className={styles.resumeDetailHeadline}>
+                  {[title, company].filter(Boolean).join(" | ") || "暂无当前职位信息"}
                 </div>
+              </div>
+              {detailUrl ? (
                 <Button
                   type="link"
                   icon={<LinkOutlined />}
@@ -486,69 +518,71 @@ export default function ResumeCandidateCard(
                 >
                   查看原始简历 URL
                 </Button>
-              </div>
+              ) : null}
+            </div>
 
-              <div className={styles.resumeDetailGrid}>
-                <div className={styles.resumeDetailItem}>
-                  <div className={styles.resumeDetailLabel}>基础信息</div>
-                  <div className={styles.resumeDetailValue}>
-                    {metaLine.length > 0 ? metaLine.join(" · ") : "暂无"}
-                  </div>
-                </div>
-                <div className={styles.resumeDetailItem}>
-                  <div className={styles.resumeDetailLabel}>期望薪资</div>
-                  <div className={styles.resumeDetailValue}>
-                    {card.expected_salary || "暂无"}
-                  </div>
-                </div>
-                <div className={styles.resumeDetailItem}>
-                  <div className={styles.resumeDetailLabel}>学校 / 教育</div>
-                  <div className={styles.resumeDetailValue}>{educationText || "暂无"}</div>
-                </div>
-                <div className={styles.resumeDetailItem}>
-                  <div className={styles.resumeDetailLabel}>最近更新</div>
-                  <div className={styles.resumeDetailValue}>{updateLabel || "暂无"}</div>
+            <div className={styles.resumeDetailGrid}>
+              <div className={styles.resumeDetailItem}>
+                <div className={styles.resumeDetailLabel}>基础信息</div>
+                <div className={styles.resumeDetailValue}>
+                  {metaLine.length > 0 ? metaLine.join(" · ") : "暂无"}
                 </div>
               </div>
+              <div className={styles.resumeDetailItem}>
+                <div className={styles.resumeDetailLabel}>期望薪资</div>
+                <div className={styles.resumeDetailValue}>
+                  {card.expected_salary || "暂无"}
+                </div>
+              </div>
+              <div className={styles.resumeDetailItem}>
+                <div className={styles.resumeDetailLabel}>学校 / 教育</div>
+                <div className={styles.resumeDetailValue}>{educationText || "暂无"}</div>
+              </div>
+              <div className={styles.resumeDetailItem}>
+                <div className={styles.resumeDetailLabel}>最近更新</div>
+                <div className={styles.resumeDetailValue}>{updateLabel || "暂无"}</div>
+              </div>
+            </div>
 
-              {reasonText ? (
-                <section className={styles.resumeDetailSection}>
-                  <div className={styles.resumeDetailSectionTitle}>推荐理由</div>
-                  <div className={styles.resumeDetailSectionBody}>{reasonText}</div>
-                </section>
-              ) : null}
-
-              {latestWorkExperience ? (
-                <section className={styles.resumeDetailSection}>
-                  <div className={styles.resumeDetailSectionTitle}>最新工作经历</div>
-                  <div className={styles.resumeDetailSectionBody}>{latestWorkExperience}</div>
-                </section>
-              ) : null}
-
-              {workSummary.length > 0 ? (
-                <section className={styles.resumeDetailSection}>
-                  <div className={styles.resumeDetailSectionTitle}>工作经历摘要</div>
-                  <div className={styles.resumeDetailTimeline}>
-                    {workSummary.map(renderTimelineEntry)}
-                  </div>
-                </section>
-              ) : null}
-
-              {tags.length > 0 ? (
-                <section className={styles.resumeDetailSection}>
-                  <div className={styles.resumeDetailSectionTitle}>标签</div>
-                  <div className={styles.resumeDetailTags}>
-                    {tags.map((tag) => (
-                      <Tag key={`${name}-detail-${tag}`} color="orange">
-                        {tag}
-                      </Tag>
-                    ))}
-                  </div>
-                </section>
-              ) : null}
-
+            {reasonText ? (
               <section className={styles.resumeDetailSection}>
-                <div className={styles.resumeDetailSectionTitle}>原始链接</div>
+                <div className={styles.resumeDetailSectionTitle}>推荐理由</div>
+                <div className={styles.resumeDetailSectionBody}>{reasonText}</div>
+              </section>
+            ) : null}
+
+            {latestWorkExperience ? (
+              <section className={styles.resumeDetailSection}>
+                <div className={styles.resumeDetailSectionTitle}>最新工作经历</div>
+                <div className={styles.resumeDetailSectionBody}>{latestWorkExperience}</div>
+              </section>
+            ) : null}
+
+            {workSummary.length > 0 ? (
+              <section className={styles.resumeDetailSection}>
+                <div className={styles.resumeDetailSectionTitle}>工作经历摘要</div>
+                <div className={styles.resumeDetailTimeline}>
+                  {workSummary.map(renderTimelineEntry)}
+                </div>
+              </section>
+            ) : null}
+
+            {tags.length > 0 ? (
+              <section className={styles.resumeDetailSection}>
+                <div className={styles.resumeDetailSectionTitle}>标签</div>
+                <div className={styles.resumeDetailTags}>
+                  {tags.map((tag) => (
+                    <Tag key={`${name}-detail-${tag}`} color="orange">
+                      {tag}
+                    </Tag>
+                  ))}
+                </div>
+              </section>
+            ) : null}
+
+            <section className={styles.resumeDetailSection}>
+              <div className={styles.resumeDetailSectionTitle}>原始链接</div>
+              {detailUrl ? (
                 <a
                   className={styles.resumeDetailLink}
                   href={detailUrl}
@@ -557,14 +591,12 @@ export default function ResumeCandidateCard(
                 >
                   {detailUrl}
                 </a>
-              </section>
-            </div>
+              ) : (
+                <Empty description="当前卡片未附带原始简历链接" />
+              )}
+            </section>
           </div>
-        ) : (
-          <div className={styles.resumePreviewEmpty}>
-            <Empty description="暂无可预览的简历详情链接" />
-          </div>
-        )}
+        </div>
       </Drawer>
     </>
   );

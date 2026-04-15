@@ -253,7 +253,7 @@ Load conversation history from a JSONL file into current memory. **Existing memo
 
 ## System Control Commands
 
-Commands for controlling and monitoring CoPaw's runtime status. These commands execute directly without going through the Agent.
+Commands for controlling and monitoring Talora's runtime status. These commands execute directly without going through the Agent.
 
 Send `/daemon <subcommand>` or short names (e.g., `/status`) in chat, or run `copaw daemon <subcommand>` from the terminal.
 
@@ -328,7 +328,7 @@ copaw daemon reload-config      # From terminal
 
 ### /daemon version - Version Information
 
-Display CoPaw version number, working directory path, and log file path.
+Display Talora version number, working directory path, and log file path.
 
 **Usage:**
 

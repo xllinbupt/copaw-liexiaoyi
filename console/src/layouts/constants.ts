@@ -99,7 +99,7 @@ export const UPDATE_MD: Record<string, string> = {
 - Chat 支持绑定 0 或 1 个职位，并在左侧按“职位 -> 多个 Chat”分组展示；未绑定对话统一收进 \`playground\`。
 - 新增内置 \`job_creator\` 技能，可在未绑定职位的对话里创建职位，并自动把当前对话挂到该职位下。
 - 支持 Agent 在识别出“当前对话明确属于某个已有职位”时自动完成绑定；已绑定后不可改绑。
-- 默认 Agent 收敛为“猎小易”，并确保 \`job_creator\`、\`job_intake_consultant\`、\`liepin_job_manage\`、\`resume_search\` 默认启用。
+- 默认 Agent 收敛为“Talora”，并确保 \`job_creator\`、\`job_intake_consultant\`、\`liepin_job_manage\`、\`resume_search\` 默认启用。
 - 简历卡片优化：工作经历改为结构化展示公司、职位、时间，优先显示绝对时间，例如 \`2024.3-至今\`。
 - Chat 工作台样式优化：左侧支持更紧凑的会话行、职位分组、按钮与版本提示样式调整。
 
@@ -120,7 +120,7 @@ pip install -e .
 - Chats can now bind to zero or one job and are grouped in the sidebar by “job -> chats”; unbound chats stay in \`playground\`.
 - Added built-in \`job_creator\` skill to create a job inside an unbound chat and bind the current chat automatically.
 - Agents can auto-bind an unbound chat to an existing job when the target job is uniquely clear.
-- Default agent is now simplified to LieXiaoYi with recruiting skills enabled by default.
+- Default agent is now simplified to Talora with recruiting skills enabled by default.
 - Resume cards now render work experience in a structured way with absolute dates when available.
 - Chat workspace UI was refined with denser rows, grouped jobs, and updated button/version styling.
 
@@ -141,7 +141,7 @@ If using Docker, rebuild your image from the latest code and restart the contain
 - Chats can bind to zero or one job and are grouped in the sidebar by “job -> chats”; unbound chats live under \`playground\`.
 - Added the built-in \`job_creator\` skill so an unbound chat can create a job and auto-bind itself to that job.
 - Agents can now auto-bind an unbound chat to an existing job when the target job is uniquely clear.
-- Simplified the default setup to a single LieXiaoYi agent with \`job_creator\`, \`job_intake_consultant\`, \`liepin_job_manage\`, and \`resume_search\` enabled by default.
+- Simplified the default setup to a single Talora agent with \`job_creator\`, \`job_intake_consultant\`, \`liepin_job_manage\`, and \`resume_search\` enabled by default.
 - Resume cards now render work experience in a structured layout with absolute dates when available.
 - Refined the Chat workspace UI with grouped jobs, denser rows, and updated button/version styling.
 

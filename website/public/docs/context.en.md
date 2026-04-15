@@ -10,7 +10,7 @@ Imagine the LLM's context window as a **backpack with limited capacity** 🎒. E
 
 ### How It Works — Summary
 
-CoPaw context management uses two parallel offload paths to handle the limited context window:
+Talora context management uses two parallel offload paths to handle the limited context window:
 
 | Mechanism                          | Triggered When                        | Offload Target            | What Stays in Context                    |
 | ---------------------------------- | ------------------------------------- | ------------------------- | ---------------------------------------- |
@@ -37,7 +37,7 @@ flowchart LR
 
 ### In-Memory Data Structure
 
-CoPaw's context consists of two components:
+Talora's context consists of two components:
 
 ```mermaid
 flowchart TD
@@ -144,7 +144,7 @@ flowchart LR
 
 ## Compaction Mechanism
 
-When the context approaches its limit, CoPaw automatically triggers compaction, condensing old conversations into a structured summary.
+When the context approaches its limit, Talora automatically triggers compaction, condensing old conversations into a structured summary.
 
 ### 1. compact_tool_result — Tool Result Compaction
 

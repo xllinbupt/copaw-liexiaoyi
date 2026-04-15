@@ -122,7 +122,7 @@ def _find_desktop_wrapper_pids() -> set[int]:
 
 
 def _find_windows_wrapper_ancestor_pids(pids: set[int]) -> set[int]:
-    """Find CoPaw wrapper/supervisor ancestors for Windows backend PIDs."""
+    """Find Talora wrapper/supervisor ancestors for Windows backend PIDs."""
     if sys.platform != "win32" or not pids:
         return set()
 
@@ -300,7 +300,7 @@ def _stop_pid_set(pids: set[int]) -> tuple[list[int], list[int]]:
     return stopped, failed
 
 
-@click.command("shutdown", help="Force stop the running CoPaw app processes.")
+@click.command("shutdown", help="Force stop the running Talora app processes.")
 @click.option(
     "--port",
     default=None,
@@ -309,7 +309,7 @@ def _stop_pid_set(pids: set[int]) -> tuple[list[int], list[int]]:
 )
 @click.pass_context
 def shutdown_cmd(ctx: click.Context, port: Optional[int]) -> None:
-    """Stop the running CoPaw app processes.
+    """Stop the running Talora app processes.
 
     `copaw app` only starts the backend process. The web console is normally
     static files served by that backend. During frontend development, a
@@ -342,7 +342,7 @@ def shutdown_cmd(ctx: click.Context, port: Optional[int]) -> None:
     all_targets = backend_pids | frontend_pids | desktop_pids | wrapper_pids
     if not all_targets:
         raise click.ClickException(
-            "No running CoPaw backend/frontend process was found.",
+            "No running Talora backend/frontend process was found.",
         )
 
     wrapper_stopped, wrapper_failed = _stop_pid_set(wrapper_pids)
@@ -368,7 +368,7 @@ def shutdown_cmd(ctx: click.Context, port: Optional[int]) -> None:
 
     if stopped:
         click.echo(
-            "Stopped CoPaw processes: "
+            "Stopped Talora processes: "
             + ", ".join(str(pid) for pid in sorted(stopped)),
         )
     if failed:

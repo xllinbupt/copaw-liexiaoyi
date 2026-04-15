@@ -5,13 +5,13 @@ Click a question to expand the answer.
 
 ---
 
-### CoPaw vs OpenClaw: Feature Comparison
+### Talora vs OpenClaw: Feature Comparison
 
 Please check the [Comparison](/docs/comparison) page for detailed feature comparison.
 
-### How to install CoPaw
+### How to install Talora
 
-CoPaw supports multiple installation methods. See
+Talora supports multiple installation methods. See
 [Quick Start](https://copaw.agentscope.io/docs/quickstart) for details:
 
 1. One-line installer (sets up Python automatically)
@@ -54,9 +54,9 @@ docker run -p 127.0.0.1:8088:8088 \
 >    The script completes file installation. Due to **Constrained Language Mode**, it cannot automatically update environment variables. Manually configure as follows:
 >
 >    - **Locate the installation directory**:
->      - Check if `uv` is available: Enter `uv --version` in CMD. If a version number appears, **only configure the CoPaw path**. If you receive the prompt `'uv' is not recognized as an internal or external command, operable program or batch file,` configure both paths.
+>      - Check if `uv` is available: Enter `uv --version` in CMD. If a version number appears, **only configure the Talora path**. If you receive the prompt `'uv' is not recognized as an internal or external command, operable program or batch file,` configure both paths.
 >      - uv path (choose one based on installation location; use if step 1 fails): Typically `%USERPROFILE%\.local\bin`, `%USERPROFILE%\AppData\Local\uv`, or the `Scripts` folder within your Python installation directory
->      - CoPaw path: Typically located at `%USERPROFILE%\.copaw\bin`.
+>      - Talora path: Typically located at `%USERPROFILE%\.copaw\bin`.
 >    - **Manually add to the system's Path environment variable**:
 >      - Press `Win + R`, type `sysdm.cpl` and press Enter to open System Properties.
 >      - Click “Advanced” -> “Environment Variables”.
@@ -72,9 +72,9 @@ docker run -p 127.0.0.1:8088:8088 \
 > - **Re-run the installation**: Open a new terminal and execute the installation script again to complete the `CoPaw` installation.
 > - **Configure the `CoPaw` environment variable**: Add `%USERPROFILE%\.copaw\bin` to your system's `Path` variable.
 
-### How to update CoPaw
+### How to update Talora
 
-To update CoPaw, use the method matching your installation type:
+To update Talora, use the method matching your installation type:
 
 1. If installed via one-line script, re-run the installer to upgrade.
 
@@ -103,13 +103,13 @@ docker run -p 127.0.0.1:8088:8088 \
 ```
 
 5. If using the Windows Desktop App (exe), currently you need to uninstall and reinstall:
-   - Uninstall CoPaw from your PC
+   - Uninstall Talora from your PC
    - Download the latest version from: https://github.com/agentscope-ai/CoPaw/releases
    - Reinstall
 
 After upgrading, restart the service with `copaw app`.
 
-### How to initialize and start CoPaw service
+### How to initialize and start Talora service
 
 Recommended quick initialization:
 
@@ -130,14 +130,14 @@ open Console and customize settings. See
 ### Port 8088 conflict on Windows
 
 On Windows, Hyper-V and WSL2 may reserve certain port ranges, which can conflict
-with CoPaw's default port **8088**. This affects all installation methods
+with Talora's default port **8088**. This affects all installation methods
 (pip, script, Docker, desktop app).
 
 **Symptoms:**
 
 - Error: `Address already in use` or `OSError: [Errno 98] Address already in use`
 - Error: `An attempt was made to access a socket in a way forbidden by its access permissions`
-- CoPaw fails to start, or browser cannot connect to `http://127.0.0.1:8088/`
+- Talora fails to start, or browser cannot connect to `http://127.0.0.1:8088/`
 
 **Check if port 8088 is reserved on Windows:**
 
@@ -194,13 +194,13 @@ netsh int ipv4 set dynamicport tcp start=49152 num=16384
 
 ### Open-source repository
 
-CoPaw is open source. Official repository:
+Talora is open source. Official repository:
 `https://github.com/agentscope-ai/CoPaw`
 
 ### Where to check latest version upgrade details
 
 See the site [Release notes](https://copaw.agentscope.io/release-notes/?lang=en)
-or CoPaw GitHub [Releases](https://github.com/agentscope-ai/CoPaw/releases).
+or Talora GitHub [Releases](https://github.com/agentscope-ai/CoPaw/releases).
 
 ### How to configure models
 
@@ -221,13 +221,13 @@ agent.
 You can also use `copaw models` for setup, downloads, and switching. See
 [CLI → Models and environment variables → copaw models](https://copaw.agentscope.io/docs/cli#copaw-models).
 
-### When using models deployed with Ollama / LM Studio, why can't CoPaw complete multi-turn interactions, complex tool calls, or remember earlier instructions?
+### When using models deployed with Ollama / LM Studio, why can't Talora complete multi-turn interactions, complex tool calls, or remember earlier instructions?
 
-In most cases, this is not a CoPaw bug. The root cause is usually that the
+In most cases, this is not a Talora bug. The root cause is usually that the
 model's context length is configured too small.
 
 When you deploy a local model with Ollama or LM Studio, if the model's
-`context length` is too low, CoPaw may show problems such as:
+`context length` is too low, Talora may show problems such as:
 
 - failing to sustain multi-turn conversations reliably
 - losing context during complex tool calls
@@ -236,13 +236,13 @@ When you deploy a local model with Ollama or LM Studio, if the model's
 
 **How to fix it:**
 
-- Before running CoPaw, set the model's `context length` to **at least 32K**
+- Before running Talora, set the model's `context length` to **at least 32K**
 - For more complex tasks, frequent tool calls, or longer conversations, you
   may need a value **higher than 32K**
 
-> ⚠️ **Before running CoPaw, you must set the context length to 32K or higher**
+> ⚠️ **Before running Talora, you must set the context length to 32K or higher**
 >
-> For local models deployed with Ollama or LM Studio, CoPaw typically needs a
+> For local models deployed with Ollama or LM Studio, Talora typically needs a
 > context length of **32K or higher** to handle multi-turn interactions,
 > complex tool calls, and long-context tasks reliably. In more demanding
 > scenarios, an even larger context window may be required.
@@ -264,11 +264,11 @@ In Console, go to **Control -> Cron Jobs** to create and manage scheduled tasks.
 
 ![cron](https://img.alicdn.com/imgextra/i3/O1CN01duPPPB1R0x495tRdY_!!6000000002050-2-tps-3822-2064.png)
 
-The easiest way to create a cron job is to talk to CoPaw in the channel where you want the results. For example, say: “Create a scheduled task that reminds me to drink water every five minutes.” You can then see the enabled job in Console.
+The easiest way to create a cron job is to talk to Talora in the channel where you want the results. For example, say: “Create a scheduled task that reminds me to drink water every five minutes.” You can then see the enabled job in Console.
 
 If a scheduled task does not run as expected, try the following:
 
-1. Confirm that the CoPaw service is running.
+1. Confirm that the Talora service is running.
 
 2. Check that the task **Status** is **Enabled**.
 
@@ -290,7 +290,7 @@ If a scheduled task does not run as expected, try the following:
 
    ![cron](https://img.alicdn.com/imgextra/i4/O1CN01TSodVd21msgJQvHkI_!!6000000007028-2-tps-3234-876.png)
 
-6. To verify that the task was created and can run, click **Execute Now**. If it works, you should see the reply in the target channel. You can also ask CoPaw: “Trigger the ‘drink water reminder’ task I just created.”
+6. To verify that the task was created and can run, click **Execute Now**. If it works, you should see the reply in the target channel. You can also ask Talora: “Trigger the ‘drink water reminder’ task I just created.”
 
    ![exec](https://img.alicdn.com/imgextra/i4/O1CN01MkrSYn1mJpJshAO8n_!!6000000004934-2-tps-3224-878.png)
 
@@ -322,7 +322,7 @@ Cause 2: key is configured but still fails. In most cases, one of the
 configuration fields is incorrect (for example `base_url`, `api key`, or model
 name).
 
-CoPaw supports API keys obtained via DashScope Coding Plan. If it still fails,
+Talora supports API keys obtained via DashScope Coding Plan. If it still fails,
 please check:
 
 - whether `base_url` is correct;
@@ -337,7 +337,7 @@ https://help.aliyun.com/zh/model-studio/coding-plan-quickstart#2531c37fd64f9
 ### How to get support when errors occur
 
 To speed up troubleshooting and fixes, please open an
-[issue](https://github.com/agentscope-ai/CoPaw/issues) in the CoPaw GitHub
+[issue](https://github.com/agentscope-ai/CoPaw/issues) in the Talora GitHub
 repository and attach the full error message and any error detail file.
 
 Console errors often include a path to an error detail file. For example:
@@ -345,4 +345,4 @@ Console errors often include a path to an error detail file. For example:
 Error: Unknown agent error: AuthenticationError: Error code: 401 - {'error': {'message': "You didn't provide an API key. You need to provide your API key in an Authorization header using Bearer auth (i.e. Authorization: Bearer YOUR_KEY). ", 'type': 'invalid_request_error', 'param': None, 'code': None}, 'request_id': 'xxx'}(Details: /var/folders/.../copaw_query_error_qzbx1mv1.json)
 
 Please upload that file (e.g. `/var/folders/.../copaw_query_error_qzbx1mv1.json`)
-and also provide your current model provider, model name, and CoPaw version.
+and also provide your current model provider, model name, and Talora version.

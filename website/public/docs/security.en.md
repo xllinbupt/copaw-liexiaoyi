@@ -1,10 +1,10 @@
 # Security
 
-CoPaw includes built-in security features to protect your agent from malicious inputs and unsafe skills. These are configured in the Console under **Settings → Security**, or via `config.json`.
+Talora includes built-in security features to protect your agent from malicious inputs and unsafe skills. These are configured in the Console under **Settings → Security**, or via `config.json`.
 
 ## Overview
 
-CoPaw's security system consists of three core security layers:
+Talora's security system consists of three core security layers:
 
 ```
 Security Architecture:
@@ -182,7 +182,7 @@ Tool Guard includes the following built-in detection rules (for `execute_shell_c
 | `TOOL_CMD_DOS_FORK_BOMB`   | CRITICAL | Fork bombs `:(){ :\|:& };:`, `kill -9 -1`       | Detects fork bombs and mass process termination |
 | `TOOL_CMD_SYSTEM_REBOOT`   | CRITICAL | `reboot`, `shutdown`, `halt`, `init 0/6`        | Terminates the host system                      |
 | `TOOL_CMD_SERVICE_RESTART` | HIGH     | `systemctl restart/stop`, `service ... restart` | Manages or disrupts system services             |
-| `TOOL_CMD_PROCESS_KILL`    | HIGH     | `pkill`, `killall`, `kill` (excludes `kill $$`) | Terminates processes that may be critical       |
+| `TOOL_CMD_PROCESS_KILL`    | HIGH     | `pkill`, `killall`, `kill` (excludes `kill $`) | Terminates processes that may be critical       |
 
 **Code Execution (CRITICAL/HIGH):**
 
@@ -534,13 +534,13 @@ Here's a complete `config.json` with all security features configured:
 
 ## Web Authentication
 
-CoPaw supports optional web login authentication to protect the Console from unauthorized access. Authentication is **disabled by default** and must be explicitly enabled via the `COPAW_AUTH_ENABLED` environment variable.
+Talora supports optional web login authentication to protect the Console from unauthorized access. Authentication is **disabled by default** and must be explicitly enabled via the `COPAW_AUTH_ENABLED` environment variable.
 
 ![login](https://img.alicdn.com/imgextra/i3/O1CN01SP7Ppd289g5e9kKO6_!!6000000007890-2-tps-3822-2064.png)
 
 ### How it works
 
-1. **Enable authentication** — Set `COPAW_AUTH_ENABLED=true` and start CoPaw
+1. **Enable authentication** — Set `COPAW_AUTH_ENABLED=true` and start Talora
 2. **Registration flow**:
    - On first visit, the Console shows a **registration page**
    - Create the single admin account (username + password)
@@ -551,7 +551,7 @@ CoPaw supports optional web login authentication to protect the Console from una
    - Token is stored in browser localStorage and automatically attached to all API requests
 4. **Auto-registration** (optional):
    - Set `COPAW_AUTH_USERNAME` and `COPAW_AUTH_PASSWORD` environment variables
-   - CoPaw automatically creates the admin account on startup, skipping web registration
+   - Talora automatically creates the admin account on startup, skipping web registration
    - Useful for Docker, Kubernetes, server management panels, and other automated deployments
 5. **Localhost bypass** — Requests from localhost (`127.0.0.1` / `::1`) automatically skip authentication; CLI commands (`copaw app`, `copaw chat`, etc.) work without a token
 
@@ -667,7 +667,7 @@ Then pass it to Docker with `--env-file .env`, or source it in your shell before
 
 ### Disable authentication
 
-Remove or unset the environment variable and restart CoPaw:
+Remove or unset the environment variable and restart Talora:
 
 ```bash
 # Linux / macOS
@@ -705,7 +705,7 @@ To completely reset the authentication system:
 ```bash
 # Delete the auth file
 rm ~/.copaw.secret/auth.json  # or $WORKING_DIR.secret/auth.json
-# Restart CoPaw; re-register on next visit
+# Restart Talora; re-register on next visit
 copaw app
 ```
 

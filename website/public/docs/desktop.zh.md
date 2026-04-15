@@ -1,4 +1,4 @@
-# CoPaw Desktop 桌面应用版使用指南
+# Talora Desktop 桌面应用版使用指南
 
 > ⚠️ **Beta 版本说明**
 >
@@ -12,7 +12,7 @@
 
 **下载地址**：[GitHub Releases][releases]
 
-本文档说明如何在 Windows 和 macOS 系统上安装和使用 CoPaw Desktop 桌面应用。
+本文档说明如何在 Windows 和 macOS 系统上安装和使用 Talora Desktop 桌面应用。
 
 [releases]: https://github.com/agentscope-ai/CoPaw/releases
 
@@ -49,21 +49,21 @@
 
 安装完成后，您会看到**两个启动快捷方式**：
 
-#### **CoPaw Desktop** (推荐日常使用)
+#### **Talora Desktop** (推荐日常使用)
 
 - **特点**: 静默启动，无终端窗口，界面简洁
 - **适用场景**: 正常使用，不需要查看技术日志
-- **启动方式**: 双击桌面或开始菜单的 "CoPaw Desktop" 图标
+- **启动方式**: 双击桌面或开始菜单的 "Talora Desktop" 图标
 - **技术说明**: 使用 VBScript 启动器，后台运行 Python 进程
 
-#### **CoPaw Desktop (Debug)** (调试模式)
+#### **Talora Desktop (Debug)** (调试模式)
 
 - **特点**: 显示终端窗口，实时输出运行日志
 - **适用场景**:
   - 遇到问题需要查看错误信息
   - 开发测试
   - 报告 Bug 时需要提供日志
-- **启动方式**: 双击开始菜单的 "CoPaw Desktop (Debug)" 图标
+- **启动方式**: 双击开始菜单的 "Talora Desktop (Debug)" 图标
 - **日志内容**:
   - 应用启动信息
   - Python 错误堆栈
@@ -73,10 +73,10 @@
 ### 常见问题
 
 **Q: 应用启动后没有反应？**
-A: 使用 "CoPaw Desktop (Debug)" 模式启动，查看终端输出的错误信息
+A: 使用 "Talora Desktop (Debug)" 模式启动，查看终端输出的错误信息
 
 **Q: 如何卸载？**
-A: 在 Windows 设置 → 应用 → 已安装的应用 → 找到 "CoPaw Desktop" → 卸载
+A: 在 Windows 设置 → 应用 → 已安装的应用 → 找到 "Talora Desktop" → 卸载
 
 **Q: 安装包是否安全？**
 A:
@@ -111,7 +111,7 @@ A:
 
 #### 为什么需要手动信任？
 
-CoPaw 应用**未经过 Apple 开发者签名和公证（Notarization）**，macOS Gatekeeper 会默认阻止运行。
+Talora 应用**未经过 Apple 开发者签名和公证（Notarization）**，macOS Gatekeeper 会默认阻止运行。
 
 **为什么没有签名？**
 
@@ -138,7 +138,7 @@ CoPaw 应用**未经过 Apple 开发者签名和公证（Notarization）**，mac
 
 1. 打开 **系统设置 → 隐私与安全性**
 2. 向下滚动，找到类似以下提示：
-   _"已阻止使用 'CoPaw'，因为无法验证开发者"_
+   _"已阻止使用 'Talora'，因为无法验证开发者"_
 3. 点击 **"仍要打开"** 或 **"允许"** 按钮
 4. 输入管理员密码确认
 

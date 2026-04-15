@@ -1,6 +1,6 @@
 # Agent Persona
 
-CoPaw defines an agent's "persona" through a set of Markdown files that are loaded into the system prompt. These files determine the agent's behavioral style, working approach, and personality traits. By editing these files, you can shape the agent into your ideal assistant—whether that's a meticulous work aide, a warm life companion, or a technical expert.
+Talora defines an agent's "persona" through a set of Markdown files that are loaded into the system prompt. These files determine the agent's behavioral style, working approach, and personality traits. By editing these files, you can shape the agent into your ideal assistant—whether that's a meticulous work aide, a warm life companion, or a technical expert.
 
 ---
 
@@ -197,20 +197,20 @@ The system prompt also includes tool and Skill descriptions:
 
 ## Built-in QA Agent
 
-CoPaw automatically creates a built-in agent named **"QA Agent"** (ID: `CoPaw_QA_Agent_0.1beta1`) when you first run `copaw init`.
+Talora automatically creates a built-in agent named **"QA Agent"** (ID: `CoPaw_QA_Agent_0.1beta1`) when you first run `copaw init`.
 
 ### QA Agent Features
 
-This is an agent **specifically designed to answer CoPaw-related questions**:
+This is an agent **specifically designed to answer Talora-related questions**:
 
 - **Dedicated persona**: Uses persona files optimized for Q&A (different from regular agents)
-- **Pre-installed skills**: Auto-enables `guidance` and `copaw_source_index` skills for querying CoPaw documentation and source code
+- **Pre-installed skills**: Auto-enables `guidance` and `copaw_source_index` skills for querying Talora documentation and source code
 - **Tool configuration**: Only core tools enabled by default (execute_shell_command, read_file, write_file, edit_file, view_image); other built-in tools are disabled
 - **Auto-maintained**: Running `copaw init` ensures this agent exists
 
 ### How to Use?
 
-You can select "QA Agent" in the agent switcher at the top-right of the Console, then ask it any questions about CoPaw.
+You can select "QA Agent" in the agent switcher at the top-right of the Console, then ask it any questions about Talora.
 
 **Good questions:**
 

@@ -467,7 +467,7 @@ export default function JobDetailPanel({
     Modal.confirm({
       title: "确认解除企业版关联？",
       content:
-        "解除后，这个 CoPaw 职位将不再关联当前企业版职位，之后可以重新绑定其他职位。",
+        "解除后，这个 Talora 职位将不再关联当前企业版职位，之后可以重新绑定其他职位。",
       okText: "解除关联",
       cancelText: "取消",
       okButtonProps: { danger: true },

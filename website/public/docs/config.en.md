@@ -6,7 +6,7 @@ This page covers:
 - **Environment variables** — How to customize paths and behavior
 - **Configuration files** — Complete field description for `config.json` and `agent.json`
 
-From **v0.1.0**, CoPaw supports **multi-agent**. Configuration is split into two layers:
+From **v0.1.0**, Talora supports **multi-agent**. Configuration is split into two layers:
 
 1. **Global config** (`config.json`) — Model providers, agent list, global settings
 2. **Agent config** (`agent.json`) — Independent config for each agent (channels, heartbeat, tools, etc.)
@@ -154,7 +154,7 @@ Stores globally shared configuration:
     "profiles": {
       "default": {
         "id": "default",
-        "name": "LieXiaoYi",
+        "name": "Talora",
         "description": "Recruiting-focused default workspace agent",
         "enabled": true
       },
@@ -210,7 +210,7 @@ Each agent has an independent `agent.json` in its workspace directory (`~/.copaw
 ```json
 {
   "id": "default",
-  "name": "LieXiaoYi",
+  "name": "Talora",
   "description": "Recruiting-focused default workspace agent",
   "workspace_dir": "",
   "channels": {
@@ -521,7 +521,7 @@ Auto-updated; no manual configuration needed.
 
 ## Model Providers
 
-CoPaw needs an LLM provider to work. You can set it up in three ways:
+Talora needs an LLM provider to work. You can set it up in three ways:
 
 - **`copaw init`** — interactive wizard, the easiest way
 - **Console UI** — in Settings → Models page
@@ -559,7 +559,7 @@ Then choose which provider + model to activate:
 > models for each provider so you can pick one directly.
 >
 > **Note:** You are responsible for ensuring the API key and base URL are valid.
-> CoPaw does not verify whether the key is correct or has sufficient quota —
+> Talora does not verify whether the key is correct or has sufficient quota —
 > make sure the chosen provider and model are accessible.
 
 ---
@@ -577,7 +577,7 @@ Set variables are auto-loaded at app startup, so all tools and child processes
 can read them via `os.environ`.
 
 > **Note:** You are responsible for ensuring the values (e.g. third-party API
-> keys) are valid. CoPaw only stores and injects them — it does not verify
+> keys) are valid. Talora only stores and injects them — it does not verify
 > correctness.
 
 ---
@@ -607,7 +607,7 @@ See [Skills](./skills) for detailed documentation.
 
 ## Memory
 
-CoPaw has persistent cross-conversation memory: it automatically compresses context and saves key information to Markdown files for long-term retention.
+Talora has persistent cross-conversation memory: it automatically compresses context and saves key information to Markdown files for long-term retention.
 
 Memory files are stored in the agent workspace:
 

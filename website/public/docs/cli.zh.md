@@ -1,6 +1,6 @@
 # CLI
 
-`copaw` 是 CoPaw 的命令行工具。本页按「上手 → 配置 → 日常管理」的顺序组织——
+`copaw` 是 Talora 的命令行工具。本页按「上手 → 配置 → 日常管理」的顺序组织——
 新用户从头读，老用户直接跳到需要的章节。
 
 > 还不清楚「频道」「心跳」「定时任务」是什么？先看 [项目介绍](./intro)。
@@ -9,7 +9,7 @@
 
 ## 快速上手
 
-第一次用 CoPaw，只需要这两条命令。
+第一次用 Talora，只需要这两条命令。
 
 ### copaw init
 
@@ -30,7 +30,7 @@ copaw init --force      # 覆盖已有配置文件
 
 ### copaw app
 
-启动 CoPaw 服务。频道、定时任务、控制台等所有运行时功能都依赖此服务。
+启动 Talora 服务。频道、定时任务、控制台等所有运行时功能都依赖此服务。
 
 ```bash
 copaw app                             # 默认 127.0.0.1:8088
@@ -44,16 +44,16 @@ copaw app --log-level debug           # 详细日志
 | `--port`      | `8088`      | 绑定端口                                                      |
 | `--reload`    | 关闭        | 文件变动时自动重载（仅开发用）                                |
 | `--log-level` | `info`      | `critical` / `error` / `warning` / `info` / `debug` / `trace` |
-| `--workers`   | —           | **[已废弃]** 将被忽略，CoPaw 始终使用 1 个 worker             |
+| `--workers`   | —           | **[已废弃]** 将被忽略，Talora 始终使用 1 个 worker             |
 
-> **说明：** `--workers` 选项因稳定性原因已废弃。CoPaw 被设计为单 worker 进程运行。多 worker 模式会导致内存状态管理和 WebSocket 连接出现问题。此选项将在未来版本中移除。
+> **说明：** `--workers` 选项因稳定性原因已废弃。Talora 被设计为单 worker 进程运行。多 worker 模式会导致内存状态管理和 WebSocket 连接出现问题。此选项将在未来版本中移除。
 
 ### 控制台
 
 `copaw app` 启动后，在浏览器打开 `http://127.0.0.1:8088/` 即可进入 **控制台** ——
 一个用于对话、频道、定时任务、技能、模型等的 Web 管理界面。详见 [控制台](./console)。
 
-若未构建前端，根路径会返回类似 `{"message": "CoPaw Web Console is not available."}` 的提示信息（实际文案可能调整），API 仍可正常使用。
+若未构建前端，根路径会返回类似 `{"message": "Talora Web Console is not available."}` 的提示信息（实际文案可能调整），API 仍可正常使用。
 
 **构建方式：** 在项目 `console/` 目录下执行 `npm ci && npm run build`，
 然后将构建产物复制到包目录：
@@ -85,7 +85,7 @@ copaw daemon logs -n 50
 
 ## 模型与环境变量
 
-使用 CoPaw 前至少需要配置一个 LLM 提供商。环境变量为内置工具（如网页搜索）提供凭据。
+使用 Talora 前至少需要配置一个 LLM 提供商。环境变量为内置工具（如网页搜索）提供凭据。
 
 ### copaw models
 
@@ -112,7 +112,7 @@ copaw models set-llm                 # 只切换模型
 
 #### 本地模型
 
-CoPaw 也支持通过 llama.cpp 或 MLX 在本地运行模型——无需 API Key。
+Talora 也支持通过 llama.cpp 或 MLX 在本地运行模型——无需 API Key。
 先安装后端：`pip install 'copaw[llamacpp]'` 或 `pip install 'copaw[mlx]'`。
 
 ```bash
@@ -137,7 +137,7 @@ copaw models remove-local <model_id> --yes   # 跳过确认
 
 #### Ollama 模型
 
-CoPaw 集成 Ollama 以在本地运行模型。模型从 Ollama 守护进程动态加载——请先从 [ollama.com](https://ollama.com) 安装 Ollama。
+Talora 集成 Ollama 以在本地运行模型。模型从 Ollama 守护进程动态加载——请先从 [ollama.com](https://ollama.com) 安装 Ollama。
 
 安装 Ollama SDK：`pip install 'copaw[ollama]'`（或使用 `--extras ollama` 重新运行安装脚本）
 
@@ -159,11 +159,11 @@ copaw models set-llm          # 切换到其他 Ollama 模型
 
 **与本地模型的主要区别：**
 
-- 模型来自 Ollama 守护进程（不由 CoPaw 下载）
+- 模型来自 Ollama 守护进程（不由 Talora 下载）
 - 使用 `ollama` 命令管理模型（非 `copaw models`）
-- 通过 Ollama CLI 或 CoPaw 添加/删除模型时，模型列表自动更新
+- 通过 Ollama CLI 或 Talora 添加/删除模型时，模型列表自动更新
 
-> **注意：** API Key 的有效性需要用户自行保证，CoPaw 不会验证。
+> **注意：** API Key 的有效性需要用户自行保证，Talora 不会验证。
 > 详见 [配置 — 模型提供商](./config#模型提供商)。
 
 ### copaw env
@@ -183,14 +183,14 @@ copaw env set GITHUB_TOKEN "ghp_xxxxxxxx"
 copaw env delete TAVILY_API_KEY
 ```
 
-> **注意：** CoPaw 只负责存储和加载，值的有效性需要用户自行保证。
+> **注意：** Talora 只负责存储和加载，值的有效性需要用户自行保证。
 > 详见 [配置 — 环境变量](./config#环境变量)。
 
 ---
 
 ## 频道
 
-将 CoPaw 连接到消息平台。
+将 Talora 连接到消息平台。
 
 ### copaw channels
 
@@ -390,7 +390,7 @@ copaw agents chat \
 
 ## 定时任务
 
-让 CoPaw 按时间自动执行任务——「每天 9 点发消息」「每 2 小时提问并转发回复」。
+让 Talora 按时间自动执行任务——「每天 9 点发消息」「每 2 小时提问并转发回复」。
 **需要 `copaw app` 正在运行。**
 
 ### copaw cron
@@ -415,7 +415,7 @@ copaw agents chat \
 任务分两种类型：
 
 - **text** —— 到点向频道发一段固定文案。
-- **agent** —— 到点向 CoPaw 提问，把回复发到频道。
+- **agent** —— 到点向 Talora 提问，把回复发到频道。
 
 ```bash
 # text：每天 9 点发「早上好！」到钉钉（默认智能体）
@@ -505,7 +505,7 @@ copaw chats delete <chat_id>
 
 ## 技能
 
-扩展 CoPaw 的能力（PDF 阅读、网页搜索等）。
+扩展 Talora 的能力（PDF 阅读、网页搜索等）。
 
 ### copaw skills
 
@@ -608,7 +608,7 @@ copaw --host 0.0.0.0 --port 9090 cron list
 
 ## 相关页面
 
-- [项目介绍](./intro) —— CoPaw 可以做什么
+- [项目介绍](./intro) —— Talora 可以做什么
 - [控制台](./console) —— Web 管理界面
 - [频道配置](./channels) —— 钉钉、飞书、iMessage、Discord、QQ 详细步骤
 - [心跳](./heartbeat) —— 定时自检/摘要

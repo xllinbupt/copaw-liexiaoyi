@@ -134,7 +134,7 @@ class LazyGroup(click.Group):
         "agent": ("copaw.cli.agents_cmd", "agents_group", ".agents_cmd"),
     },
 )
-@click.version_option(version=__version__, prog_name="CoPaw")
+@click.version_option(version=__version__, prog_name="Talora")
 @click.option("--host", default=None, help="API Host")
 @click.option(
     "--port",
@@ -144,7 +144,7 @@ class LazyGroup(click.Group):
 )
 @click.pass_context
 def cli(ctx: click.Context, host: str | None, port: int | None) -> None:
-    """CoPaw CLI."""
+    """Talora CLI."""
     # default from last run if not provided
     last = read_last_api()
     if host is None or port is None:

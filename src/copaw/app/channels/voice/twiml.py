@@ -9,7 +9,7 @@ def build_conversation_relay_twiml(
     ws_url: str,
     *,
     welcome_greeting: str = (
-        "Hi! This is LieXiaoXia, your recruiting assistant. How can I help?"
+        "Hi! This is Talora, your recruiting assistant. How can I help?"
     ),
     tts_provider: str = "google",
     tts_voice: str = "en-US-Journey-D",
@@ -40,7 +40,7 @@ def build_conversation_relay_twiml(
 
 
 def build_busy_twiml(
-    message: str = "LieXiaoXia is on another call. Please try again later.",
+    message: str = "Talora is on another call. Please try again later.",
 ) -> str:
     """Build TwiML that speaks a busy message.
 

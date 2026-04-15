@@ -287,13 +287,13 @@ async def upsert_job_external_link(
     capabilities: list[str] | None = None,
     credential_ref: str | None = None,
 ) -> ExternalJobLinkView:
-    """Create or update the mapping between a CoPaw job and an external job."""
+    """Create or update the mapping between a Talora job and an external job."""
     normalized_job_id = _trimmed(job_id)
     normalized_platform = _trimmed(platform)
     normalized_external_job_id = _trimmed(external_job_id)
     normalized_external_job_title = _trimmed(external_job_title)
     if not normalized_job_id:
-        raise ValueError("缺少 CoPaw 职位 ID")
+        raise ValueError("缺少 Talora 职位 ID")
     if not normalized_platform:
         raise ValueError("缺少平台标识")
     if not normalized_external_job_id:
@@ -356,7 +356,7 @@ async def upsert_job_external_link(
             and (target_link is None or link.id != target_link.id)
         ):
             raise ExternalJobLinkConflictError(
-                "当前 CoPaw 职位已绑定其他企业版职位；如需更换，请先解除旧绑定",
+                "当前 Talora 职位已绑定其他企业版职位；如需更换，请先解除旧绑定",
             )
 
     if target_link is None:
@@ -398,7 +398,7 @@ async def upsert_job_external_link(
 
 
 async def delete_job_external_links(job_id: str) -> int:
-    """Delete all external job links associated with a CoPaw job."""
+    """Delete all external job links associated with a Talora job."""
     links_repo = JsonExternalJobLinkRepository(
         get_recruitment_external_job_links_path(),
     )
@@ -414,7 +414,7 @@ async def unlink_job_external_link(
     normalized_job_id = _trimmed(job_id)
     normalized_link_id = _trimmed(link_id)
     if not normalized_job_id:
-        raise ValueError("缺少 CoPaw 职位 ID")
+        raise ValueError("缺少 Talora 职位 ID")
     if not normalized_link_id:
         raise ValueError("缺少外部关联 ID")
 

@@ -2,6 +2,7 @@
 import json
 import logging
 import platform
+import re
 from datetime import datetime, timezone
 from typing import List, Optional, Union
 from urllib.parse import urlparse
@@ -132,8 +133,44 @@ def _resolve_content_url(url: str) -> str:
     return _abspath_from_url(url)
 
 
+def _first_non_empty_string(*values: str) -> str:
+    for value in values:
+        if isinstance(value, str):
+            trimmed = value.strip()
+            if trimmed:
+                return trimmed
+    return ""
+
+
 def _is_likely_resume_token(value: str) -> bool:
     return bool(re.fullmatch(r"[A-Za-z0-9]{16,}", value.strip()))
+
+
+def _extract_resume_token(value: str) -> str:
+    if not isinstance(value, str):
+        return ""
+    trimmed = value.strip()
+    if not trimmed:
+        return ""
+
+    matched = re.search(r"[?&]resIdEncode=([A-Za-z0-9]+)", trimmed, re.IGNORECASE)
+    if matched:
+        return matched.group(1)
+    if trimmed.startswith("resIdEncode="):
+        return trimmed[len("resIdEncode=") :].strip()
+    if _is_likely_resume_token(trimmed):
+        return trimmed
+    return ""
+
+
+def _build_liepin_resume_detail_url(value: str) -> str:
+    token = _extract_resume_token(value)
+    if not token:
+        return ""
+    return (
+        "https://lpt.liepin.com/resume/detail"
+        f"?resIdEncode={token}&sfrom=R_SEARCH_CONDITION"
+    )
 
 
 def _normalize_resume_detail_url_by_source(
@@ -154,7 +191,7 @@ def _normalize_resume_detail_url_by_source(
         return _resolve_content_url(trimmed)
 
     if "resIdEncode=" in trimmed or _is_likely_resume_token(trimmed):
-        return ""
+        return _build_liepin_resume_detail_url(trimmed)
 
     return _resolve_content_url(trimmed)
 
@@ -165,26 +202,44 @@ def _normalize_resume_card_payload(block: dict) -> dict:
     source_platform = str(
         payload.get("source_platform") or payload.get("source") or "",
     ).strip().lower()
+    payload["resIdEncode"] = _first_non_empty_string(
+        payload.get("resIdEncode"),
+        payload.get("res_id_encode"),
+        payload.get("resumeIdEncode"),
+        payload.get("resume_id_encode"),
+    )
+    payload["expect_location"] = _first_non_empty_string(
+        payload.get("expect_location"),
+        payload.get("expectLocation"),
+        payload.get("expectDqName"),
+    )
+    payload["expected_salary"] = _first_non_empty_string(
+        payload.get("expected_salary"),
+        payload.get("expect_salary"),
+        payload.get("expectSalaryShowName"),
+        payload.get("salary_expect"),
+    )
+    payload["match_reason"] = _first_non_empty_string(
+        payload.get("match_reason"),
+        payload.get("match_note"),
+        payload.get("summary"),
+    )
 
     detail_token = (
-        (
-            payload.get("resIdEncode")
-            or payload.get("resumeIdEncode")
-            or (
-                payload.get("resume_detail_url")
-                if isinstance(payload.get("resume_detail_url"), str)
-                and _is_likely_resume_token(payload.get("resume_detail_url"))
-                else None
-            )
-            or (
-                payload.get("detail_url")
-                if isinstance(payload.get("detail_url"), str)
-                and _is_likely_resume_token(payload.get("detail_url"))
-                else None
-            )
+        payload.get("resIdEncode")
+        or payload.get("resumeIdEncode")
+        or (
+            payload.get("resume_detail_url")
+            if isinstance(payload.get("resume_detail_url"), str)
+            and _is_likely_resume_token(payload.get("resume_detail_url"))
+            else None
         )
-        if False
-        else None
+        or (
+            payload.get("detail_url")
+            if isinstance(payload.get("detail_url"), str)
+            and _is_likely_resume_token(payload.get("detail_url"))
+            else None
+        )
     )
 
     for key in (
@@ -209,6 +264,8 @@ def _normalize_resume_card_payload(block: dict) -> dict:
                 url_pc,
                 source_platform,
             )
+    if not payload.get("resume_detail_url") and detail_token:
+        payload["resume_detail_url"] = _build_liepin_resume_detail_url(detail_token)
     if not payload.get("detail_url"):
         detail_url = payload.get("resume_detail_url") or payload.get("urlPc")
         if isinstance(detail_url, str) and detail_url.strip():
@@ -216,9 +273,6 @@ def _normalize_resume_card_payload(block: dict) -> dict:
                 detail_url,
                 source_platform,
             )
-
-    if detail_token and not payload.get("resume_detail_url"):
-        payload["resume_detail_url"] = ""
     if payload.get("resume_detail_url") and not payload.get("detail_url"):
         payload["detail_url"] = payload["resume_detail_url"]
 

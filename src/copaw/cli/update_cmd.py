@@ -48,7 +48,7 @@ def _subprocess_text_kwargs() -> dict[str, Any]:
 
 @dataclass(frozen=True)
 class InstallInfo:
-    """Information about the current CoPaw installation."""
+    """Information about the current Talora installation."""
 
     package_dir: str
     python_executable: str
@@ -61,7 +61,7 @@ class InstallInfo:
 
 @dataclass(frozen=True)
 class RunningServiceInfo:
-    """Detected CoPaw service endpoint state."""
+    """Detected Talora service endpoint state."""
 
     is_running: bool
     base_url: str | None = None
@@ -91,7 +91,7 @@ def _is_newer_version(latest: str, current: str) -> bool | None:
 
 
 def _fetch_latest_version() -> str:
-    """Fetch the latest published CoPaw version from PyPI."""
+    """Fetch the latest published Talora version from PyPI."""
     try:
         resp = httpx.get(
             _PYPI_JSON_URL,
@@ -102,17 +102,17 @@ def _fetch_latest_version() -> str:
         data = resp.json()
     except httpx.HTTPError as exc:
         raise click.ClickException(
-            f"Failed to fetch the latest CoPaw version from PyPI: {exc}",
+            f"Failed to fetch the latest Talora version from PyPI: {exc}",
         ) from exc
     except json.JSONDecodeError as exc:
         raise click.ClickException(
             "Received an invalid response from PyPI when checking for the "
-            f"latest CoPaw version: {exc}",
+            f"latest Talora version: {exc}",
         ) from exc
     version = str(data.get("info", {}).get("version", "")).strip()
     if not version:
         raise click.ClickException(
-            "Unable to determine the latest CoPaw version.",
+            "Unable to determine the latest Talora version.",
         )
     return version
 
@@ -169,7 +169,7 @@ def _detect_installation() -> InstallInfo:
 
 
 def _probe_service(base_url: str) -> RunningServiceInfo:
-    """Probe a possible running CoPaw HTTP service."""
+    """Probe a possible running Talora HTTP service."""
     try:
         resp = httpx.get(
             f"{base_url.rstrip('/')}/api/version",
@@ -191,7 +191,7 @@ def _probe_service(base_url: str) -> RunningServiceInfo:
 
 
 def _process_candidate_ports() -> list[int]:
-    """Infer candidate local CoPaw service ports from running processes."""
+    """Infer candidate local Talora service ports from running processes."""
     ports: list[int] = []
     for _pid, command in _process_table():
         if not _is_copaw_service_command(command):
@@ -227,7 +227,7 @@ def _detect_running_service(
     host: str | None,
     port: int | None,
 ) -> RunningServiceInfo:
-    """Detect whether a CoPaw HTTP service is currently running."""
+    """Detect whether a Talora HTTP service is currently running."""
     candidates: list[str] = []
     seen: set[str] = set()
     preferred_hosts: list[str] = []
@@ -268,9 +268,9 @@ def _detect_running_service(
 def _running_service_display(running: RunningServiceInfo) -> str:
     """Build a concise running-service description for user prompts."""
     if not running.base_url:
-        return "a running CoPaw service"
+        return "a running Talora service"
     version_suffix = f" (version {running.version})" if running.version else ""
-    return f"CoPaw service at {running.base_url}{version_suffix}"
+    return f"Talora service at {running.base_url}{version_suffix}"
 
 
 def _confirm_force_shutdown(running: RunningServiceInfo) -> bool:
@@ -290,7 +290,7 @@ def _confirm_force_shutdown(running: RunningServiceInfo) -> bool:
     )
     click.secho(
         "Running `copaw shutdown` will forcibly terminate the current "
-        "CoPaw backend/frontend processes.",
+        "Talora backend/frontend processes.",
         fg="red",
         bold=True,
     )
@@ -340,7 +340,7 @@ def _run_shutdown_for_update(
 
     if result.returncode != 0:
         raise click.ClickException(
-            "`copaw shutdown` failed. Please stop the running CoPaw "
+            "`copaw shutdown` failed. Please stop the running Talora "
             "service manually before running `copaw update`.",
         )
 
@@ -547,7 +547,7 @@ def run_update_worker(plan_path: str | Path) -> int:
 
     click.echo("")
     click.echo(
-        "[copaw] Updating CoPaw "
+        "[copaw] Updating Talora "
         f"{plan['current_version']} -> {plan['latest_version']}...",
     )
     click.echo(f"[copaw] Using installer: {plan['installer_label']}")
@@ -576,7 +576,7 @@ def run_update_worker(plan_path: str | Path) -> int:
     if return_code == 0:
         click.echo("[copaw] Update completed successfully.")
         click.echo(
-            "[copaw] Please restart any running CoPaw service "
+            "[copaw] Please restart any running Talora service "
             "to use the new version.",
         )
     else:
@@ -636,7 +636,7 @@ def _confirm_source_override(info: InstallInfo, yes: bool) -> bool:
 )
 @click.pass_context
 def update_cmd(ctx: click.Context, yes: bool) -> None:
-    """Upgrade CoPaw in the current Python environment."""
+    """Upgrade Talora in the current Python environment."""
     info = _detect_installation()
     latest_version = _fetch_latest_version()
 
@@ -644,7 +644,7 @@ def update_cmd(ctx: click.Context, yes: bool) -> None:
 
     version_check = _is_newer_version(latest_version, __version__)
     if version_check is False:
-        click.echo("CoPaw is already up to date.")
+        click.echo("Talora is already up to date.")
         return
 
     if not _confirm_source_override(info, yes):
@@ -695,7 +695,7 @@ def update_cmd(ctx: click.Context, yes: bool) -> None:
             )
 
     if not yes and not click.confirm(
-        f"Update CoPaw to {latest_version} in the current environment?",
+        f"Update Talora to {latest_version} in the current environment?",
         default=True,
     ):
         click.echo("Cancelled.")
@@ -712,7 +712,7 @@ def update_cmd(ctx: click.Context, yes: bool) -> None:
     }
     plan_path = _write_worker_plan(plan)
     click.echo("")
-    click.echo("Starting CoPaw update...")
+    click.echo("Starting Talora update...")
 
     if sys.platform == "win32":
         _run_update_worker_detached(plan_path)

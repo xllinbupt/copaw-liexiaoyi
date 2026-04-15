@@ -1,6 +1,6 @@
 # Multi-Agent
 
-CoPaw supports **multi-agent**, allowing you to run multiple independent AI agents in a single CoPaw instance.
+Talora supports **multi-agent**, allowing you to run multiple independent AI agents in a single Talora instance.
 
 > This feature was introduced in **v0.1.0**.
 
@@ -15,7 +15,7 @@ CoPaw supports **multi-agent**, allowing you to run multiple independent AI agen
 
 ### What is Multi-Agent?
 
-Simply put, **multi-agent** lets you run multiple "personas" in one CoPaw, where each persona:
+Simply put, **multi-agent** lets you run multiple "personas" in one Talora, where each persona:
 
 - Has its own **personality and specialization** (configured via different persona files)
 - Remembers **its own conversations** (no cross-talk)
@@ -40,7 +40,7 @@ Each agent focuses on its domain without interference.
 
 ### Use Case 2: Platform Separation
 
-You might use CoPaw across multiple platforms:
+You might use Talora across multiple platforms:
 
 - **DingTalk** - work-related conversations
 - **Discord** - community discussions
@@ -65,7 +65,7 @@ You might need:
 
 #### 1. View and Switch Agents
 
-After starting CoPaw, you'll see the **Agent Selector** in the **top-left corner** of the console:
+After starting Talora, you'll see the **Agent Selector** in the **top-left corner** of the console:
 
 ```
 ┌───────────────────────────────────┐
@@ -228,7 +228,7 @@ Not recommended. The `default` agent is the system's default fallback; deleting 
 
 ## Upgrading from Single-Agent
 
-If you previously used CoPaw **v0.0.x**, upgrading to **v0.1.0** will **automatically migrate**:
+If you previously used Talora **v0.0.x**, upgrading to **v0.1.0** will **automatically migrate**:
 
 1. **Automatic Migration on First Start**
 
@@ -237,8 +237,8 @@ If you previously used CoPaw **v0.0.x**, upgrading to **v0.1.0** will **automati
 
 2. **Verify Migration**
 
-   - After starting CoPaw, check the agent list in console
-   - You should see an agent named "LieXiaoYi"
+   - After starting Talora, check the agent list in console
+   - You should see an agent named "Talora"
    - Your old conversations and configs should still be there
 
 3. **Backup Recommendation**

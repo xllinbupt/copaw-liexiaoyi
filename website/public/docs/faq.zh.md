@@ -4,13 +4,13 @@
 
 ---
 
-### CoPaw 与 OpenClaw 的功能对比
+### Talora 与 OpenClaw 的功能对比
 
 请查看 [对比](/docs/comparison) 页面了解详细的功能对比。
 
-### CoPaw如何安装
+### Talora如何安装
 
-CoPaw 支持多种安装方式，详情请见文档 [快速开始](https://copaw.agentscope.io/docs/quickstart)：
+Talora 支持多种安装方式，详情请见文档 [快速开始](https://copaw.agentscope.io/docs/quickstart)：
 
 1. 一键安装，帮你搞定 Python 环境
 
@@ -51,9 +51,9 @@ docker run -p 127.0.0.1:8088:8088 \
 >    脚本已完成文件安装，由于 **受限语言模式** ，脚本无法自动写入环境变量，此时只需手动配置：
 >
 >    - **找到安装目录**：
->      - 检查 `uv` 是否可用：在 CMD 中输入 `uv --version` ，如果显示版本号，则**只需配置 CoPaw 路径**；如果提示 `'uv' 不是内部或外部命令，也不是可运行的程序或批处理文件。`，则需同时配置两者。
+>      - 检查 `uv` 是否可用：在 CMD 中输入 `uv --version` ，如果显示版本号，则**只需配置 Talora 路径**；如果提示 `'uv' 不是内部或外部命令，也不是可运行的程序或批处理文件。`，则需同时配置两者。
 >      - uv路径（任选其一，取决于安装位置，若`uv`不可用则填）：通常在`%USERPROFILE%\.local\bin`、`%USERPROFILE%\AppData\Local\uv`或 Python 安装目录下的 `Scripts` 文件夹
->      - CoPaw路径：通常在 `%USERPROFILE%\.copaw\bin` 。
+>      - Talora路径：通常在 `%USERPROFILE%\.copaw\bin` 。
 >    - **手动添加到系统的 Path 环境变量**：
 >      - 按 `Win + R`，输入 `sysdm.cpl` 并回车，打开“系统属性”。
 >      - 点击 “高级” -> “环境变量”。
@@ -69,9 +69,9 @@ docker run -p 127.0.0.1:8088:8088 \
 > - **重新运行**：打开新终端，再次执行安装脚本以完成 `CoPaw` 安装。
 > - **配置`CoPaw`环境变量**：将 `%USERPROFILE%\.copaw\bin` 添加到系统的 `Path` 变量中。
 
-### CoPaw如何更新
+### Talora如何更新
 
-要更新 CoPaw 到最新版本，可根据你的安装方式选择对应方法：
+要更新 Talora 到最新版本，可根据你的安装方式选择对应方法：
 
 1. 如果你使用的是一键安装脚本，直接重新运行安装命令即可自动升级。
 
@@ -100,13 +100,13 @@ docker run -p 127.0.0.1:8088:8088 \
 ```
 
 5. 如果你使用的是 Windows 桌面版（exe），目前需要卸载后重新安装：
-   - 在电脑中卸载 CoPaw
+   - 在电脑中卸载 Talora
    - 下载最新版本：https://github.com/agentscope-ai/CoPaw/releases
    - 重新安装
 
 升级后重启服务 copaw app。
 
-### CoPaw服务如何启动及初始化
+### Talora服务如何启动及初始化
 
 推荐使用默认配置快速初始化：
 
@@ -124,13 +124,13 @@ copaw app
 
 ### Windows 端口 8088 冲突问题
 
-在 Windows 上，Hyper-V 和 WSL2 可能会保留某些端口范围，这可能与 CoPaw 的默认端口 **8088** 冲突。此问题影响所有安装方式（pip 安装、脚本安装、Docker、桌面应用）。
+在 Windows 上，Hyper-V 和 WSL2 可能会保留某些端口范围，这可能与 Talora 的默认端口 **8088** 冲突。此问题影响所有安装方式（pip 安装、脚本安装、Docker、桌面应用）。
 
 **症状：**
 
 - 报错：`Address already in use` 或 `OSError: [Errno 98] Address already in use`
 - 报错：`An attempt was made to access a socket in a way forbidden by its access permissions`
-- CoPaw 无法启动，或浏览器无法访问 `http://127.0.0.1:8088/`
+- Talora 无法启动，或浏览器无法访问 `http://127.0.0.1:8088/`
 
 **检查端口 8088 是否被 Windows 保留：**
 
@@ -184,12 +184,12 @@ netsh int ipv4 set dynamicport tcp start=49152 num=16384
 
 ### 开源地址
 
-CoPaw 已开源，官方仓库地址：
+Talora 已开源，官方仓库地址：
 `https://github.com/agentscope-ai/CoPaw`
 
 ### 最新版本升级内容如何查看
 
-具体版本变更可在官网 [更新日志](https://copaw.agentscope.io/release-notes/?lang=zh) 或 CoPaw GitHub 仓库 [Releases](https://github.com/agentscope-ai/CoPaw/releases) 中查看。
+具体版本变更可在官网 [更新日志](https://copaw.agentscope.io/release-notes/?lang=zh) 或 Talora GitHub 仓库 [Releases](https://github.com/agentscope-ai/CoPaw/releases) 中查看。
 
 ### 如何配置模型
 
@@ -204,11 +204,11 @@ CoPaw 已开源，官方仓库地址：
 
 命令行也可使用 `copaw models` 系列命令完成配置、下载和切换，详情请见文档 [CLI → 模型与环境变量 → copaw models](https://copaw.agentscope.io/docs/cli#copaw-models)。
 
-### 使用 Ollama / LM Studio 部署的模型时，为什么 CoPaw 无法完成多轮交互、复杂工具调用，或记不住之前的指令？
+### 使用 Ollama / LM Studio 部署的模型时，为什么 Talora 无法完成多轮交互、复杂工具调用，或记不住之前的指令？
 
-这类问题通常不是 CoPaw 本身异常，而是**模型上下文长度配置过小**导致的。
+这类问题通常不是 Talora 本身异常，而是**模型上下文长度配置过小**导致的。
 
-当你使用 Ollama 或 LM Studio 部署本地模型时，如果模型的 `context length` 设置太低，CoPaw 在以下场景中就可能表现异常：
+当你使用 Ollama 或 LM Studio 部署本地模型时，如果模型的 `context length` 设置太低，Talora 在以下场景中就可能表现异常：
 
 - 无法稳定完成多轮对话
 - 执行复杂工具调用时中途丢失上下文
@@ -217,12 +217,12 @@ CoPaw 已开源，官方仓库地址：
 
 **解决方法：**
 
-- 运行 CoPaw 前，请将模型的 `context length` 设置为**至少 32K**
+- 运行 Talora 前，请将模型的 `context length` 设置为**至少 32K**
 - 如果任务较复杂、工具调用较多或对话轮次较长，实际可能需要设置到**高于 32K**
 
-> ⚠️ **运行 CoPaw 前必须将上下文长度设为 32K 以上**
+> ⚠️ **运行 Talora 前必须将上下文长度设为 32K 以上**
 >
-> 对于 Ollama 和 LM Studio 部署的本地模型，如果要让 CoPaw 正常完成多轮交互、复杂工具调用和长上下文任务，通常必须提供 **32K 或更高** 的上下文长度；在更复杂的场景下，可能还需要进一步提高。
+> 对于 Ollama 和 LM Studio 部署的本地模型，如果要让 Talora 正常完成多轮交互、复杂工具调用和长上下文任务，通常必须提供 **32K 或更高** 的上下文长度；在更复杂的场景下，可能还需要进一步提高。
 >
 > 注意，更大的上下文窗口会显著增加显存 / 内存占用和计算开销，请确认你的本地机器能够支持。
 
@@ -240,11 +240,11 @@ CoPaw 已开源，官方仓库地址：
 
 ![cron](https://img.alicdn.com/imgextra/i2/O1CN018UMwzM1stRomiHjJt_!!6000000005824-2-tps-3822-2064.png)
 
-最方便的定时任务创建方式是，在你想要获取定时任务返回结果的频道，与CoPaw对话，让CoPaw帮你创建一个定时任务。例如，可以直接与CoPaw对话：“帮我创建一个定时任务，每隔五分钟提醒我喝水。”之后可以在控制台中看到状态为已启用的定时任务。
+最方便的定时任务创建方式是，在你想要获取定时任务返回结果的频道，与Talora对话，让Talora帮你创建一个定时任务。例如，可以直接与Talora对话：“帮我创建一个定时任务，每隔五分钟提醒我喝水。”之后可以在控制台中看到状态为已启用的定时任务。
 
 如果定时任务没有正常启动，可以按照以下几个步骤排查：
 
-1. 首先确认 CoPaw 服务是在正常运行中的。
+1. 首先确认 Talora 服务是在正常运行中的。
 
 2. 定时任务的 **启用状态** 是否为 **已启动**。
 
@@ -266,7 +266,7 @@ CoPaw 已开源，官方仓库地址：
 
    ![cron](https://img.alicdn.com/imgextra/i3/O1CN01BtYIqK1Xb1xdYmcai_!!6000000002941-2-tps-3242-892.png)
 
-6. 排查结束后，如果想确认一下定时任务是否创建成功，且能成功触发，可以点击 **立即执行**，若成功创建，则可在对应频道收到回复。或者也可以直接与 CoPaw 对话：“帮我触发一下刚刚创建的提醒喝水定时任务”。
+6. 排查结束后，如果想确认一下定时任务是否创建成功，且能成功触发，可以点击 **立即执行**，若成功创建，则可在对应频道收到回复。或者也可以直接与 Talora 对话：“帮我触发一下刚刚创建的提醒喝水定时任务”。
 
    ![exec](https://img.alicdn.com/imgextra/i3/O1CN01a1IIsY1PhQZ5YXlCe_!!6000000001872-2-tps-3232-890.png)
 
@@ -290,7 +290,7 @@ Error: Unknown agent error: AuthenticationError: Error code: 401 - {'error': {'m
 
 原因2：配置了 key 但仍报错，通常是配置项填写错误（如 `base_url`、`api key` 或模型名）。
 
-CoPaw 支持百炼 Coding Plan 获取的 API key。如果仍报错，请重点检查：
+Talora 支持百炼 Coding Plan 获取的 API key。如果仍报错，请重点检查：
 
 - `base_url` 是否填写正确；
 - API key 是否粘贴完整（无多余空格）；
@@ -303,10 +303,10 @@ https://help.aliyun.com/zh/model-studio/coding-plan-quickstart#2531c37fd64f9
 
 ### 报错如何获取修复帮助
 
-为了加快修复与排查，共建良好社区生态，建议遇到报错时，首选在 CoPaw 的 GitHub 仓库中提 [issue](https://github.com/agentscope-ai/CoPaw/issues)，请附上完整报错信息，并上传错误详情文件。
+为了加快修复与排查，共建良好社区生态，建议遇到报错时，首选在 Talora 的 GitHub 仓库中提 [issue](https://github.com/agentscope-ai/CoPaw/issues)，请附上完整报错信息，并上传错误详情文件。
 
 控制台报错里通常会给出错误文件路径，例如在以下报错中：
 
 Error: Unknown agent error: AuthenticationError: Error code: 401 - {'error': {'message': "You didn't provide an API key. You need to provide your API key in an Authorization header using Bearer auth (i.e. Authorization: Bearer YOUR_KEY). ", 'type': 'invalid_request_error', 'param': None, 'code': None}, 'request_id': 'xxx'}(Details: /var/folders/.../copaw_query_error_qzbx1mv1.json)
 
-请将后面的`/var/folders/.../copaw_query_error_qzbx1mv1.json`文件一并上传，同时提供你当前的模型提供商、模型名和 CoPaw 的具体版本。
+请将后面的`/var/folders/.../copaw_query_error_qzbx1mv1.json`文件一并上传，同时提供你当前的模型提供商、模型名和 Talora 的具体版本。
