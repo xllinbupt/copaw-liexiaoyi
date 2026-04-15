@@ -92,7 +92,7 @@ def test_main_posts_stringified_ejob_info_and_returns_ids(monkeypatch, capsys) -
     monkeypatch.setattr(
         module,
         "resolve_liexiaoxia_token",
-        lambda explicit_token, token_list_url: "shared-token",
+        lambda explicit_token: "shared-token",
     )
 
     def _fake_post(url, *, payload, token):

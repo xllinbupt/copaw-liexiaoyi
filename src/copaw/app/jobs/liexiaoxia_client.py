@@ -146,11 +146,12 @@ def resolve_liexiaoxia_token(
     token = _trimmed(os.getenv(LIEXIAOXIA_TOKEN_ENV_VAR, ""))
     if token:
         return token
-    if not token_list_url.strip():
-        raise LiexiaoxiaTokenError(
-            "未提供 Liexiaoxia token，且 token 列表地址为空。"
-        )
-    return fetch_liexiaoxia_token(token_list_url.strip())
+    token_hint = token_list_url.strip() or DEFAULT_LIEXIAOXIA_TOKEN_LIST_URL
+    raise LiexiaoxiaTokenError(
+        "未提供 Liexiaoxia token，请通过 --token 或环境变量 "
+        f"{LIEXIAOXIA_TOKEN_ENV_VAR} 提供；"
+        f"如需获取，请前往 {token_hint}。"
+    )
 
 
 def post_liexiaoxia_json(

@@ -330,7 +330,6 @@ _bootstrap_import_path()
 os.environ.setdefault("COPAW_LOG_LEVEL", "error")
 
 from copaw.app.jobs.liexiaoxia_client import (  # noqa: E402
-    DEFAULT_LIEXIAOXIA_TOKEN_LIST_URL,
     LiexiaoxiaTokenError,
     post_liexiaoxia_json,
     resolve_liexiaoxia_token,
@@ -343,12 +342,7 @@ def main() -> int:
     parser.add_argument(
         "--token",
         default="",
-        help="Explicit Liexiaoxia token. Falls back to LIEXIAOXIA_TOKEN or token list URL.",
-    )
-    parser.add_argument(
-        "--token-list-url",
-        default=DEFAULT_LIEXIAOXIA_TOKEN_LIST_URL,
-        help="Token list page used when no explicit token or env token is available.",
+        help="Explicit Liexiaoxia token. Falls back to LIEXIAOXIA_TOKEN.",
     )
     parser.add_argument(
         "--ejob-info-json",
@@ -378,10 +372,7 @@ def main() -> int:
         return 6
 
     try:
-        token = resolve_liexiaoxia_token(
-            args.token,
-            token_list_url=args.token_list_url,
-        )
+        token = resolve_liexiaoxia_token(args.token)
     except LiexiaoxiaTokenError as exc:
         print(
             json.dumps(

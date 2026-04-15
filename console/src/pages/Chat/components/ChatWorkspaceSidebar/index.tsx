@@ -498,11 +498,9 @@ const ChatWorkspaceSidebar: React.FC<ChatWorkspaceSidebarProps> = ({
                     }}
                   />
                 ))}
-                {filteredUnassignedChats.length === 0 ? (
-                  <div className={styles.sectionHint}>
-                    {t("chat.unassignedSectionHint")}
-                  </div>
-                ) : null}
+                <div className={styles.sectionHint}>
+                  {t("chat.unassignedSectionHint")}
+                </div>
               </div>
             </section>
 
