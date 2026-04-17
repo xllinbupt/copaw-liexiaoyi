@@ -44,15 +44,21 @@ export type ResumeCardPayload = {
   title?: string;
   companyName?: string;
   city?: string;
+  currentCity?: string;
+  current_city?: string;
   location?: string;
   dqName?: string;
   expectDqName?: string;
+  expectCity?: string;
+  expect_city?: string;
   years_experience?: number | string;
   work_years?: number | string;
   workYears?: number | string;
   education?: string;
   expect_title?: string;
   expectTitle?: string;
+  expectJobtitle?: string;
+  expect_jobtitle?: string;
   expect_location?: string;
   expectLocation?: string;
   eduLevelName?: string;
@@ -63,6 +69,7 @@ export type ResumeCardPayload = {
   salaryMonths?: number | string;
   expected_salary?: string;
   expect_salary?: string;
+  expectSalary?: string;
   salary_expect?: string;
   expectSalaryShowName?: string;
   updated_at?: string;
@@ -103,6 +110,20 @@ export type ResumeCardPayload = {
     endTime?: string;
     summary?: string;
   }>;
+  recentWork?: Array<{
+    company?: string;
+    company_name?: string;
+    companyName?: string;
+    title?: string;
+    title_name?: string;
+    titleName?: string;
+    period?: string;
+    start_time?: string;
+    end_time?: string;
+    startTime?: string;
+    endTime?: string;
+    summary?: string;
+  }>;
   recentWorkList?: Array<{
     companyName?: string | null;
     titleName?: string | null;
@@ -128,9 +149,11 @@ export type ResumeCardPayload = {
     majorName?: string | null;
     degree?: string | null;
     eduLevelName?: string | null;
+    level?: string | null;
     enrollment_type?: string | null;
     enrollmentType?: string | null;
     unifiedEnrollmentName?: string | null;
+    type?: string | null;
     period?: string | null;
     enroll_time?: string | null;
     enrollTime?: string | null;
@@ -173,7 +196,9 @@ export type ResumeCardPayload = {
   selfAssessment?: string;
   additional?: string;
   match_reason?: string;
+  matchReason?: string;
   match_note?: string;
+  brief?: string;
   summary?: string;
   source?: string;
   resume_detail_url?: string;
@@ -529,10 +554,12 @@ function normalizeEducationSummaryObject(
     education.enrollment_type,
     education.enrollmentType,
     education.unifiedEnrollmentName,
+    education.type,
   );
   const degreeBase = firstNonEmptyString(
     education.degree,
     education.eduLevelName,
+    education.level,
   );
   const degree = [degreeBase, enrollmentType ? `(${enrollmentType})` : ""]
     .filter(Boolean)
@@ -794,7 +821,11 @@ export function normalizeResumeCardPayload(
   const summaryWorkExperiences =
     normalizedWorkExperiences.length > 0
       ? normalizedWorkExperiences
-      : normalizeWorkExperiencesFromSummary(normalized.recent_work);
+      : normalizeWorkExperiencesFromSummary(
+          Array.isArray(normalized.recent_work)
+            ? normalized.recent_work
+            : normalized.recentWork,
+        );
   const recentWorkListExperiences =
     summaryWorkExperiences.length > 0
       ? summaryWorkExperiences
@@ -878,9 +909,13 @@ export function normalizeResumeCardPayload(
   );
   normalized.city = firstNonEmptyString(
     normalized.city,
+    normalized.currentCity,
+    normalized.current_city,
     normalized.location,
     normalized.dqName,
     normalized.expectDqName,
+    normalized.expectCity,
+    normalized.expect_city,
     normalized.expect_location,
     normalized.expectLocation,
     normalized.expectList?.[0]?.dqName,
@@ -906,6 +941,7 @@ export function normalizeResumeCardPayload(
   normalized.expected_salary = firstNonEmptyString(
     normalized.expected_salary,
     normalized.expect_salary,
+    normalized.expectSalary,
     normalized.salary_expect,
     normalized.expectSalaryShowName,
     expectedSalaryFromExpect,
@@ -936,11 +972,13 @@ export function normalizeResumeCardPayload(
   }
   normalized.summary = firstNonEmptyString(
     normalized.summary,
+    typeof normalized.brief === "string" ? normalized.brief : "",
     normalized.selfAssessment,
     normalized.additional,
   );
   normalized.match_reason = firstNonEmptyString(
     normalized.match_reason,
+    normalized.matchReason,
     normalized.match_note,
     normalized.summary,
   );

@@ -3,16 +3,16 @@
 ### 接口
 
 - Method：`POST`
-- 固定 base URL：`http://open-techarea-sandbox20620.sandbox.tongdao.cn`
-- 固定 Path：`/liexiaoxia/search_resume_by_token`
-- 固定搜索 URL：`http://open-techarea-sandbox20620.sandbox.tongdao.cn/liexiaoxia/search_resume_by_token`
+- 固定 base URL：`http://open-agent-sandbox20711.sandbox.tongdao.cn`
+- 固定 Path：`/liexiaoxia/resume/search_resume`
+- 固定搜索 URL：`http://open-agent-sandbox20711.sandbox.tongdao.cn/liexiaoxia/resume/search_resume`
 - Headers：`Content-Type: application/json` + `Authorization: Bearer <token>`
 
 请求体固定为：
 
 ```json
 {
-  "boolSearchJsonStr": "<非空 JSON 字符串>"
+  "boolSearchJsonStr": "<非空 JSON 字符串，字符串内容必须是对象>"
 }
 ```
 
@@ -20,7 +20,8 @@
 
 - 调用前必须先拿到 token；没有 token 就停下并提示用户去 `https://vacs.tongdao.cn/visa/persionaccesstoken/list` 获取
 - 搜索链路只走 API，不要退回浏览器页面
-- `boolSearchJsonStr` 必须是字符串，且字符串内容必须是合法 JSON
+- `boolSearchJsonStr` 必须是字符串，且字符串内容必须是合法 JSON 对象
+- 分页或过滤能力要写进 `boolSearchJsonStr` 内层对象，例如 `curPage`、`pageSize`、`filterChat`
 
 ## 返回值
 
@@ -44,6 +45,7 @@
 | `expectDqName` | `String` | 第一条期望工作地点名称。 |
 | `expectJobtitleName` | `String` | 第一条期望职位名称。 |
 | `expectSalaryShowName` | `String` | 期望薪资展示文案。 |
+| `brief` | `String` | 简历摘要，可直接用于首轮样本判断或候选人卡片摘要。 |
 | `recentWorkList` | `List` | 最近至多 3 段工作经历。 |
 | `highestEdu` | `Object` | 第一条教育经历摘要。 |
 
@@ -88,5 +90,40 @@
 
 - 搜索结果合并或去重时，一律使用 `resIdEncode`
 - 样本校准阶段先展示 3 到 5 条摘要，不要一上来就全量推荐
+- 有 `brief` 时，优先用 `brief` 做首轮展示；没有时再回退到 `recentWorkList` 和 `highestEdu`
 - 正式推荐时，优先基于搜索结果摘要和 `resIdEncode` 组织输出
 - 如果结果为空，说明本次查询没命中；先调条件，不要伪造候选人
+
+## 推荐卡片映射
+
+当你把搜索结果整理成 `resume_card` 时，优先保留搜索接口原始字段，不要重命名成自造字段。
+
+推荐保留：
+
+- `resIdEncode`
+- `resName`
+- `age`
+- `workYears`
+- `dqName`
+- `expectDqName`
+- `expectJobtitleName`
+- `expectSalaryShowName`
+- `brief`
+- `recentWorkList`
+- `highestEdu`
+
+只额外补充：
+
+- `type: "resume_card"`
+- `source_platform: "liexiaoxia"`
+- `match_reason`
+- `resume_detail_url`（仅在真实存在时）
+
+避免输出这类未约定字段名：
+
+- `recentWork`
+- `matchReason`
+- `currentCity`
+- `expectCity`
+- `expectJobtitle`
+- `expectSalary`

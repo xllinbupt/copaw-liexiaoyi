@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 """Chat management API."""
 from __future__ import annotations
+
 import logging
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 from uuid import uuid4
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
@@ -18,6 +20,7 @@ from .utils import agentscope_msg_to_message
 
 router = APIRouter(prefix="/chats", tags=["chats"])
 logger = logging.getLogger(__name__)
+ORPHAN_CHAT_GRACE_PERIOD = timedelta(seconds=30)
 
 
 async def get_workspace(request: Request):
@@ -72,8 +75,15 @@ def _is_pristine_empty_chat(spec: ChatSpec) -> bool:
 async def _is_orphaned_chat(
     spec: ChatSpec,
     session: SafeJSONSession,
+    *,
+    status: str = "idle",
 ) -> bool:
     if session.session_state_exists(spec.session_id, spec.user_id):
+        return False
+    if status == "running":
+        return False
+    last_activity_at = spec.updated_at or spec.created_at
+    if datetime.now(timezone.utc) - last_activity_at <= ORPHAN_CHAT_GRACE_PERIOD:
         return False
     return not _is_pristine_empty_chat(spec)
 
@@ -98,7 +108,8 @@ async def list_chats(
     result = []
     orphan_chat_ids: list[str] = []
     for spec in chats:
-        if await _is_orphaned_chat(spec, session):
+        status = await tracker.get_status(spec.id)
+        if await _is_orphaned_chat(spec, session, status=status):
             orphan_chat_ids.append(spec.id)
             logger.warning(
                 "Detected orphaned chat %s for missing session %s; hiding from list.",
@@ -106,7 +117,6 @@ async def list_chats(
                 spec.session_id,
             )
             continue
-        status = await tracker.get_status(spec.id)
         result.append(spec.model_copy(update={"status": status}))
 
     if orphan_chat_ids:
@@ -189,7 +199,8 @@ async def get_chat(
             detail=f"Chat not found: {chat_id}",
         )
 
-    if await _is_orphaned_chat(chat_spec, session):
+    status = await workspace.task_tracker.get_status(chat_id)
+    if await _is_orphaned_chat(chat_spec, session, status=status):
         logger.warning(
             "Detected orphaned chat %s for missing session %s; deleting stale spec.",
             chat_id,
@@ -205,7 +216,6 @@ async def get_chat(
         chat_spec.session_id,
         chat_spec.user_id,
     )
-    status = await workspace.task_tracker.get_status(chat_id)
     if not state:
         return ChatHistory(messages=[], status=status)
     memories = state.get("agent", {}).get("memory", [])

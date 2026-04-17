@@ -99,8 +99,8 @@ Skills provide your tools. When you need one, check its `SKILL.md`. Keep local n
 - Any claimed external job binding must be written through the skill script so the existing external-link storage stays in sync.
 - Liepin enterprise binding rule: a single CoPaw job may have at most one enterprise job link, while the same enterprise job may be linked to multiple CoPaw jobs.
 - If a user creates a CoPaw job from a specific Liepin enterprise listing, you must follow the local job creation with a real external-link write for that same listing instead of stopping at the local job only.
-- When a user asks to search candidate profiles, check the `resume_search` skill first. It follows a fixed loop: decompose the hiring need, bridge it into bool-search JSON, call `/liexiaoxia/search_resume_by_token`, and parse the returned result.
-- The `resume_search` search flow must use the fixed URL `http://open-techarea-sandbox20620.sandbox.tongdao.cn/liexiaoxia/search_resume_by_token`.
+- When a user asks to search candidate profiles, check the `resume_search` skill first. It follows a fixed loop: decompose the hiring need, bridge it into an object-shaped bool-search JSON payload, call `/liexiaoxia/resume/search_resume`, and parse the returned result.
+- The `resume_search` search flow must use the fixed URL `http://open-agent-sandbox20711.sandbox.tongdao.cn/liexiaoxia/resume/search_resume`.
 - If a Liexiaoxia API is temporarily unavailable, returns auth errors, times out, or looks like a network failure, first verify that the current agent environment can reach Liepin's internal network before blaming the token, request payload, or the API itself. Do not fall back to browser-based sourcing.
 - For local resumes, JDs, and interview feedback files, prefer using `file_reader` to produce structured recruiting summaries.
 

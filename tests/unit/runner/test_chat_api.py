@@ -47,13 +47,16 @@ class _FakeSession:
 
 
 class _FakeTaskTracker:
+    def __init__(self, statuses: dict[str, str] | None = None):
+        self._statuses = statuses or {}
+
     async def get_status(self, chat_id: str) -> str:
-        return "idle"
+        return self._statuses.get(chat_id, "idle")
 
 
 class _FakeWorkspace:
-    def __init__(self):
-        self.task_tracker = _FakeTaskTracker()
+    def __init__(self, statuses: dict[str, str] | None = None):
+        self.task_tracker = _FakeTaskTracker(statuses=statuses)
 
 
 @pytest.mark.asyncio
@@ -66,7 +69,7 @@ async def test_list_chats_filters_orphaned_history_chat() -> None:
         user_id="default",
         channel="console",
         created_at=now - timedelta(days=1),
-        updated_at=now,
+        updated_at=now - timedelta(minutes=5),
     )
     manager = _FakeManager([orphan])
     session = _FakeSession(existing_sessions=set())
@@ -148,6 +151,65 @@ async def test_list_chats_keeps_new_job_context_chat_without_session() -> None:
 
 
 @pytest.mark.asyncio
+async def test_list_chats_keeps_recently_renamed_chat_without_session() -> None:
+    now = datetime.now(timezone.utc)
+    recent = ChatSpec(
+        id="chat-recent",
+        name="帮我生成一个大客户销售的",
+        session_id="console:default:recent",
+        user_id="default",
+        channel="console",
+        created_at=now - timedelta(seconds=10),
+        updated_at=now - timedelta(seconds=2),
+    )
+    manager = _FakeManager([recent])
+    session = _FakeSession(existing_sessions=set())
+    workspace = _FakeWorkspace()
+
+    chats = await chat_api.list_chats(
+        user_id=None,
+        channel=None,
+        mgr=manager,
+        session=session,
+        workspace=workspace,
+    )
+
+    assert len(chats) == 1
+    assert chats[0].id == "chat-recent"
+    assert manager.deleted_chat_ids == []
+
+
+@pytest.mark.asyncio
+async def test_list_chats_keeps_running_chat_without_session() -> None:
+    now = datetime.now(timezone.utc)
+    running = ChatSpec(
+        id="chat-running",
+        name="帮我生成一个大客户销售的",
+        session_id="console:default:running",
+        user_id="default",
+        channel="console",
+        created_at=now - timedelta(minutes=2),
+        updated_at=now - timedelta(minutes=1),
+    )
+    manager = _FakeManager([running])
+    session = _FakeSession(existing_sessions=set())
+    workspace = _FakeWorkspace(statuses={"chat-running": "running"})
+
+    chats = await chat_api.list_chats(
+        user_id=None,
+        channel=None,
+        mgr=manager,
+        session=session,
+        workspace=workspace,
+    )
+
+    assert len(chats) == 1
+    assert chats[0].id == "chat-running"
+    assert chats[0].status == "running"
+    assert manager.deleted_chat_ids == []
+
+
+@pytest.mark.asyncio
 async def test_get_chat_raises_404_for_orphaned_history_chat() -> None:
     now = datetime.now(timezone.utc)
     orphan = ChatSpec(
@@ -157,7 +219,7 @@ async def test_get_chat_raises_404_for_orphaned_history_chat() -> None:
         user_id="default",
         channel="console",
         created_at=now - timedelta(days=2),
-        updated_at=now,
+        updated_at=now - timedelta(minutes=5),
     )
     manager = _FakeManager([orphan])
     session = _FakeSession(existing_sessions=set())
@@ -172,3 +234,31 @@ async def test_get_chat_raises_404_for_orphaned_history_chat() -> None:
         )
 
     assert manager.deleted_chat_ids == ["chat-orphan"]
+
+
+@pytest.mark.asyncio
+async def test_get_chat_keeps_running_chat_without_session() -> None:
+    now = datetime.now(timezone.utc)
+    running = ChatSpec(
+        id="chat-running",
+        name="帮我生成一个大客户销售的",
+        session_id="console:default:running",
+        user_id="default",
+        channel="console",
+        created_at=now - timedelta(minutes=2),
+        updated_at=now - timedelta(minutes=1),
+    )
+    manager = _FakeManager([running])
+    session = _FakeSession(existing_sessions=set())
+    workspace = _FakeWorkspace(statuses={"chat-running": "running"})
+
+    history = await chat_api.get_chat(
+        chat_id="chat-running",
+        mgr=manager,
+        session=session,
+        workspace=workspace,
+    )
+
+    assert history.messages == []
+    assert history.status == "running"
+    assert manager.deleted_chat_ids == []

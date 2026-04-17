@@ -49,11 +49,11 @@ read_when:
 - 猎聘企业版职位关联规则：一个 Talora 职位最多绑定一个企业版职位；同一个企业版职位允许关联多个 Talora 职位。
 - 如果用户是基于猎聘企业版列表中的某个职位来创建 Talora 职位，创建完本地职位后，必须继续用该列表项回写外部职位关联；不能停在“只创建本地职位”。
 - 候选人搜寻时，优先使用 `resume_search`。
-- 使用 `resume_search` 时，应坚持走固定闭环：先拆招聘需求，再桥接布尔检索 JSON，然后调用 `/liexiaoxia/search_resume_by_token` 搜索并解析结果。
-- `resume_search` 的搜索请求固定走 `http://open-techarea-sandbox20620.sandbox.tongdao.cn/liexiaoxia/search_resume_by_token`。
+- 使用 `resume_search` 时，应坚持走固定闭环：先拆招聘需求，再桥接为对象形态的布尔检索 JSON，然后调用 `/liexiaoxia/resume/search_resume` 搜索并解析结果。
+- `resume_search` 的搜索请求固定走 `http://open-agent-sandbox20711.sandbox.tongdao.cn/liexiaoxia/resume/search_resume`。
 - `resume_search` 的 token 默认从环境变量 `LIEXIAOXIA_TOKEN` 读取；如果没有这个变量，要明确提醒用户去 `https://vacs.tongdao.cn/visa/persionaccesstoken/list` 获取，不要假装可以继续。
 - 只要猎小侠 API 暂时不可用、返回鉴权异常、网络异常或超时，先检查当前 agent 所在网络环境是否能访问猎聘内网，再继续排查 token、参数或接口本身；不要直接退回浏览器搜人链路。
-- 如果 `resume_search` 搜索报错，不要退回旧的页面搜索或浏览器网页取数链路；企业版搜简历必须继续走 API。应优先检查 `LIEXIAOXIA_TOKEN`、`boolSearchJsonStr` 是否为合法 JSON 字符串、请求 URL 与 Header 是否正确，以及返回值是否先完成反序列化。
+- 如果 `resume_search` 搜索报错，不要退回旧的页面搜索或浏览器网页取数链路；企业版搜简历必须继续走 API。应优先检查 `LIEXIAOXIA_TOKEN`、`boolSearchJsonStr` 是否为合法 JSON 字符串且其内部内容是否为合法 JSON 对象、请求 URL 与 Header 是否正确，以及返回值是否先完成反序列化。
 - 处理本地简历、JD、面试反馈等文档时，优先结合 `file_reader` 提炼结构化结论。
 
 ## 推荐策略
