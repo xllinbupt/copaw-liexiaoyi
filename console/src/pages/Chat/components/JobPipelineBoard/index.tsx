@@ -101,6 +101,7 @@ const MIN_COLUMN_WIDTHS: ColumnWidths = {
 const TABLE_WIDTH_STORAGE_KEY = "copaw-job-pipeline-table-widths";
 const VIEW_MODE_STORAGE_KEY_PREFIX = "copaw-job-pipeline-view-mode";
 const COLUMN_ORDER_STORAGE_KEY = "copaw-job-pipeline-table-order-v2";
+const STAGE_FILTER_STORAGE_KEY_PREFIX = "copaw-job-pipeline-stage-filter";
 
 function normalizeStoredColumnWidths(
   parsed: Partial<ColumnWidths>,
@@ -402,6 +403,7 @@ export default function JobPipelineBoard(props: JobPipelineBoardProps) {
     useState<PipelineTableColumnKey | null>(null);
   const [dragOverColumnKey, setDragOverColumnKey] =
     useState<PipelineTableColumnKey | null>(null);
+  const [activeStageFilter, setActiveStageFilter] = useState<string>("all");
 
   const openCandidateDetail = (entry: PipelineEntryView) => {
     props.onOpenCandidate({
@@ -461,6 +463,20 @@ export default function JobPipelineBoard(props: JobPipelineBoardProps) {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem(
+        `${STAGE_FILTER_STORAGE_KEY_PREFIX}:${props.jobId}`,
+      );
+      if (raw) {
+        setActiveStageFilter(raw);
+        return;
+      }
+    } catch {}
+    setActiveStageFilter("all");
+  }, [props.jobId]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
     window.localStorage.setItem(
       TABLE_WIDTH_STORAGE_KEY,
       JSON.stringify(columnWidths),
@@ -482,6 +498,14 @@ export default function JobPipelineBoard(props: JobPipelineBoardProps) {
       viewMode,
     );
   }, [props.jobId, viewMode]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(
+      `${STAGE_FILTER_STORAGE_KEY_PREFIX}:${props.jobId}`,
+      activeStageFilter,
+    );
+  }, [activeStageFilter, props.jobId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -541,16 +565,22 @@ export default function JobPipelineBoard(props: JobPipelineBoardProps) {
       ),
     [entries, stages],
   );
+  const visibleEntries = useMemo(
+    () =>
+      activeStageFilter === "all"
+        ? entries
+        : entries.filter((entry) => entry.current_stage_id === activeStageFilter),
+    [activeStageFilter, entries],
+  );
 
-  const summaryText = useMemo(() => {
-    if (!entries.length) {
-      return "还没有候选人进入这个职位的 Pipeline。";
+  useEffect(() => {
+    if (
+      activeStageFilter !== "all" &&
+      !stages.some((stage) => stage.id === activeStageFilter)
+    ) {
+      setActiveStageFilter("all");
     }
-    const stageBits = stages
-      .map((stage) => `${stage.name} ${countsByStage.get(stage.id) ?? 0}`)
-      .join(" · ");
-    return `共 ${entries.length} 位候选人，${stageBits}`;
-  }, [countsByStage, entries.length, stages]);
+  }, [activeStageFilter, stages]);
 
   const tableColumns = useMemo<
     NonNullable<TableProps<PipelineEntryView>["columns"]>
@@ -1067,9 +1097,45 @@ export default function JobPipelineBoard(props: JobPipelineBoardProps) {
 
   return (
     <div className={styles.boardWrap}>
-      <div className={styles.summaryBar}>
-        <div className={styles.summaryText}>{summaryText}</div>
+      <div className={styles.filterBar}>
+        {entries.length ? (
+          <div className={styles.filterChips}>
+            <button
+              type="button"
+              className={`${styles.filterChip} ${
+                activeStageFilter === "all" ? styles.filterChipActive : ""
+              }`.trim()}
+              onClick={() => setActiveStageFilter("all")}
+            >
+              全部
+              <span className={styles.filterChipCount}>{entries.length}</span>
+            </button>
+            {stages.map((stage) => (
+              <button
+                key={stage.id}
+                type="button"
+                className={`${styles.filterChip} ${
+                  activeStageFilter === stage.id ? styles.filterChipActive : ""
+                }`.trim()}
+                onClick={() => setActiveStageFilter(stage.id)}
+              >
+                {stage.name}
+                <span className={styles.filterChipCount}>
+                  {countsByStage.get(stage.id) ?? 0}
+                </span>
+              </button>
+            ))}
+          </div>
+        ) : null}
         <div className={styles.summaryActions}>
+          <Button
+            type="text"
+            size="small"
+            icon={<ReloadOutlined />}
+            onClick={() => notifyJobPipelineUpdated(props.jobId)}
+          >
+            刷新
+          </Button>
           <Segmented
             size="small"
             className={styles.viewToggle}
@@ -1098,14 +1164,6 @@ export default function JobPipelineBoard(props: JobPipelineBoardProps) {
               setViewMode(value as PipelineViewMode);
             }}
           />
-          <Button
-            type="text"
-            size="small"
-            icon={<ReloadOutlined />}
-            onClick={() => notifyJobPipelineUpdated(props.jobId)}
-          >
-            刷新
-          </Button>
         </div>
       </div>
 
@@ -1128,7 +1186,7 @@ export default function JobPipelineBoard(props: JobPipelineBoardProps) {
               },
             }}
             columns={tableColumns}
-            dataSource={entries}
+            dataSource={visibleEntries}
             scroll={{
               x:
                 Object.values(columnWidths).reduce(
@@ -1142,7 +1200,7 @@ export default function JobPipelineBoard(props: JobPipelineBoardProps) {
         <div className={styles.boardScroller}>
           <div className={styles.boardGrid}>
             {stages.map((stage) => {
-              const stageEntries = buildColumnEntries(entries, stage.id);
+              const stageEntries = buildColumnEntries(visibleEntries, stage.id);
               const isDropActive =
                 dragOverStageId === stage.id &&
                 !!draggingEntryId &&
@@ -1152,12 +1210,16 @@ export default function JobPipelineBoard(props: JobPipelineBoardProps) {
                   key={stage.id}
                   className={`${styles.column} ${
                     isDropActive ? styles.columnDropActive : ""
+                  } ${
+                    activeStageFilter !== "all" && activeStageFilter !== stage.id
+                      ? styles.columnFilteredOut
+                      : ""
                   }`}
                 >
                   <div className={styles.columnHeader}>
                     <div className={styles.columnTitle}>{stage.name}</div>
                     <div className={styles.columnCount}>
-                      {countsByStage.get(stage.id) ?? 0}
+                      {stageEntries.length}
                     </div>
                   </div>
 
