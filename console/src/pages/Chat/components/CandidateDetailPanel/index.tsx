@@ -1,3 +1,4 @@
+import { ExportOutlined } from "@ant-design/icons";
 import { Button, Empty, Segmented, Spin, Tag, message } from "antd";
 import { useEffect, useMemo, useState } from "react";
 import { jobApi } from "../../../../api/modules/job";
@@ -10,6 +11,7 @@ import type {
   ChatCandidateDetails,
   ChatJobDetails,
 } from "../../chatWorkspace";
+import { buildLiepinResumeDetailUrl } from "../../utils";
 import styles from "./index.module.less";
 
 interface CandidateDetailPanelProps {
@@ -192,6 +194,11 @@ export default function CandidateDetailPanel({
   }
 
   const profile = detail.candidate;
+  const detailUrl =
+    profile.resume_detail_url ||
+    (profile.source_platform === "liepin" || profile.source_platform === "liexiaoxia"
+      ? buildLiepinResumeDetailUrl(profile.source_candidate_key)
+      : "");
   const primaryFacts = [
     getGenderLabel(profile.gender),
     getAgeLabel(profile.age),
@@ -203,12 +210,34 @@ export default function CandidateDetailPanel({
     <div className={styles.panelContent}>
       <section className={styles.profileSection}>
         <div className={styles.profileHeader}>
-          <div>
-            <div className={styles.profileName}>{profile.name || candidate.candidateName}</div>
-            <div className={styles.profileFacts}>
-              {primaryFacts.join(" · ") || "暂未补充基础信息"}
+          {detailUrl ? (
+            <a
+              className={styles.profileLink}
+              href={detailUrl}
+              target="_blank"
+              rel="noreferrer"
+              title="打开原始简历"
+            >
+              <div className={styles.profileNameRow}>
+                <div className={styles.profileName}>
+                  {profile.name || candidate.candidateName}
+                </div>
+                <ExportOutlined className={styles.profileLinkIcon} />
+              </div>
+              <div className={styles.profileFacts}>
+                {primaryFacts.join(" · ") || "暂未补充基础信息"}
+              </div>
+            </a>
+          ) : (
+            <div>
+              <div className={styles.profileName}>
+                {profile.name || candidate.candidateName}
+              </div>
+              <div className={styles.profileFacts}>
+                {primaryFacts.join(" · ") || "暂未补充基础信息"}
+              </div>
             </div>
-          </div>
+          )}
           {profile.expected_salary ? (
             <Tag className={styles.profileTag}>{profile.expected_salary}</Tag>
           ) : null}

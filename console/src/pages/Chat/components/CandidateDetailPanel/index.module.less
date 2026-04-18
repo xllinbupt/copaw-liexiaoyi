@@ -21,11 +21,45 @@
   gap: 12px;
 }
 
+.profileLink {
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+}
+
+.profileLink:hover .profileName,
+.profileLink:focus-visible .profileName {
+  color: #ff7a1a;
+}
+
+.profileLink:focus-visible {
+  outline: none;
+}
+
+.profileNameRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .profileName {
   color: rgba(0, 0, 0, 0.88);
   font-size: 20px;
   line-height: 1.4;
   font-weight: 700;
+  transition: color 0.18s ease;
+}
+
+.profileLinkIcon {
+  flex: 0 0 auto;
+  color: rgba(0, 0, 0, 0.34);
+  font-size: 12px;
+  transition: color 0.18s ease;
+}
+
+.profileLink:hover .profileLinkIcon,
+.profileLink:focus-visible .profileLinkIcon {
+  color: #ff7a1a;
 }
 
 .profileFacts {
@@ -246,6 +280,17 @@
   .jobCardName,
   .timelineTitle {
     color: rgba(255, 255, 255, 0.9);
+  }
+
+  .profileLinkIcon {
+    color: rgba(255, 255, 255, 0.34);
+  }
+
+  .profileLink:hover .profileName,
+  .profileLink:focus-visible .profileName,
+  .profileLink:hover .profileLinkIcon,
+  .profileLink:focus-visible .profileLinkIcon {
+    color: #ff9b4a;
   }
 
   .profileFacts,

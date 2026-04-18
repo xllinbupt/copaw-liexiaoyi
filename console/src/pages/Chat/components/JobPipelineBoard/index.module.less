@@ -334,10 +334,44 @@
 
 .tableCandidate {
   min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
 }
 
 .tableEducation {
   min-width: 0;
+}
+
+.candidateExternalLink {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  line-height: 0;
+  text-decoration: none;
+  transition:
+    transform 0.18s ease,
+    opacity 0.18s ease;
+}
+
+.candidateExternalLink:hover,
+.candidateExternalLink:focus-visible {
+  opacity: 0.88;
+  transform: translateY(-1px);
+}
+
+.candidateExternalLink:focus-visible {
+  outline: none;
+}
+
+.candidateExternalLinkLogo {
+  display: block;
+  width: 14px;
+  height: 14px;
 }
 
 .tableCandidateMeta {
@@ -488,6 +522,10 @@
   .columnCount {
     background: rgba(255, 255, 255, 0.08);
     color: rgba(255, 255, 255, 0.6);
+  }
+
+  .candidateExternalLink {
+    opacity: 0.9;
   }
 
   .emptyColumn,

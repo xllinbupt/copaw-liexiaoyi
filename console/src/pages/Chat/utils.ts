@@ -412,7 +412,9 @@ function extractResumeToken(value: string | undefined): string {
   return "";
 }
 
-function buildLiepinResumeDetailUrl(resumeToken: string | undefined): string {
+export function buildLiepinResumeDetailUrl(
+  resumeToken: string | undefined,
+): string {
   const token = extractResumeToken(resumeToken);
   if (!token) return "";
   return `https://lpt.liepin.com/resume/detail?resIdEncode=${encodeURIComponent(token)}&sfrom=R_SEARCH_CONDITION`;

@@ -35,6 +35,8 @@ import {
   notifyJobPipelineUpdated,
   type JobPipelineUpdatedDetail,
 } from "../../chatWorkspace";
+import { buildLiepinResumeDetailUrl } from "../../utils";
+import liepinCandidateIconUrl from "../../../../assets/liepin-candidate-icon.svg";
 import styles from "./index.module.less";
 
 interface JobPipelineBoardProps {
@@ -385,6 +387,19 @@ function buildColumnEntries(
   return entries.filter((entry) => entry.current_stage_id === stageId);
 }
 
+function getCandidateResumeDetailUrl(entry: PipelineEntryView): string {
+  if (entry.candidate.resume_detail_url?.trim()) {
+    return entry.candidate.resume_detail_url.trim();
+  }
+
+  const sourcePlatform = (entry.candidate.source_platform || "").trim();
+  if (sourcePlatform === "liepin" || sourcePlatform === "liexiaoxia") {
+    return buildLiepinResumeDetailUrl(entry.candidate.source_candidate_key);
+  }
+
+  return "";
+}
+
 export default function JobPipelineBoard(props: JobPipelineBoardProps) {
   const [loading, setLoading] = useState(true);
   const [board, setBoard] = useState<JobPipelineView | null>(null);
@@ -690,6 +705,24 @@ export default function JobPipelineBoard(props: JobPipelineBoardProps) {
             >
               {entry.candidate.name}
             </button>
+            {getCandidateResumeDetailUrl(entry) ? (
+              <a
+                className={styles.candidateExternalLink}
+                href={getCandidateResumeDetailUrl(entry)}
+                target="_blank"
+                rel="noreferrer"
+                title="打开猎聘企业版简历"
+                onClick={(event) => {
+                  event.stopPropagation();
+                }}
+              >
+                <img
+                  className={styles.candidateExternalLinkLogo}
+                  src={liepinCandidateIconUrl}
+                  alt="Liepin"
+                />
+              </a>
+            ) : null}
           </div>
         ),
       },
