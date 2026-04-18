@@ -360,17 +360,73 @@ async def _add_candidate_to_job_pipeline_unlocked(
 ) -> PipelineEntryMutationResult:
     target_stage = _find_stage(stages, system_stage=request.stage)
 
-    candidate = await _upsert_candidate(request.candidate)
     entries_repo = JsonPipelineEntryRepository(get_pipeline_entries_path())
+    candidates_repo = JsonCandidateRepository(get_pipeline_candidates_path())
     activities_repo = JsonPipelineActivityRepository(
         get_pipeline_activities_path(),
     )
+    resolved_source_resume_id = _trimmed(request.source_resume_id) or _trimmed(
+        request.candidate.source_candidate_key,
+    )
+    candidate_input = request.candidate
+    if (
+        resolved_source_resume_id
+        and not _trimmed(candidate_input.source_candidate_key)
+    ):
+        candidate_input = candidate_input.model_copy(
+            update={"source_candidate_key": resolved_source_resume_id},
+        )
+
+    existing_entry_by_resume = None
+    if resolved_source_resume_id:
+        existing_entry_by_resume = await entries_repo.find_entry_by_source_resume_id(
+            job_id=job_id,
+            source_resume_id=resolved_source_resume_id,
+        )
+
+    if existing_entry_by_resume is not None:
+        existing_candidate = await candidates_repo.get_candidate(
+            existing_entry_by_resume.candidate_id,
+        )
+        if existing_candidate is None:
+            raise ValueError(
+                f"候选人不存在：{existing_entry_by_resume.candidate_id}",
+            )
+        merged_candidate_input = candidate_input.model_copy(
+            update={"id": existing_candidate.id},
+        )
+        candidate = _merge_candidate(
+            existing_candidate,
+            merged_candidate_input,
+            now=datetime.now(timezone.utc),
+        )
+        await candidates_repo.upsert_candidate(candidate)
+        return PipelineEntryMutationResult(
+            created=False,
+            entry=_build_entry_view(
+                existing_entry_by_resume,
+                candidates_by_id={candidate.id: candidate},
+                stages_by_id=stages_by_id,
+                job_name=jobs_by_id.get(job_id).name
+                if jobs_by_id.get(job_id) is not None
+                else "",
+            ),
+        )
+
+    candidate = await _upsert_candidate(candidate_input)
 
     existing_entry = await entries_repo.find_entry(
         job_id=job_id,
         candidate_id=candidate.id,
     )
     if existing_entry is not None:
+        if (
+            resolved_source_resume_id
+            and not _trimmed(existing_entry.source_resume_id)
+        ):
+            existing_entry.source_resume_id = resolved_source_resume_id
+            existing_entry.updated_at = datetime.now(timezone.utc)
+            await entries_repo.upsert_entry(existing_entry)
         return PipelineEntryMutationResult(
             created=False,
             entry=_build_entry_view(
@@ -397,7 +453,7 @@ async def _add_candidate_to_job_pipeline_unlocked(
         owner_user_id=_trimmed(request.owner_user_id),
         source_chat_id=_trimmed(request.source_chat_id),
         source_session_id=_trimmed(request.source_session_id),
-        source_resume_id=_trimmed(request.source_resume_id)
+        source_resume_id=resolved_source_resume_id
         or _trimmed(candidate.source_candidate_key),
         summary=_trimmed(request.summary),
         latest_activity_at=now,

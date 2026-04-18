@@ -177,6 +177,22 @@ class JsonPipelineEntryRepository(_JsonFileStore):
                 return entry
         return None
 
+    async def find_entry_by_source_resume_id(
+        self,
+        *,
+        job_id: str,
+        source_resume_id: str,
+    ) -> PipelineEntry | None:
+        if not source_resume_id:
+            return None
+        for entry in (await self.load()).entries:
+            if (
+                entry.job_id == job_id
+                and entry.source_resume_id == source_resume_id
+            ):
+                return entry
+        return None
+
     async def upsert_entry(self, entry: PipelineEntry) -> None:
         entries_file = await self.load()
         for index, existing in enumerate(entries_file.entries):

@@ -169,6 +169,44 @@ async def test_add_candidate_to_pipeline_deduplicates_and_updates_stage(
 
 
 @pytest.mark.asyncio
+async def test_add_candidate_to_pipeline_deduplicates_by_source_resume_id(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setattr(job_paths, "WORKING_DIR", tmp_path)
+
+    jobs_repo = JsonJobRepository(tmp_path / "recruitment_jobs.json")
+    await jobs_repo.upsert_job(_build_job("job-1"))
+
+    request = AddPipelineCandidateRequest(
+        candidate=CandidateProfileInput(
+            name="李四",
+            source_platform="liexiaoxia",
+            current_title="后端工程师",
+            current_company="某互联网公司",
+        ),
+        source_type="outbound",
+        added_by="agent",
+        summary="技术背景合适",
+        source_resume_id="resume-002",
+    )
+
+    first = await add_candidate_to_job_pipeline("job-1", request)
+    second = await add_candidate_to_job_pipeline("job-1", request)
+
+    assert first.created is True
+    assert second.created is False
+    assert first.entry.id == second.entry.id
+    assert first.entry.candidate.id == second.entry.candidate.id
+    assert second.entry.source_resume_id == "resume-002"
+
+    pipeline = await list_job_pipeline("job-1")
+    assert len(pipeline.entries) == 1
+    assert pipeline.entries[0].source_resume_id == "resume-002"
+    assert pipeline.entries[0].candidate.source_candidate_key == "resume-002"
+
+
+@pytest.mark.asyncio
 async def test_add_candidate_to_pipeline_serializes_concurrent_requests(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
