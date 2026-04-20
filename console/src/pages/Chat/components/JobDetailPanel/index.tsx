@@ -23,7 +23,6 @@ import type {
 } from "../../chatWorkspace";
 import CandidateDetailPanel from "../CandidateDetailPanel";
 import JobPipelineBoard from "../JobPipelineBoard";
-import { getPipelineTabStats } from "../pipelineStats";
 import styles from "./index.module.less";
 
 const PANEL_WIDTH_STORAGE_KEY = "copaw-chat-job-panel-width";
@@ -394,10 +393,6 @@ export default function JobDetailPanel({
     };
   }, [activeJob, jobDetail]);
 
-  const pipelineTabStats = useMemo(
-    () => getPipelineTabStats(pipelineSnapshot),
-    [pipelineSnapshot],
-  );
   const activeExternalLinks = useMemo(
     () => externalLinks.filter((link) => link.status === "active"),
     [externalLinks],
@@ -730,53 +725,7 @@ export default function JobDetailPanel({
                 },
                 {
                   key: "pipeline",
-                  label: (
-                    <span className={styles.pipelineTabLabel}>
-                      <span>候选人</span>
-                      {pipelineTabStats.lead > 0 ||
-                      pipelineTabStats.active > 0 ||
-                      pipelineTabStats.interviewing > 0 ? (
-                        <span className={styles.pipelineTabStats}>
-                          {pipelineTabStats.lead > 0 ? (
-                            <span
-                              className={`${styles.pipelineTabStat} ${styles.pipelineTabStatLead}`}
-                            >
-                              <span className={styles.pipelineTabStatLabel}>
-                                线索
-                              </span>
-                              <span className={styles.pipelineTabStatValue}>
-                                {pipelineTabStats.lead}
-                              </span>
-                            </span>
-                          ) : null}
-                          {pipelineTabStats.active > 0 ? (
-                            <span
-                              className={`${styles.pipelineTabStat} ${styles.pipelineTabStatActive}`}
-                            >
-                              <span className={styles.pipelineTabStatLabel}>
-                                推进中
-                              </span>
-                              <span className={styles.pipelineTabStatValue}>
-                                {pipelineTabStats.active}
-                              </span>
-                            </span>
-                          ) : null}
-                          {pipelineTabStats.interviewing > 0 ? (
-                            <span
-                              className={`${styles.pipelineTabStat} ${styles.pipelineTabStatInterview}`}
-                            >
-                              <span className={styles.pipelineTabStatLabel}>
-                                面试
-                              </span>
-                              <span className={styles.pipelineTabStatValue}>
-                                {pipelineTabStats.interviewing}
-                              </span>
-                            </span>
-                          ) : null}
-                        </span>
-                      ) : null}
-                    </span>
-                  ),
+                  label: "候选人",
                   children: activeJob.jobId ? (
                     <JobPipelineBoard
                       jobId={activeJob.jobId}
